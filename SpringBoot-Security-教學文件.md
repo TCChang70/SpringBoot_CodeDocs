@@ -651,15 +651,13 @@ public class AuthService {
 }
 ```
 
-### Step 5 — application.yml 設定
+### Step 5 — application.properties 設定
 
-```yaml
-app:
-  jwt:
-    # 至少 256 bits (32 bytes)，Base64 編碼
-    # 可用指令產生：openssl rand -base64 32
-    secret: dGhpcylzLWEtc2VjcmV0LWtleS1mb3ItandTLXRlc3Rpbmc=
-    expiration: 86400000   # 24 小時（毫秒）
+```application.properties
+# 至少 256 bits (32 bytes)，Base64 編碼
+# 可用指令產生：openssl rand -base64 32
+app.jwt.secret: dGhpcylzLWEtc2VjcmV0LWtleS1mb3ItandTLXRlc3Rpbmc=
+app.jwt.expiration: 86400000   # 24 小時（毫秒）
 ```
 
 ---
