@@ -1309,7 +1309,58 @@ public String welcome(Principal principal, Model model) {
 <!-- 或使用 Spring Security 整合標籤 -->
 <p>歡迎，<span sec:authentication="name"></span>！</p>
 ```
+### Q6: 控制器不需要寫 POST login
+**不需要。**
 
+Spring Security 的 `formLogin()` 設定中：
+
+```java
+.loginProcessingUrl("/login")
+```
+
+這行告訴 Spring Security **自動攔截所有 `POST /login` 請求**，由內部的 `UsernamePasswordAuthenticationFilter` 處理認證邏輯，**完全不會進入你的 Controller**。
+
+你的 `AuthController` 只需要處理 **`GET /login`**（渲染登入頁面）：
+
+```java
+@GetMapping("/login")
+public String loginPage() {
+    return "login";   // Thymeleaf 渲染 login.html
+}
+```
+
+---
+
+### 如果你加了 `@PostMapping("/login")` 會怎樣？
+
+Spring Security 的 Filter 在 DispatcherServlet **之前**執行，`POST /login` 會被 Security Filter 攔截並消化掉，你的 Controller 方法**永遠不會被呼叫**，加了也沒作用。
+
+```
+請求流程：
+
+POST /login
+    │
+    ▼ UsernamePasswordAuthenticationFilter（Security Filter）攔截
+    │ ← 認證在這裡完成，流程結束
+    │
+    ✗ DispatcherServlet（你的 Controller）永遠到不了這裡
+```
+
+---
+
+### 需要自己寫 POST 的情況
+
+只有在**不使用 Spring Security 的 formLogin()、改用 JWT** 時，才需要自己寫登入端點：
+
+```java
+// JWT 架構才需要這樣寫
+@PostMapping("/api/auth/login")
+public ResponseEntity<JwtResponse> login(@RequestBody LoginRequest request) {
+    // 手動呼叫 authenticationManager.authenticate(...)
+}
+```
+
+你的文件目前是 Thymeleaf 表單登入架構，**`AuthController` 不需要加 POST 方法**。
 ### 延伸學習路徑
 
 ```
