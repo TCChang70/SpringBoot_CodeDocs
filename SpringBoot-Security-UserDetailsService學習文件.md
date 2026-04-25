@@ -656,6 +656,14 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 }
+
+package demo.com.example.model;
+import java.util.Optional;
+import org.springframework.data.jpa.repository.JpaRepository;
+public interface RoleRepository extends JpaRepository<Role, Long> {
+    Optional<Role>	findByName(String r);
+}
+
 ```
 
 ### 資料庫結構（ERD）
