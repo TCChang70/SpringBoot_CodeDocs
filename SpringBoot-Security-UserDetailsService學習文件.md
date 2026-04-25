@@ -15,10 +15,13 @@
 6. [相關 Entity 與 Repository 結構](#6-相關-entity-與-repository-結構)
 7. [Controller 與 View 範例](#7-controller-與-view-範例)
 8. [資料庫初始化範例](#8-資料庫初始化範例)
-9. [完整登入流程圖解](#9-完整登入流程圖解)
-10. [完整專案結構](#10-完整專案結構)
-11. [常見問題與延伸學習](#11-常見問題與延伸學習)
-12. [自我檢核清單](#12-自我檢核清單)
+9. [Login POST 整合測試](#9-login-post-整合測試)
+   - [9-1 Security 層測試](#9-1-security-層測試)（`formLogin()` 直接驗證認證邏輯）
+   - [9-2 Thymeleaf 頁面渲染測試](#9-2-thymeleaf-頁面渲染測試)（完整 HTTP 表單送出 + HTML 回應驗證）
+10. [完整登入流程圖解](#10-完整登入流程圖解)
+11. [完整專案結構](#11-完整專案結構)
+12. [常見問題與延伸學習](#12-常見問題與延伸學習)
+13. [自我檢核清單](#13-自我檢核清單)
 
 ---
 
@@ -458,6 +461,8 @@ BCrypt 雜湊: $2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy
 | REST API（前後端分離）+ JWT | 停用 CSRF，JWT 本身防止偽造 |
 | 傳統 MVC 表單應用 | **保留 CSRF**（預設啟用），Thymeleaf 自動帶 `_csrf` Token |
 
+> ⚠️ **Thymeleaf 測試注意**：若使用 [9-2 Thymeleaf 頁面渲染測試](#9-2-thymeleaf-頁面渲染測試)，請移除 `SpringSecurityConfig` 中的 `csrf(csrf -> csrf.disable())`，保留 CSRF 防護，測試才能正確驗證 `with(csrf())` 與 403 的行為。
+
 #### 表單登入設定
 
 | 設定項 | 預設值 | 說明 |
@@ -656,15 +661,24 @@ public interface UserRepository extends JpaRepository<User, Long> {
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
 }
+```
+----
 
-package demo.com.example.model;
+### RoleRepository
+
+```java
+package com.example.demo.repository;
+
+import com.example.demo.model.Role;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
-public interface RoleRepository extends JpaRepository<Role, Long> {
-    Optional<Role>	findByName(String r);
-}
 
+public interface RoleRepository extends JpaRepository<Role, Long> {
+    Optional<Role> findByName(String name);
+}
 ```
+---
+
 
 ### 資料庫結構（ERD）
 
@@ -798,7 +812,9 @@ import lombok.AllArgsConstructor;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.Set;
 
 @Component
@@ -810,6 +826,7 @@ public class DataInitializer implements CommandLineRunner {
     private final PasswordEncoder passwordEncoder;
 
     @Override
+    @Transactional
     public void run(String... args) {
 
         // 1. 建立角色（若尚不存在）
@@ -833,7 +850,10 @@ public class DataInitializer implements CommandLineRunner {
             admin.setUsername("admin");
             admin.setEmail("admin@example.com");
             admin.setPassword(passwordEncoder.encode("admin123"));  // ← BCrypt 加密
-            admin.setRoles(Set.of(adminRole, userRole));
+            Set<Role> adminRoles = new HashSet<>();
+            adminRoles.add(adminRole);
+            adminRoles.add(userRole);
+            admin.setRoles(adminRoles);
             userRepository.save(admin);
             System.out.println("✅ 預設管理員帳號已建立：admin / admin123");
         }
@@ -844,9 +864,316 @@ public class DataInitializer implements CommandLineRunner {
 > ⚠️ **生產環境注意**：`DataInitializer` 僅供開發/教學使用。  
 > 生產環境請改用 Flyway 或 Liquibase 管理資料庫初始化腳本，並從環境變數讀取密碼。
 
+> **`@Transactional` 說明**：加上 `@Transactional` 可確保 `roleRepository.save()` 回傳的角色實體在整個 `run()` 方法中保持 **managed 狀態**。若無 `@Transactional`，每次 `save()` 各自建立獨立 Session，第三步 `userRepository.save(admin)` 時角色實體已變為 detached，搭配 `CascadeType.ALL` 可能引發 `DetachedObjectException`。
+
 ---
 
-## 9. 完整登入流程圖解
+## 9. Login POST 整合測試
+
+### 測試環境準備
+
+確認 `pom.xml` 已包含以下依賴（[第 2 節](#2-pomxml-依賴設定)已列出）：
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+<dependency>
+    <groupId>org.springframework.security</groupId>
+    <artifactId>spring-security-test</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+> `spring-security-test` 提供 `formLogin()`、`authenticated()`、`unauthenticated()` 等 Spring Security 專用測試輔助方法。
+
+若不想依賴 MySQL（CI/CD 環境），可在 `src/test/resources/application.properties` 換用 H2：
+
+```properties
+# src/test/resources/application.properties（測試專用）
+spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+spring.datasource.driver-class-name=org.h2.Driver
+spring.jpa.hibernate.ddl-auto=create-drop
+```
+
+並在 `pom.xml` 加入 H2 測試依賴：
+
+```xml
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+---
+
+### 9-1 Security 層測試
+
+> **測試策略**：使用 `SecurityMockMvcRequestBuilders.formLogin()` 直接觸發 Spring Security 認證管道，**跳過 Thymeleaf 渲染**，僅驗證認證結果（成功/失敗）與重導向目標。速度快，適合 CI 快速反饋。
+
+#### 完整程式碼
+
+```java
+package com.example.demo;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.authenticated;
+import static org.springframework.security.test.web.servlet.response.SecurityMockMvcResultMatchers.unauthenticated;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class LoginIntegrationTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    /** 測試 1：正確帳號 + 正確密碼 → 認證成功，重導向 /welcome */
+    @Test
+    void whenValidCredentials_thenAuthenticatedAndRedirect() throws Exception {
+        mockMvc.perform(formLogin("/login")
+                .user("admin")
+                .password("admin123"))
+            .andExpect(authenticated().withUsername("admin"))
+            .andExpect(redirectedUrl("/welcome"));
+    }
+
+    /** 測試 2：正確 Email + 正確密碼 → 認證成功（支援 email 登入） */
+    @Test
+    void whenValidEmail_thenAuthenticated() throws Exception {
+        mockMvc.perform(formLogin("/login")
+                .user("admin@example.com")
+                .password("admin123"))
+            .andExpect(authenticated());
+    }
+
+    /** 測試 3：正確帳號 + 錯誤密碼 → 認證失敗，重導向 /login?error=true */
+    @Test
+    void whenInvalidPassword_thenUnauthenticatedAndRedirect() throws Exception {
+        mockMvc.perform(formLogin("/login")
+                .user("admin")
+                .password("wrongpassword"))
+            .andExpect(unauthenticated())
+            .andExpect(redirectedUrl("/login?error=true"));
+    }
+
+    /** 測試 4：不存在的帳號 → 認證失敗 */
+    @Test
+    void whenUnknownUser_thenUnauthenticated() throws Exception {
+        mockMvc.perform(formLogin("/login")
+                .user("unknown")
+                .password("whatever"))
+            .andExpect(unauthenticated());
+    }
+
+    /** 測試 5：未登入直接存取受保護資源 → 重導向登入頁 */
+    @Test
+    void whenNotAuthenticated_thenRedirectToLogin() throws Exception {
+        mockMvc.perform(get("/welcome"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrlPattern("**/login"));
+    }
+}
+```
+
+---
+
+### 測試方法說明
+
+| 方法 | 來源 | 說明 |
+|------|------|------|
+| `formLogin("/login")` | `SecurityMockMvcRequestBuilders` | 模擬 Spring Security 表單登入的 POST 請求 |
+| `.user(value)` | `FormLoginRequestBuilder` | 設定 `username` 欄位值（可以是帳號或 email） |
+| `.password(value)` | `FormLoginRequestBuilder` | 設定 `password` 欄位值 |
+| `authenticated()` | `SecurityMockMvcResultMatchers` | 斷言認證成功（Spring Security 建立了 Authentication） |
+| `authenticated().withUsername("admin")` | 同上 | 進一步斷言使用者名稱符合預期 |
+| `unauthenticated()` | `SecurityMockMvcResultMatchers` | 斷言認證失敗 |
+| `redirectedUrl("/welcome")` | MockMvc | 斷言重導向目標 URL 完全符合 |
+| `redirectedUrlPattern("**/login")` | MockMvc | 以萬用字元比對重導向 URL |
+
+> ⚠️ **`@SpringBootTest` 需要啟動完整 Spring 容器**，會執行 `DataInitializer` 寫入預設帳號。  
+> `@AutoConfigureMockMvc` 自動建立 `MockMvc` 實例，無需啟動真實 HTTP Server（更快）。
+
+---
+
+### 9-2 Thymeleaf 頁面渲染測試
+
+> **測試策略**：使用 `MockMvcRequestBuilders.post()` 模擬真實瀏覽器表單送出，驗證 **HTML 回應內容**（表單結構、錯誤訊息、歡迎文字），涵蓋完整 HTTP 請求→ Security Filter → Controller → Thymeleaf 渲染的路徑。
+
+#### Thymeleaf 測試需啟用 CSRF
+
+Thymeleaf 範本應用應保留 CSRF 保護（`th:action` 自動插入 `_csrf` 隱藏欄位）。  
+請將 `SpringSecurityConfig` 中的 `csrf(csrf -> csrf.disable())` **移除或改為啟用**：
+
+```java
+// ✅ Thymeleaf 應用：保留 CSRF（移除 csrf.disable()）
+http
+    .authorizeHttpRequests(auth -> auth
+        .requestMatchers("/login", "/register").permitAll()
+        .anyRequest().authenticated()
+    )
+    .formLogin(form -> form
+        .loginPage("/login")
+        .loginProcessingUrl("/login")
+        .defaultSuccessUrl("/welcome", true)
+        .failureUrl("/login?error=true")
+        .permitAll()
+    )
+    .logout(logout -> logout
+        .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+        .logoutSuccessUrl("/login?logout=true")
+        .invalidateHttpSession(true)
+        .deleteCookies("JSESSIONID")
+        .permitAll()
+    );
+// ← 不再呼叫 .csrf(csrf -> csrf.disable())
+```
+
+> **`with(csrf())`**：測試中使用 `SecurityMockMvcRequestPostProcessors.csrf()` 模擬瀏覽器帶上有效 CSRF Token，等同於 Thymeleaf 表單自動插入的 `_csrf` 隱藏欄位行為。
+
+#### 完整測試程式碼
+
+```java
+package com.example.demo;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.web.servlet.MockMvc;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+class LoginThymeleafTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    /** 測試 1：GET /login → 回傳 200，HTML 含 username、password 欄位與正確 action */
+    @Test
+    void getLoginPage_thenReturnFormHtml() throws Exception {
+        mockMvc.perform(get("/login"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+            .andExpect(content().string(containsString("name=\"username\"")))
+            .andExpect(content().string(containsString("name=\"password\"")))
+            .andExpect(content().string(containsString("/login")));
+    }
+
+    /** 測試 2：GET /login?error → HTML 顯示錯誤提示文字 */
+    @Test
+    void getLoginPageWithError_thenShowErrorMessage() throws Exception {
+        mockMvc.perform(get("/login").param("error", ""))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("帳號或密碼錯誤")));
+    }
+
+    /** 測試 3：GET /login?logout → HTML 顯示登出成功文字 */
+    @Test
+    void getLoginPageWithLogout_thenShowLogoutMessage() throws Exception {
+        mockMvc.perform(get("/login").param("logout", ""))
+            .andExpect(status().isOk())
+            .andExpect(content().string(containsString("已成功登出")));
+    }
+
+    /** 測試 4：POST /login（含 CSRF）+ 正確憑證 → 302 重導向 /welcome */
+    @Test
+    void postLoginWithValidCredentials_thenRedirectWelcome() throws Exception {
+        mockMvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("username", "admin")
+                .param("password", "admin123")
+                .with(csrf()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/welcome"));
+    }
+
+    /** 測試 5：POST /login（含 CSRF）+ 錯誤密碼 → 302 重導向 /login?error=true */
+    @Test
+    void postLoginWithWrongPassword_thenRedirectLoginError() throws Exception {
+        mockMvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("username", "admin")
+                .param("password", "wrong")
+                .with(csrf()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/login?error=true"));
+    }
+
+    /** 測試 6：POST /login（不含 CSRF Token）→ 403 Forbidden（CSRF 防護生效） */
+    @Test
+    void postLoginWithoutCsrf_thenForbidden() throws Exception {
+        mockMvc.perform(post("/login")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .param("username", "admin")
+                .param("password", "admin123"))
+            .andExpect(status().isForbidden());
+    }
+
+    /** 測試 7：@WithMockUser 模擬已登入 → GET /welcome 回傳 200，HTML 含使用者名稱 */
+    @Test
+    @WithMockUser(username = "admin", roles = {"ADMIN", "USER"})
+    void getWelcomePage_thenShowUsername() throws Exception {
+        mockMvc.perform(get("/welcome"))
+            .andExpect(status().isOk())
+            .andExpect(content().contentTypeCompatibleWith(MediaType.TEXT_HTML))
+            .andExpect(content().string(containsString("admin")));
+    }
+
+    /** 測試 8：@WithMockUser 模擬已登入 → GET /logout（含 CSRF）→ 302 重導向 /login?logout=true */
+    @Test
+    @WithMockUser(username = "admin")
+    void logout_thenRedirectToLoginWithLogoutParam() throws Exception {
+        mockMvc.perform(get("/logout").with(csrf()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/login?logout=true"));
+    }
+}
+```
+
+#### 測試方法說明
+
+| 方法 | 說明 |
+|------|------|
+| `post("/login")` | 模擬瀏覽器提交 HTML 表單（完整 HTTP 路徑） |
+| `.contentType(APPLICATION_FORM_URLENCODED)` | 設定請求 Content-Type，與真實表單一致 |
+| `.param("username", ...)` | 設定表單欄位值 |
+| `.with(csrf())` | 注入有效 CSRF Token，模擬 Thymeleaf `th:action` 自動插入的 `_csrf` 欄位 |
+| `@WithMockUser(...)` | 不執行登入流程，直接將指定使用者設入 `SecurityContext`，適合測試已認證頁面 |
+| `content().string(containsString(...))` | 驗證 Thymeleaf 渲染後的 HTML 字串內容 |
+
+#### 兩種測試策略比較
+
+| 面向 | 9-1 Security 層測試 | 9-2 Thymeleaf 頁面渲染測試 |
+|------|--------------------|--------------------------|
+| 主要工具 | `formLogin()` | `post()` + `with(csrf())` |
+| 測試範圍 | Spring Security 認證邏輯 | 完整 HTTP 往返 + HTML 輸出 |
+| 需要 CSRF | 否（直接呼叫認證管道） | 是（模擬真實表單送出） |
+| HTML 內容驗證 | 否 | 是（`containsString`） |
+| 執行速度 | 較快 | 稍慢（Thymeleaf 渲染） |
+| 建議用途 | CI 快速回歸測試 | 前端整合驗收測試 |
+
+---
+
+## 10. 完整登入流程圖解
 
 ```
 瀏覽器                    Spring Security              你的程式碼
@@ -895,7 +1222,7 @@ POST /login
 
 ---
 
-## 10. 完整專案結構
+## 11. 完整專案結構
 
 ```
 src/main/java/com/example/demo/
@@ -919,11 +1246,18 @@ src/main/resources/
 └── templates/
     ├── login.html                   ← 登入頁面（Thymeleaf）
     └── welcome.html                 ← 登入成功頁面
+
+src/test/java/com/example/demo/
+├── LoginIntegrationTest.java        ← 9-1 Security 層整合測試
+└── LoginThymeleafTest.java           ← 9-2 Thymeleaf 頁面渲染測試
+
+src/test/resources/
+└── application.properties           ← 測試用 H2 資料庫設定（選用）
 ```
 
 ---
 
-## 11. 常見問題與延伸學習
+## 12. 常見問題與延伸學習
 
 ### Q1：`loadUserByUsername` 參數名是 `username` 但我用 email 登入？
 
@@ -996,7 +1330,7 @@ Spring Security + React/Angular 前後端分離
 
 ---
 
-## 12. 自我檢核清單
+## 13. 自我檢核清單
 
 完成本文件學習後，確認你能夠回答以下問題：
 
