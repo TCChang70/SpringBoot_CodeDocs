@@ -782,3 +782,174 @@ DataInitializer（CommandLineRunner）
 ---
 
 > 💡 **建議**：動手實作比閱讀更有效！嘗試從零開始建立此專案，遇到問題再回來查閱本文件。
+
+# 以下說明改成自訂 Controller 處理登入驗證時，需要變動的三個地方：
+
+---
+
+## 改用自訂 Controller 做登入驗證
+
+### 核心差異
+
+| | Spring Security 自動處理（原版） | 自訂 Controller 處理 |
+|---|---|---|
+| `POST /login` | 框架攔截，自動驗證 | 你自己的 `@PostMapping` 處理 |
+| 驗證邏輯 | `UsernamePasswordAuthenticationFilter` | 注入 `AuthenticationManager` 手動呼叫 |
+| Session 建立 | 框架自動 | 手動寫入 `SecurityContextHolder` |
+
+---
+
+### 變動 1 — `SecurityConfig.java`
+
+移除 `loginProcessingUrl`（讓 Spring Security 不要攔截 POST /login），並**暴露 `AuthenticationManager` 為 Bean**：
+
+```java
+@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .csrf(csrf -> csrf.disable())
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/login", "/register").permitAll()
+                .anyRequest().authenticated()
+            )
+            .formLogin(form -> form
+                .loginPage("/login")
+                // ❌ 刪掉這行：.loginProcessingUrl("/login")
+                // 改成一個不存在的路徑，讓框架不攔截 POST /login
+                .loginProcessingUrl("/spring-security-login-disabled")
+                .defaultSuccessUrl("/welcome", true)
+                .failureUrl("/login?error=true")
+                .permitAll()
+            )
+            .logout(logout -> logout
+                .logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+                .logoutSuccessUrl("/login?logout=true")
+                .invalidateHttpSession(true)
+                .deleteCookies("JSESSIONID")
+                .permitAll()
+            );
+
+        return http.build();
+    }
+
+    // ✅ 新增：暴露 AuthenticationManager，讓 Controller 可以注入使用
+    @Bean
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authConfig) throws Exception {
+        return authConfig.getAuthenticationManager();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+}
+```
+
+---
+
+### 變動 2 — `AuthController.java`
+
+加入 `@PostMapping("/login")` 手動執行驗證流程：
+
+```java
+@Controller
+@AllArgsConstructor
+public class AuthController {
+
+    // ✅ 新增注入
+    private final AuthenticationManager authenticationManager;
+
+    @GetMapping("/login")
+    public String loginPage() {
+        return "login";
+    }
+
+    // ✅ 新增：自訂 POST /login 處理
+    @PostMapping("/login")
+    public String processLogin(
+            @RequestParam String username,
+            @RequestParam String password,
+            HttpServletRequest request,
+            RedirectAttributes redirectAttributes) {
+
+        try {
+            // ① 建立「待驗證的憑證物件」
+            UsernamePasswordAuthenticationToken token =
+                new UsernamePasswordAuthenticationToken(username, password);
+
+            // ② 呼叫 AuthenticationManager 驗證
+            //    底層會呼叫 CustomUserDetailsService.loadUserByUsername()
+            //    再用 BCryptPasswordEncoder.matches() 比對密碼
+            Authentication authentication = authenticationManager.authenticate(token);
+
+            // ③ 把驗證結果寫入 SecurityContext（這一步讓 Spring Security 認識你已登入）
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // ④ 把 SecurityContext 存入 Session（讓後續請求維持登入狀態）
+            HttpSession session = request.getSession(true);
+            session.setAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                SecurityContextHolder.getContext()
+            );
+
+            return "redirect:/welcome";
+
+        } catch (AuthenticationException e) {
+            // 驗證失敗（帳號不存在或密碼錯誤）
+            return "redirect:/login?error=true";
+        }
+    }
+
+    @GetMapping("/welcome")
+    public String welcome() {
+        return "welcome";
+    }
+}
+```
+
+---
+
+### 變動 3 — `login.html`（不需改動）
+
+表單原本就是 `POST /login`，**不需要修改**，Controller 接手後完全相容：
+
+```html
+<form th:action="@{/login}" method="post">
+    <input type="text" name="username" required />
+    <input type="password" name="password" required />
+    <button type="submit">登入</button>
+</form>
+```
+
+---
+
+### 完整驗證流程（改版後）
+
+```
+④ 使用者 POST /login
+    │
+    ▼
+⑤ AuthController.processLogin() ← 你的 Controller 接管
+    │
+    ▼
+⑥ authenticationManager.authenticate(token)
+    │  → 內部呼叫 CustomUserDetailsService.loadUserByUsername()
+    │  → 內部呼叫 BCryptPasswordEncoder.matches()
+    │
+    ├─ 失敗 → redirect:/login?error=true
+    │
+    ▼
+⑦ SecurityContextHolder 寫入 + Session 儲存
+    │
+    ▼
+⑧ redirect:/welcome
+```
+
+> **注意**：`CustomUserDetailsService` 不需要任何修改，它仍然是驗證的核心，只是從「框架自動呼叫」改為「透過 `AuthenticationManager` 間接呼叫」。
+
+Similar code found with 1 license type
