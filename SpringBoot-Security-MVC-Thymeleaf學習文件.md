@@ -28,27 +28,23 @@
 這個專案示範如何使用 **Spring Boot + Spring Security + Thymeleaf** 建立一個完整的 MVC 登入/登出系統。
 
 ```
-使用者瀏覽器
-     │
-     ▼
-Spring Security Filter Chain  ←── 攔截所有請求，驗證身份
-     │
-     ▼
-Controller (AuthController)   ←── 處理頁面路由 (GET)
-     │
-     ▼
-Service (CustomUserDetailsService) ←── 從資料庫載入使用者資料
-     │
-     ▼
-Repository (UserRepository)   ←── JPA 查詢資料庫
-     │
-     ▼
-Database (MySQL)
-     │
-     ▼
-Thymeleaf Templates (login.html / welcome.html)
+HTTP 請求
+    │
+    ▼
+SpringSecurityConfig
+    ├── SecurityFilterChain   ← 決定哪些路徑需要認證
+    ├── PasswordEncoder       ← BCrypt 密碼比對
+    └── AuthenticationManager
+            │
+            ▼
+    CustomUserDetailsService
+            │  loadUserByUsername(usernameOrEmail)
+            ▼
+    UserRepository
+            │  findByUsernameOrEmail(...)
+            ▼
+    資料庫（users / roles 資料表）
 ```
-
 ### 核心概念快覽
 
 | 元件 | 角色 | 關鍵技術術語 |
