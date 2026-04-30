@@ -120,7 +120,11 @@ Controller → Spring Data JPA Repository → MySQL（自動實作 CRUD）
     <version>5.6.15.Final</version>
     <scope>compile</scope>
 </dependency>
-
+ <dependency>
+    	<groupId>mysql</groupId>
+    	<artifactId>mysql-connector-java</artifactId>
+    	<version>8.0.33</version>
+</dependency> 
 <!-- Gson：Java 物件 ↔ JSON 轉換工具 -->
 <dependency>
     <groupId>com.google.code.gson</groupId>
