@@ -97,7 +97,15 @@ function UserGreeting({ isLoggedIn, username }) {
   );
 }
 ```
-
+```
+<div>
+   {/* App() 使用方法 */}
+  <UserGreeting isLoggedIn={isLoggedIn} username="小明" />
+  <button onClick={() => setIsLoggedIn(prev => !prev)}>
+             切換登入狀態
+  </button>
+</div>
+```
 ---
 
 ### 列表渲染（List Rendering）
