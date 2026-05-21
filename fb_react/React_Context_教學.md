@@ -1,15 +1,40 @@
 # React Context 教學文件
 
 ## 目錄
-1. [什麼是 React Context？](#1-什麼是-react-context)
-2. [問題：Prop Drilling（屬性探鑽）](#2-問題prop-drilling屬性探鑽)
-3. [解決方法：建立 Context](#3-解決方法建立-context)
-4. [Context 的三個核心概念](#4-context-的三個核心概念)
-5. [範例一：使用 Consumer 讀取 Context](#5-範例一使用-consumer-讀取-context)
-6. [範例二：使用 useContext Hook](#6-範例二使用-usecontext-hook)
-7. [範例三：搭配 useState 更新 Context 值](#7-範例三搭配-usestate-更新-context-值)
-8. [完整綜合範例](#8-完整綜合範例)
-9. [重點整理](#9-重點整理)
+- [React Context 教學文件](#react-context-教學文件)
+  - [目錄](#目錄)
+  - [1. 什麼是 React Context？](#1-什麼是-react-context)
+  - [2. 問題：Prop Drilling（屬性探鑽）](#2-問題prop-drilling屬性探鑽)
+    - [示意圖](#示意圖)
+    - [問題程式碼](#問題程式碼)
+  - [3. 解決方法：建立 Context](#3-解決方法建立-context)
+    - [步驟 1：建立 Context 檔案](#步驟-1建立-context-檔案)
+    - [步驟 2：使用 Provider 提供資料](#步驟-2使用-provider-提供資料)
+  - [4. Context 的三個核心概念](#4-context-的三個核心概念)
+  - [5. 範例一：使用 Consumer 讀取 Context](#5-範例一使用-consumer-讀取-context)
+    - [說明](#說明)
+    - [資料流示意](#資料流示意)
+  - [6. 範例二：使用 useContext Hook](#6-範例二使用-usecontext-hook)
+    - [改寫前（Consumer 寫法）](#改寫前consumer-寫法)
+    - [改寫後（useContext 寫法）](#改寫後usecontext-寫法)
+    - [完整的多層元件範例（使用 useContext）](#完整的多層元件範例使用-usecontext)
+  - [7. 範例三：搭配 useState 更新 Context 值（本地狀態）](#7-範例三搭配-usestate-更新-context-值本地狀態)
+    - [狀態說明](#狀態說明)
+  - [8. 進階技巧：透過 Context 共享更新函式](#8-進階技巧透過-context-共享更新函式)
+    - [8.1 正確模式：將 setter 傳入 Context](#81-正確模式將-setter-傳入-context)
+    - [8.2 最佳實踐：自定義 Hook 封裝](#82-最佳實踐自定義-hook-封裝)
+  - [9. 完整綜合範例](#9-完整綜合範例)
+    - [檔案結構](#檔案結構)
+    - [MyUserContext.js](#myusercontextjs)
+    - [UserApp.jsx](#userappjsx)
+    - [UserProfile.jsx（Consumer 方式）](#userprofilejsxconsumer-方式)
+    - [UpdateUsername.jsx（useContext 方式）](#updateusernamejsxusecontext-方式)
+  - [10. 重點整理](#10-重點整理)
+    - [React Context 使用步驟](#react-context-使用步驟)
+    - [三種讀取方式比較](#三種讀取方式比較)
+    - [常見錯誤](#常見錯誤)
+    - [效能注意事項](#效能注意事項)
+    - [何時使用 Context？](#何時使用-context)
 
 ---
 
@@ -106,17 +131,20 @@ export default Component1;
 // MyUserContext.js
 import { createContext } from "react";
 
-const UserContext = createContext();
+const UserContext = createContext();       // 無預設值
+// const UserContext = createContext("Guest");  // 有預設值（可選）
 
 export default UserContext;
 ```
 
-`createContext()` 會回傳一個 **Context 物件**，其中包含兩個重要屬性：
+`createContext(defaultValue?)` 接受一個**可選的預設值**參數，並回傳一個 **Context 物件**，其中包含兩個重要屬性：
 
 | 屬性 | 說明 |
 |------|------|
 | `Provider` | 提供 Context 值的元件，包裹需要共享資料的子元件 |
 | `Consumer` | 消費（讀取）Context 值的元件 |
+
+> ⚠️ **預設值的作用：** `defaultValue` 只有在元件**沒有被任何 `Provider` 包裹**時才會生效。若 `Provider` 的 `value` 設為 `undefined`，子元件收到的也是 `undefined`，而非預設值。
 
 ### 步驟 2：使用 Provider 提供資料
 
@@ -292,9 +320,11 @@ export default Component1;
 
 ---
 
-## 7. 範例三：搭配 useState 更新 Context 值
+## 7. 範例三：搭配 useState 更新 Context 值（本地狀態）
 
-以下範例示範如何讓使用者透過表單更新 Context 中的使用者名稱。
+以下範例示範如何讓使用者透過表單更新使用者名稱。
+
+> ⚠️ **設計限制說明：** 此範例中 `UpdateUsername` 使用 `useContext` 取得初始值後，將其存入**元件本地的 `useState`**。這意味著更新只影響該元件自身，**不會同步反映到其他使用同一 Context 的元件**（例如 `UserProfile`）。正確的共享更新模式請參閱 [第 8 節](#8-進階技巧透過-context-共享更新函式)。
 
 ```jsx
 // UpdateUsername.jsx
@@ -351,7 +381,117 @@ export default UpdateUsername;
 
 ---
 
-## 8. 完整綜合範例
+## 8. 進階技巧：透過 Context 共享更新函式
+
+實務上，僅傳遞靜態值給 Context 通常不夠用。**正確做法**是將「值」與「更新函式」同時封裝在 `value` 物件中傳入 Provider，讓所有子元件都能讀取並觸發更新，實現真正的跨元件狀態同步。
+
+### 8.1 正確模式：將 setter 傳入 Context
+
+```jsx
+import { useState, createContext, useContext } from "react";
+
+const UserContext = createContext();
+
+function UserApp() {
+  const [user, setUser] = useState("John Doe");
+
+  return (
+    // 同時傳遞「值」與「更新函式」
+    <UserContext.Provider value={{ user, setUser }}>
+      <UserProfile />
+      <UpdateUsername />
+    </UserContext.Provider>
+  );
+}
+```
+
+子元件透過解構同時取得值與 setter：
+
+```jsx
+function UserProfile() {
+  const { user } = useContext(UserContext);
+  return (
+    <div>
+      <h1>User Profile</h1>
+      <p>Username: {user}</p>
+    </div>
+  );
+}
+
+function UpdateUsername() {
+  const { user, setUser } = useContext(UserContext);
+  const [input, setInput] = useState("");
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (input) {
+      setUser(input);   // 直接更新 Provider 的 value，所有消費者同步刷新
+      setInput("");
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+        placeholder="Enter new username"
+      />
+      <button type="submit">Update</button>
+      <p>Current: {user}</p>
+    </form>
+  );
+}
+```
+
+> **關鍵差異：** `setUser` 直接來自 `UserApp` 的 `useState`。呼叫後 Provider 的 `value` 更新，`UserProfile` 與 `UpdateUsername` 都會同步收到新值。
+
+---
+
+### 8.2 最佳實踐：自定義 Hook 封裝
+
+將 `useContext` 包裝為自定義 Hook 是業界推薦的模式，兼具語意清晰與錯誤防護：
+
+```js
+// MyUserContext.js
+import { createContext, useContext, useState } from "react";
+
+const UserContext = createContext();
+
+// 自定義 Hook：語意化且有防呆機制
+export function useUser() {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error("useUser 必須在 <UserContext.Provider> 內使用");
+  }
+  return context;
+}
+
+export default UserContext;
+```
+
+使用時直接呼叫 `useUser()`，更加語意化：
+
+```jsx
+function UserProfile() {
+  const { user } = useUser();   // 取代 useContext(UserContext)
+  return <p>Username: {user}</p>;
+}
+
+function UpdateUsername() {
+  const { user, setUser } = useUser();
+  // ...
+}
+```
+
+**自定義 Hook 的優點：**
+- 隱藏 Context 實作細節，元件不需要 `import UserContext`
+- 若忘記加 Provider，會拋出清楚的錯誤訊息而非靜默失敗
+- 未來更換狀態管理方案時只需修改 Hook，消費者元件不需異動
+
+---
+
+## 9. 完整綜合範例
 
 以下是整合所有檔案的完整架構：
 
@@ -457,30 +597,56 @@ export default UpdateUsername;
 
 ---
 
-## 9. 重點整理
+## 10. 重點整理
 
 ### React Context 使用步驟
 
 ```
 步驟 1：建立 Context
-  const MyContext = createContext();
+  const MyContext = createContext();           // 或 createContext(預設值)
 
 步驟 2：用 Provider 包裹元件並提供值
-  <MyContext.Provider value={data}>
+  <MyContext.Provider value={{ data, setData }}>  // 同時傳值與 setter
     <子元件 />
   </MyContext.Provider>
 
 步驟 3：在子元件中讀取 Context 值
-  方法 A（推薦）：const value = useContext(MyContext);
-  方法 B：<MyContext.Consumer>{(value) => <div>{value}</div>}</MyContext.Consumer>
+  方法 A（推薦）：const { data, setData } = useContext(MyContext);
+  方法 B（最佳實踐）：const { data, setData } = useMyContext();  // 自定義 Hook
+  方法 C（舊式）：<MyContext.Consumer>{(value) => <div>{value}</div>}</MyContext.Consumer>
 ```
 
-### 兩種讀取方式比較
+### 三種讀取方式比較
 
 | 方式 | 語法 | 適用場景 |
 |------|------|---------|
-| `useContext` Hook | `const value = useContext(MyContext)` | 推薦，程式碼簡潔 |
-| `Consumer` 元件 | `<MyContext.Consumer>{v => ...}</MyContext.Consumer>` | 需要在 JSX 中直接讀取 |
+| `useContext` Hook | `const value = useContext(MyContext)` | 一般用途，程式碼簡潔 |
+| 自定義 Hook | `const value = useMyContext()` | 推薦，語意化且有防呆保護 |
+| `Consumer` 元件 | `<MyContext.Consumer>{v => ...}</MyContext.Consumer>` | 需相容舊版類別元件時使用 |
+
+### 常見錯誤
+
+| 錯誤 | 問題說明 | 正確做法 |
+|------|---------|---------|
+| Context 更新不同步 | 用 `useState(contextValue)` 快取初始值，更新只影響本地 | 直接使用 `useContext` 取值，setter 透過 Context 傳遞 |
+| 忘記包裹 Provider | 元件取得 `undefined` 或預設值，行為異常 | 確保消費元件被 Provider 祖先包裹 |
+| 傳遞未穩定的物件 | `value={{ user, setUser }}` 每次渲染產生新物件，觸發不必要重渲 | 用 `useMemo` 穩定 value，或拆分 Context |
+| 將 Context 當作萬能解法 | 所有狀態都放進 Context，每次更新都重渲大範圍元件 | 只放真正需要跨層共享的資料 |
+
+### 效能注意事項
+
+當 `Provider` 的 `value` 更新時，**所有**消費該 Context 的元件都會重新渲染。為避免效能問題：
+
+```jsx
+// ❌ 每次 UserApp 渲染都產生新物件，導致所有消費者重渲
+<UserContext.Provider value={{ user, setUser }}>
+
+// ✅ 用 useMemo 穩定參考，只在 user 真正改變時才更新
+const contextValue = useMemo(() => ({ user, setUser }), [user]);
+<UserContext.Provider value={contextValue}>
+```
+
+亦可將「常變動的值」與「不常變動的 setter」拆分成兩個 Context，讓只需要 setter 的元件不因值的變動而重渲。
 
 ### 何時使用 Context？
 
@@ -492,4 +658,4 @@ export default UpdateUsername;
 
 ❌ **不適合使用：**
 - 只在父子元件之間傳遞的資料（直接用 `props` 即可）
-- 頻繁更新的資料（可能造成不必要的重新渲染）
+- 高頻更新的資料（如動畫狀態、滾動位置，考慮使用 Zustand / Jotai 等狀態庫）
