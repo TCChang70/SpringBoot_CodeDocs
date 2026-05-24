@@ -175,7 +175,65 @@ function App() {
   );
 }
 ```
+```jsx
+// components/Content.jsx — 深層子元件直接消費 Context，無需 props 傳遞
+import { useTheme } from '../contexts/ThemeContext';
 
+function Content() {
+  const { theme } = useTheme();
+
+  const isDark = theme === 'dark';
+
+  const styles = {
+    wrapper: {
+      padding: '24px',
+      minHeight: '200px',
+      background: isDark ? '#1e1e1e' : '#f9f9f9',
+      color:      isDark ? '#e0e0e0' : '#222',
+      borderTop:  `2px solid ${isDark ? '#555' : '#ddd'}`,
+      transition: 'background 0.3s, color 0.3s',
+    },
+    badge: {
+      display: 'inline-block',
+      padding: '4px 12px',
+      borderRadius: '999px',
+      fontSize: '13px',
+      fontWeight: 600,
+      background: isDark ? '#444' : '#e0e0e0',
+      color:      isDark ? '#fff' : '#333',
+      marginBottom: '12px',
+    },
+    card: {
+      padding: '16px',
+      borderRadius: '8px',
+      border: `1px solid ${isDark ? '#444' : '#ddd'}`,
+      background: isDark ? '#2a2a2a' : '#fff',
+      marginTop: '16px',
+    },
+  };
+
+  return (
+    <main style={styles.wrapper}>
+      <span style={styles.badge}>目前主題：{isDark ? '🌙 深色' : '☀️ 淺色'}</span>
+
+      <p>
+        這個 <code>&lt;Content&gt;</code> 元件透過 <strong>useTheme()</strong> 直接
+        從 ThemeContext 取得 <code>theme</code> 值，不需要父層透過 props 傳入。
+      </p>
+
+      <div style={styles.card}>
+        <h3 style={{ margin: '0 0 8px' }}>Context 運作說明</h3>
+        <ul style={{ margin: 0, paddingLeft: '20px', lineHeight: '1.8' }}>
+          <li><code>createContext()</code> — 建立 Context 容器</li>
+          <li><code>&lt;ThemeProvider&gt;</code> — 在 AppContext 最外層提供資料</li>
+          <li><code>useTheme()</code> — 任意子元件消費，不需要 props 傳遞</li>
+        </ul>
+      </div>
+    </main>
+  );
+}
+export default Content;
+```
 ```jsx
 // components/Header.jsx — 深層子元件直接取用
 import { useTheme } from '../contexts/ThemeContext';
@@ -352,7 +410,64 @@ function ExpensiveList({ items, filter }) {
   );
 }
 ```
+```jsx
+// MemoDemo.jsx — ExpensiveList 的使用範例
+import { useState } from 'react';
+import { ExpensiveList } from './memo';
 
+// 模擬一份大型城市清單
+const CITIES = [
+  'Tokyo', 'Taipei', 'Taichung', 'Tainan', 'Taitung',
+  'New York', 'New Delhi', 'New Orleans', 'Newcastle',
+  'Beijing', 'Berlin', 'Bangkok', 'Barcelona', 'Brisbane',
+  'Seoul', 'Sydney', 'Singapore', 'Stockholm', 'Santiago',
+];
+
+export default function MemoDemo() {
+  const [filter, setFilter] = useState('');
+  const [count, setCount]   = useState(0);   // ← 刻意加一個「無關的狀態」
+
+  return (
+    <div style={{ maxWidth: 480, margin: '40px auto', fontFamily: 'sans-serif' }}>
+      <h2>useMemo 示範</h2>
+
+      <p style={{ color: '#666', fontSize: 14 }}>
+        點擊「+1」改變 <code>count</code>，觀察 console：
+        因為 <code>items</code> / <code>filter</code> 沒變，
+        <strong> useMemo 不會重新計算</strong>。
+      </p>
+
+      {/* 無關的狀態，觸發父元件重新渲染 */}
+      <div style={{ marginBottom: 16 }}>
+        <button
+          onClick={() => setCount(c => c + 1)}
+          style={{ padding: '6px 16px', marginRight: 8 }}
+        >
+          +1
+        </button>
+        <span>count = {count}（改變此值不會重算過濾）</span>
+      </div>
+
+      {/* 過濾輸入框 */}
+      <input
+        type="text"
+        value={filter}
+        onChange={e => setFilter(e.target.value)}
+        placeholder="輸入關鍵字過濾城市..."
+        style={{ width: '100%', padding: '8px 12px', fontSize: 16, boxSizing: 'border-box', marginBottom: 12 }}
+      />
+
+      <p style={{ fontSize: 13, color: '#888' }}>
+        ↳ 只有輸入框改變時，才會看到 console 印出「重新計算過濾結果...」
+      </p>
+
+      {/* 將 CITIES 與 filter 傳入 ExpensiveList */}
+      <ExpensiveList items={CITIES} filter={filter} />
+    </div>
+  );
+}
+
+```
 #### `useCallback` — 記憶函式
 
 ```jsx
