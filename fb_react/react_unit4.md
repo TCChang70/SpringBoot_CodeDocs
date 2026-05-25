@@ -182,9 +182,9 @@ import { Link } from 'react-router-dom';
 
 function Products() {
   const products = [
-    { id: 1, name: 'iPhone 16' },
-    { id: 2, name: 'AirPods Pro' },
-    { id: 3, name: 'MacBook Pro' },
+    { id: 1, name: 'Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops' },
+    { id: 2, name: 'Mens Casual Premium Slim Fit T-Shirts ' },
+    { id: 3, name: 'Mens Cotton Jacket' },
   ];
 
   return (
