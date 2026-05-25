@@ -141,11 +141,11 @@ function Navbar() {
 ### `useParams` — 取得 URL 參數
 
 ```jsx
-// pages/ProductDetail.jsx
+// pages/FakeProductDetail.jsx
 import { useParams } from 'react-router-dom';
 import { useState, useEffect } from 'react';
 
-function ProductDetail() {
+function FakeProductDetail() {
   // useParams 回傳 URL 中所有動態參數
   const { id } = useParams();
   const [product, setProduct] = useState(null);
@@ -173,7 +173,7 @@ function ProductDetail() {
   );
 }
 
-export default ProductDetail;
+export default FakeProductDetail;
 ```
 
 ```jsx
@@ -192,14 +192,16 @@ function Products() {
       {products.map(p => (
         <li key={p.id}>
           {/* 動態產生連結 */}
-          <Link to={`/products/${p.id}`}>{p.name}</Link>
+          <Link to={`/fakeproductdetail/${p.id}`}>{p.name}</Link>
         </li>
       ))}
     </ul>
   );
 }
 ```
-
+```route
+  <Route path="/fakeproductdetail/:id" element={<FakeProductDetail />} />
+```
 ---
 
 ### 多個動態參數
