@@ -612,7 +612,7 @@ function PostList() {
 ### 實作 `useLocalStorage`
 
 ```jsx
-// hooks/useLocalStorage.js
+// ./useLocalStorage.js
 import { useState } from 'react';
 
 function useLocalStorage(key, initialValue) {
@@ -620,6 +620,7 @@ function useLocalStorage(key, initialValue) {
   const [storedValue, setStoredValue] = useState(() => {
     try {
       const item = window.localStorage.getItem(key);
+      console.log("Get :" + item);
       return item ? JSON.parse(item) : initialValue;
     } catch {
       return initialValue;
@@ -630,6 +631,7 @@ function useLocalStorage(key, initialValue) {
   const setValue = (value) => {
     try {
       setStoredValue(value);
+      console.log("Save :" + value);
       window.localStorage.setItem(key, JSON.stringify(value));
     } catch (error) {
       console.error('localStorage 寫入失敗：', error);
@@ -638,20 +640,21 @@ function useLocalStorage(key, initialValue) {
 
   return [storedValue, setValue];
 }
-
 export default useLocalStorage;
 ```
-
 ```jsx
 // 使用 useLocalStorage — 用法和 useState 幾乎一樣！
-import useLocalStorage from './hooks/useLocalStorage';
+import useLocalStorage from './useLocalStorage';
 
-function Settings() {
+function MySettings() {
   const [theme, setTheme] = useLocalStorage('theme', 'light');
   const [language, setLanguage] = useLocalStorage('language', 'zh-TW');
 
+  const bgColor = theme === 'dark' ? '#222' : '#fff';
+  const textColor = theme === 'dark' ? '#fff' : '#222';
+
   return (
-    <div>
+    <div style={{ backgroundColor: bgColor, color: textColor, padding: '20px', minHeight: '100vh' }}>
       <p>目前主題：{theme}</p>
       <button onClick={() => setTheme('dark')}>深色模式</button>
       <button onClick={() => setTheme('light')}>淺色模式</button>
@@ -662,8 +665,9 @@ function Settings() {
     </div>
   );
 }
-```
+export default MySettings;
 
+```
 ---
 
 ### 自訂 Hook 設計原則
