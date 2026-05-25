@@ -132,7 +132,7 @@ function Navbar() {
 
 ```jsx
 // App.jsx
-<Route path="/products/:id" element={<ProductDetail />} />
+<Route path="/fakeproductdetail/:id" element={<FakeProductDetail />} />
 //                   ↑ 動態段落（Dynamic Segment），以 : 開頭
 ```
 
@@ -198,9 +198,6 @@ function Products() {
     </ul>
   );
 }
-```
-```route
-  <Route path="/fakeproductdetail/:id" element={<FakeProductDetail />} />
 ```
 ---
 
