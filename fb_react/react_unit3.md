@@ -789,18 +789,123 @@ function UncontrolledForm() {
 ### 組合優於繼承（Composition over Inheritance）
 
 React 不使用 class 繼承來重用 UI，而是透過**元件組合**實現靈活的介面設計。
+```css
+/* 遮罩背景 */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
 
+/* Modal 本體 */
+.modal {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  width: 90%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* 標題列 */
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.modal-header button {
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  cursor: pointer;
+  color: #666;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.modal-header button:hover {
+  background: #f1f1f1;
+}
+
+/* 內容區 */
+.modal-body {
+  padding: 20px;
+  flex: 1;
+}
+
+/* 頁尾按鈕區 */
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: #f8f9fa;
+}
+
+.modal-footer button {
+  padding: 6px 16px;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  cursor: pointer;
+  background: #fff;
+}
+
+.modal-footer button:hover {
+  background: #f1f1f1;
+}
+
+```
 ```jsx
-// 通用 Modal 元件（使用 children 和 slots）
+import { useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
+import './Modal.css';
+
 function Modal({ isOpen, onClose, title, children, footer }) {
+  // ESC 鍵關閉
+  const handleKeyDown = useCallback((e) => {
+    if (e.key === 'Escape') onClose();
+  }, [onClose]);
+
+  // 開啟時：監聽鍵盤、鎖定背景滾動
+  useEffect(() => {
+    if (!isOpen) return;
+    document.addEventListener('keydown', handleKeyDown);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, handleKeyDown]);
+
   if (!isOpen) return null;
 
-  return (
-    <div className="modal-overlay" onClick={onClose}>
+  return createPortal(
+    <div
+      className="modal-overlay"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="modal-title"
+    >
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h2>{title}</h2>
-          <button onClick={onClose}>✕</button>
+          <h2 id="modal-title">{title}</h2>
+          <button onClick={onClose} aria-label="關閉">✕</button>
         </div>
         <div className="modal-body">
           {children}
@@ -811,34 +916,124 @@ function Modal({ isOpen, onClose, title, children, footer }) {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 
-// 組合使用 — 傳入不同的 children 和 footer
-function App() {
-  const [showModal, setShowModal] = useState(false);
+export default Modal;
+```
+```jsx
+import { useState, useCallback } from 'react';
+import Modal from './components/Modal';
+
+function ModalDemo() {
+  const [deleteModal, setDeleteModal] = useState(false);
+  const [infoModal, setInfoModal] = useState(false);
+  const [formModal, setFormModal] = useState(false);
+  const [inputValue, setInputValue] = useState('');
+  const [confirmed, setConfirmed] = useState(null);
+
+  const handleConfirmDelete = useCallback(() => {
+    setConfirmed('已刪除該筆資料');
+    setDeleteModal(false);
+  }, []);
+
+  const handleFormSubmit = useCallback(() => {
+    setConfirmed(`已送出：${inputValue}`);
+    setInputValue('');
+    setFormModal(false);
+  }, [inputValue]);
 
   return (
-    <>
-      <button onClick={() => setShowModal(true)}>開啟確認對話框</button>
+    <div style={{ padding: '40px', fontFamily: 'sans-serif' }}>
+      <h1>Modal 元件示範</h1>
 
+      {confirmed && (
+        <p style={{ color: 'green', fontWeight: 'bold' }}>✔ {confirmed}</p>
+      )}
+
+      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+        {/* 確認刪除 */}
+        <button onClick={() => setDeleteModal(true)}>🗑 刪除資料</button>
+
+        {/* 純資訊 */}
+        <button onClick={() => setInfoModal(true)}>ℹ 查看說明</button>
+
+        {/* 含表單 */}
+        <button onClick={() => setFormModal(true)}>✏ 填寫備註</button>
+      </div>
+
+      {/* --- 確認刪除 Modal --- */}
       <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
+        isOpen={deleteModal}
+        onClose={() => setDeleteModal(false)}
         title="確認刪除"
         footer={
           <>
-            <button onClick={() => setShowModal(false)}>取消</button>
-            <button className="danger">確認刪除</button>
+            <button onClick={() => setDeleteModal(false)}>取消</button>
+            <button
+              onClick={handleConfirmDelete}
+              style={{ marginLeft: '8px', background: '#e53e3e', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              確認刪除
+            </button>
           </>
         }
       >
         <p>確定要刪除這筆資料嗎？此操作無法復原。</p>
       </Modal>
-    </>
+
+      {/* --- 資訊說明 Modal --- */}
+      <Modal
+        isOpen={infoModal}
+        onClose={() => setInfoModal(false)}
+        title="使用說明"
+        footer={
+          <button onClick={() => setInfoModal(false)}>關閉</button>
+        }
+      >
+        <ul>
+          <li>點擊背景或按 ESC 可關閉視窗</li>
+          <li>Modal 透過 createPortal 掛載至 body</li>
+          <li>開啟時背景無法滾動</li>
+        </ul>
+      </Modal>
+
+      {/* --- 含表單 Modal --- */}
+      <Modal
+        isOpen={formModal}
+        onClose={() => setFormModal(false)}
+        title="填寫備註"
+        footer={
+          <>
+            <button onClick={() => setFormModal(false)}>取消</button>
+            <button
+              onClick={handleFormSubmit}
+              style={{ marginLeft: '8px', background: '#3182ce', color: '#fff', border: 'none', padding: '6px 14px', borderRadius: '4px', cursor: 'pointer' }}
+            >
+              送出
+            </button>
+          </>
+        }
+      >
+        <label htmlFor="note">備註內容：</label>
+        <br />
+        <textarea
+          id="note"
+          rows={4}
+          style={{ width: '100%', marginTop: '8px', boxSizing: 'border-box' }}
+          value={inputValue}
+          onChange={e => setInputValue(e.target.value)}
+          placeholder="請輸入備註..."
+        />
+      </Modal>
+    </div>
   );
 }
+
+export default ModalDemo;
+
 ```
 
 ---
