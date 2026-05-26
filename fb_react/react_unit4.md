@@ -72,7 +72,24 @@ function App() {
 
 export default App;
 ```
+```jsx
+import { useNavigate } from 'react-router-dom';
 
+export default function Home() {
+  const navigate = useNavigate();
+
+  return (
+    <div>     
+          <h1>歡迎來到首頁</h1>
+          <p>這是使用 React Router 建立的 SPA 示範專案。</p>
+          <button            
+            onClick={() => navigate('/products')}>
+            瀏覽商品
+          </button>
+    </div>      
+  );
+}
+```
 ---
 
 ### `<Link>` 與 `<NavLink>` — 導覽連結
@@ -82,7 +99,7 @@ export default App;
 ```jsx
 import { Link, NavLink } from 'react-router-dom';
 
-function Navbar() {
+export default function Navbar() {
   return (
     <nav>
       {/* Link：基本連結，不重整頁面 */}
