@@ -349,6 +349,8 @@ import Settings from './pages/dashboard/Settings';
 function App() {
   return (
     <Routes>
+      {/* 根路由自動導向 /dashboard */}
+      <Route path="/" element={<Navigate to="/dashboard" replace />} />   
       <Route path="/dashboard" element={<Dashboard />}>
         {/* 子路由 — index 代表預設子路由（path="/dashboard"） */}
         <Route index element={<Overview />} />
