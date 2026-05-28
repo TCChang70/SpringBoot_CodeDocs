@@ -405,28 +405,208 @@ function CurrentPage() {
   );
 }
 
-// 常見用途：取得查詢字串參數
+// 常見用途：取得查詢字串參數 必須加入 Components.css 才能正常顯示
 import { useSearchParams } from 'react-router-dom';
+import './Components.css';
 
-function ProductList() {
+const SORT_OPTIONS = [
+  { value: 'name',  label: '依名稱' },
+  { value: 'price', label: '依價格' },
+  { value: 'date',  label: '依日期' },
+];
+
+const MOCK_PRODUCTS = [
+  { id: 1, name: '商品 A', price: 100, date: '2026-01-01' },
+  { id: 2, name: '商品 B', price: 50,  date: '2026-03-15' },
+  { id: 3, name: '商品 C', price: 200, date: '2025-12-20' },
+];
+
+function sortProducts(products, sortKey) {
+  return [...products].sort((a, b) => {
+    if (sortKey === 'price') return a.price - b.price;
+    if (sortKey === 'date')  return new Date(a.date) - new Date(b.date);
+    return a.name.localeCompare(b.name);
+  });
+}
+
+/**
+ * ProductSearch — 示範 useSearchParams Hook
+ *
+ * useSearchParams 回傳：
+ *   [searchParams, setSearchParams]
+ *
+ *   searchParams.get('key')  → 讀取單一參數
+ *   setSearchParams({ key }) → 更新 URL 查詢字串（不觸發頁面重整）
+ */
+function ProductSearch() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const sort = searchParams.get('sort') ?? 'name';
+
+  // 從 URL 讀取 sort 參數，預設為 'name'
+  const sort  = searchParams.get('sort')  ?? 'name';
+  const order = searchParams.get('order') ?? 'asc';
+
+  const sorted = sortProducts(MOCK_PRODUCTS, sort);
+  // 使用展開運算符建立新陣列再反轉，避免直接修改 sorted（純函式原則）
+  const displayed = order === 'desc' ? [...sorted].reverse() : sorted;
+
+  function handleSortChange(e) {
+    setSearchParams({ sort: e.target.value, order });
+  }
+
+  function handleOrderChange(e) {
+    setSearchParams({ sort, order: e.target.value });
+  }
 
   return (
-    <div>
-      <select
-        value={sort}
-        onChange={e => setSearchParams({ sort: e.target.value })}
-      >
-        <option value="name">依名稱</option>
-        <option value="price">依價格</option>
-      </select>
-      <p>目前排序：{sort}</p>
+    <div className="card">
+      <h2>useSearchParams 示範</h2>
+
+      <div className="controls">
+        <label>
+          排序欄位：
+          <select value={sort} onChange={handleSortChange}>
+            {SORT_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>{opt.label}</option>
+            ))}
+          </select>
+        </label>
+
+        <label>
+          排序方向：
+          <select value={order} onChange={handleOrderChange}>
+            <option value="asc">升冪 ↑</option>
+            <option value="desc">降冪 ↓</option>
+          </select>
+        </label>
+      </div>
+
+      <p className="url-preview">
+        目前 URL 參數：<code>?sort={sort}&amp;order={order}</code>
+      </p>
+
+      <ul className="product-list">
+        {displayed.map(p => (
+          <li key={p.id}>
+            {p.name}｜價格：{p.price}｜日期：{p.date}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
-```
+export default ProductSearch;
 
+```
+```css
+  /* ====================================================
+   共用元件樣式：CurrentPage / ProductSearch
+   ==================================================== */
+
+/* --- 卡片容器 --- */
+.card {
+  text-align: left;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 24px 28px;
+  margin: 20px 0;
+  box-shadow: var(--shadow);
+}
+
+.card h2 {
+  margin-bottom: 16px;
+  color: var(--text-h);
+}
+
+/* --- useLocation 表格 --- */
+.location-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15px;
+}
+
+.location-table th,
+.location-table td {
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  text-align: left;
+}
+
+.location-table th {
+  width: 110px;
+  background: var(--code-bg);
+  color: var(--text-h);
+  font-weight: 500;
+}
+
+.location-table td code {
+  word-break: break-all;
+}
+
+/* --- useSearchParams 控制列 --- */
+.controls {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  color: var(--text);
+}
+
+.controls select {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.controls select:focus {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* --- URL 預覽列 --- */
+.url-preview {
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 14px;
+}
+
+/* --- 商品清單 --- */
+.product-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.product-list li {
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--code-bg);
+  font-size: 15px;
+  color: var(--text-h);
+  transition: background 0.15s;
+}
+
+.product-list li:hover {
+  background: var(--accent-bg);
+  border-color: var(--accent-border);
+}
+
+```
 ---
 
 ## 巢狀路由（Nested Routes）
