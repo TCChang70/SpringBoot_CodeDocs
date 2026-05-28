@@ -237,39 +237,141 @@ function UserPost() {
 
 ### 概念說明
 除了點擊連結，有時需要在程式邏輯中切換頁面（例如登入成功後跳轉），這時要用 `useNavigate`。
-
 ```jsx
-import { useNavigate } from 'react-router-dom';
+ // Mock authentication API — replace with real API calls (e.g., fetch/axios) in production
+/**
+ * Simulate a login API call.
+ * @param {string} email
+ * @param {string} password
+ * @returns {Promise<{ token: string, user: { email: string } }>}
+ */
+export async function loginAPI(email, password) {
+  // Simulate network latency
+  await new Promise((resolve) => setTimeout(resolve, 1500));
+
+  if (!email || !password) {
+    throw new Error('電子郵件和密碼不得為空');
+  }
+
+  // Demo: reject a specific "wrong" password to demonstrate error handling
+  if (password === 'wrong') {
+    throw new Error('帳號或密碼錯誤，請重試');
+  }
+
+  // Simulate successful response
+  return { token: 'mock-jwt-token', user: { email } };
+}
+
+```
+```jsx
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
+import { loginAPI } from './api/auth';
+import './LoginForm.css';
 
 function LoginForm() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+
+    if (!email.trim() || !password.trim()) {
+      setError('請填寫電子郵件和密碼');
+      return;
+    }
+
+    setLoading(true);
     try {
-      await loginAPI(email, password);
-
-      // 登入成功，跳轉到首頁
+      await loginAPI(email.trim(), password);
       navigate('/');
-
-      // 跳轉並傳遞 state（不顯示在 URL 中）
-      navigate('/dashboard', { state: { from: 'login' } });
-
-      // 取代目前歷史記錄（按上一頁不會回到登入頁）
-      navigate('/', { replace: true });
-    } catch {
-      console.error('登入失敗');
+    } catch (err) {
+      setError(err.message || '登入失敗，請稍後再試');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      {/* ... 表單內容 */}
-    </form>
+    <div className="login-wrapper">
+      <form onSubmit={handleSubmit} className="login-form" noValidate>
+        <h2 className="login-title">登入</h2>
+
+        {error && (
+          <div className="login-error" role="alert">
+            {error}
+          </div>
+        )}
+
+        <div className="form-group">
+          <label htmlFor="email">電子郵件</label>
+          <input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="example@email.com"
+            disabled={loading}
+            autoComplete="email"
+            required
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="password">密碼</label>
+          <input
+            id="password"
+            type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="請輸入密碼"
+            disabled={loading}
+            autoComplete="current-password"
+            required
+          />
+        </div>
+
+        <button type="submit" className="login-btn" disabled={loading}>
+          {loading ? (
+            <>
+              <span className="spinner" aria-hidden="true" /> 登入中...
+            </>
+          ) : (
+            '登入'
+          )}
+        </button>
+
+        <p className="login-hint">
+          測試帳號：任意信箱 ＋ 任意密碼（輸入 <code>wrong</code> 模擬錯誤）
+        </p>
+      </form>
+    </div>
   );
 }
+export default LoginForm;
+
+import { useNavigate } from 'react-router-dom';
+
+function HomePage() {
+  const navigate = useNavigate();
+
+  return (
+    <div className="home-wrapper">
+      <h1>歡迎回來！</h1>
+      <p>您已成功登入。</p>
+      <button className="login-btn" onClick={() => navigate('/login')}>
+        登出
+      </button>
+    </div>
+  );
+}
+
+export default HomePage;
+
 ```
 
 ```jsx
