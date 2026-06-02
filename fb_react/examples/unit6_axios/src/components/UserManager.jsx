@@ -1,8 +1,6 @@
 // src/components/UserManager.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const BASE_URL = 'https://fakestoreapi.com/users';
+import apiClient from '../api/client';
 
 export default function UserManager() {
   const [users, setUsers]     = useState([]);
@@ -17,13 +15,13 @@ export default function UserManager() {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get(BASE_URL, {
+        const { data } = await apiClient.get('/users', {
           params: { limit: 20 },
           signal: controller.signal,
         });
         setUsers(data);
       } catch (err) {
-        if (!axios.isCancel(err)) setError(err.message);
+        if (!apiClient.isCancel?.(err) && err.name !== 'CanceledError') setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -37,7 +35,7 @@ export default function UserManager() {
   const handleAdd = async () => {
     if (!newName.trim()) return;
     try {
-      const { data: newUser } = await axios.post(BASE_URL, {
+      const { data: newUser } = await apiClient.post('/users', {
         username: newName,
         email: `${newName}@demo.com`,
         password: 'demo1234'       
