@@ -326,8 +326,13 @@ apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.set('Authorization', `Bearer ${token}`);
+    } else {
+      console.warn('[Interceptor] ⚠️ 無 token，Authorization header 不會加入');
     }
+    // 觀察用：axios v1.x 需用 toJSON() 或直接讀取欄位
+    console.log('[Request]', config.method?.toUpperCase(), config.url);
+    console.log('[Authorization]', config.headers.get('Authorization') ?? '（未設定）');
     return config; // ⚠️ 必須 return config，否則請求不會送出
   },
   (error) => Promise.reject(error)
