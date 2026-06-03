@@ -549,22 +549,20 @@ export default function UserManager() {
   const handleAdd = async () => {
     if (!newName.trim()) return;
     try {
-      const { data } = await axios.post(BASE_URL, {
+      const { data: newUser } = await apiClient.post('/users', {
         username: newName,
         email: `${newName}@demo.com`,
-        password: 'demo1234',
-        name: { firstname: newName, lastname: 'Demo' },
-        address: { city: '台北市', street: '範例路', number: 1, zipcode: '100' },
-        phone: '0900-000-000',
+        password: 'demo1234'       
       });
       // fakestoreapi 回傳新物件（含 id），附加到列表最前方
-      setUsers(prev => [data, ...prev]);
+      setUsers(prev => [{...newUser,username: newName,
+        email: `${newName}@demo.com`,
+        password: 'demo1234' }, ...prev]);
       setNewName('');
     } catch (err) {
       setError(`新增失敗：${err.message}`);
     }
   };
-
   if (loading) return <p>載入中...</p>;
   if (error)   return <p style={{ color: 'red' }}>錯誤：{error}</p>;
 
