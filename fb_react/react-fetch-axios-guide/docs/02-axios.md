@@ -512,9 +512,7 @@ axios.post('/upload', formData, {
 ```jsx
 // src/components/UserManager.jsx
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-
-const BASE_URL = 'https://fakestoreapi.com/users';
+import apiClient from '../api/client';
 
 export default function UserManager() {
   const [users, setUsers]     = useState([]);
@@ -529,13 +527,13 @@ export default function UserManager() {
     const fetchUsers = async () => {
       try {
         setLoading(true);
-        const { data } = await axios.get(BASE_URL, {
-          params: { limit: 5 },
+        const { data } = await apiClient.get('/users', {
+          params: { limit: 20 },
           signal: controller.signal,
         });
         setUsers(data);
       } catch (err) {
-        if (!axios.isCancel(err)) setError(err.message);
+        if (!apiClient.isCancel?.(err) && err.name !== 'CanceledError') setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -563,6 +561,7 @@ export default function UserManager() {
       setError(`新增失敗：${err.message}`);
     }
   };
+
   if (loading) return <p>載入中...</p>;
   if (error)   return <p style={{ color: 'red' }}>錯誤：{error}</p>;
 
