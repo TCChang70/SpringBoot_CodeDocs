@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--        ↑ 宣告 Thymeleaf 命名空間，讓 th:* 屬性生效 -->
+<head>
+    <meta charset="UTF-8">
+    <title>登入</title>
+</head>
+<body>
+    <h2>登入系統</h2>
+
+    <!-- 登入失敗訊息：URL 有 ?error 參數時顯示 -->
+    <div th:if="${param.error}" style="color:red;">
+        帳號或密碼錯誤，請重試。
+    </div>
+
+    <!-- 登出成功訊息：URL 有 ?logout 參數時顯示 -->
+    <div th:if="${param.logout}" style="color:green;">
+        已成功登出。
+    </div>
+
+    <!--
+        th:action="@{/login}" → Thymeleaf 產生正確的相對路徑 URL
+        method="post"          → Spring Security 只攔截 POST /login
+        若 CSRF 未關閉，Thymeleaf 會自動插入 <input type="hidden" name="_csrf" value="...">
+    -->
+    <form th:action="@{/login}" method="post">
+        <div>
+            <label>帳號或 Email：</label>
+            <input type="text" name="username" required />
+            <!--              ↑ name 必須是 "username"，Spring Security 預設讀取此欄位 -->
+        </div>
+        <div>
+            <label>密碼：</label>
+            <input type="password" name="password" required />
+            <!--                   ↑ name 必須是 "password" -->
+        </div>
+        <button type="submit">登入</button>
+    </form>
+</body>
+</html>
