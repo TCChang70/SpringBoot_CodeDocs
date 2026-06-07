@@ -37,7 +37,7 @@ public class UserService {
   Log 記錄 ──────────────────────────────────┐
   安全驗證 ────────────────────────────────┐  │
   效能計時 ──────────────────────────────┐ │  │
-                                         ↓ ↓  ↓
+                                        ↓ ↓  ↓
   OrderService.createOrder() ══════════════════
   UserService.updateUser()   ══════════════════
   ProductService.addStock()  ══════════════════
