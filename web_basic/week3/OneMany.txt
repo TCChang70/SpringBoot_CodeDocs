@@ -1,0 +1,390 @@
+package model;
+
+import java.io.Serializable;
+import javax.persistence.*;
+
+
+/**
+ * The persistent class for the employees database table.
+ * 
+ */
+@Entity
+@Table(name="employees")
+@NamedQuery(name="Employee.findAll", query="SELECT e FROM Employee e")
+public class Employee implements Serializable {
+	private static final long serialVersionUID = 1L;	
+    @Id
+	private int employeeNumber;
+	private String firstName;
+	private String lastName;
+	private String extension;
+	private String email;
+	private int reportsTo;
+	private String jobTitle;
+	
+	//bi-directional many-to-one association to Office
+	@ManyToOne
+	@JoinColumn(name="officeCode", referencedColumnName="officeCode")
+	private Office office;
+
+	public Employee() {
+	}
+	
+	
+
+	public Employee(int employeeNumber, String firstName, String lastName, String extension, String email,
+			int reportsTo, String jobTitle) {		
+		this.employeeNumber = employeeNumber;
+		this.firstName = firstName;
+		this.lastName = lastName;
+		this.extension = extension;
+		this.email = email;
+		this.reportsTo = reportsTo;
+		this.jobTitle = jobTitle;
+	}
+
+
+
+	public String getEmail() {
+		return this.email;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public int getEmployeeNumber() {
+		return this.employeeNumber;
+	}
+
+	public void setEmployeeNumber(int employeeNumber) {
+		this.employeeNumber = employeeNumber;
+	}
+
+	public String getExtension() {
+		return this.extension;
+	}
+
+	public void setExtension(String extension) {
+		this.extension = extension;
+	}
+
+	public String getFirstName() {
+		return this.firstName;
+	}
+
+	public void setFirstName(String firstName) {
+		this.firstName = firstName;
+	}
+
+	public String getJobTitle() {
+		return this.jobTitle;
+	}
+
+	public void setJobTitle(String jobTitle) {
+		this.jobTitle = jobTitle;
+	}
+
+	public String getLastName() {
+		return this.lastName;
+	}
+
+	public void setLastName(String lastName) {
+		this.lastName = lastName;
+	}
+
+	public int getReportsTo() {
+		return this.reportsTo;
+	}
+
+	public void setReportsTo(int reportsTo) {
+		this.reportsTo = reportsTo;
+	}
+
+	public Office getOffice() {
+		return this.office;
+	}
+
+	public void setOffice(Office office) {
+		this.office = office;
+	}
+
+
+
+	@Override
+	public String toString() {
+		return "Employee [employeeNumber=" + employeeNumber + ", firstName=" + firstName + ", lastName=" + lastName
+				+ ", extension=" + extension + ", email=" + email + ", reportsTo=" + reportsTo + ", jobTitle="
+				+ jobTitle + "]";
+	}
+
+}
+
+package model;
+
+import java.io.Serializable;
+import javax.persistence.*;
+import java.util.List;
+
+
+/**
+ * The persistent class for the offices database table.
+ * 
+ */
+@Entity
+@Table(name="offices")
+@NamedQuery(name="Office.findAll", query="SELECT o FROM Office o")
+public class Office implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	private String officeCode;	
+
+	private String city;
+	
+	private String addressLine1;
+
+	private String addressLine2;
+
+	private String country;
+
+	private String phone;
+
+	private String postalCode;
+
+	private String state;
+
+	private String territory;
+
+	//bi-directional many-to-one association to Employee
+	@OneToMany(mappedBy="office", cascade=CascadeType.ALL)
+	private List<Employee> employees;
+
+	public Office() {
+	}
+    
+	public Office(String officeCode, String city, String addressLine1, String country, String phone, String postalCode,
+			String state, String territory) {		
+		this.officeCode = officeCode;
+		this.city = city;
+		this.addressLine1 = addressLine1;
+		this.country = country;
+		this.phone = phone;
+		this.postalCode = postalCode;
+		this.state = state;
+		this.territory = territory;
+	}
+
+	public String getOfficeCode() {
+		return this.officeCode;
+	}
+
+	public void setOfficeCode(String officeCode) {
+		this.officeCode = officeCode;
+	}
+
+	public String getAddressLine1() {
+		return this.addressLine1;
+	}
+
+	public void setAddressLine1(String addressLine1) {
+		this.addressLine1 = addressLine1;
+	}
+
+	public String getAddressLine2() {
+		return this.addressLine2;
+	}
+
+	public void setAddressLine2(String addressLine2) {
+		this.addressLine2 = addressLine2;
+	}
+
+	public String getCity() {
+		return this.city;
+	}
+
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+	public String getCountry() {
+		return this.country;
+	}
+
+	public void setCountry(String country) {
+		this.country = country;
+	}
+
+	public String getPhone() {
+		return this.phone;
+	}
+
+	public void setPhone(String phone) {
+		this.phone = phone;
+	}
+
+	public String getPostalCode() {
+		return this.postalCode;
+	}
+
+	public void setPostalCode(String postalCode) {
+		this.postalCode = postalCode;
+	}
+
+	public String getState() {
+		return this.state;
+	}
+
+	public void setState(String state) {
+		this.state = state;
+	}
+
+	public String getTerritory() {
+		return this.territory;
+	}
+
+	public void setTerritory(String territory) {
+		this.territory = territory;
+	}
+
+	public List<Employee> getEmployees() {
+		return this.employees;
+	}
+
+	public void setEmployees(List<Employee> employees) {
+		this.employees = employees;
+	}
+
+	public Employee addEmployee(Employee employee) {
+		getEmployees().add(employee);
+		employee.setOffice(this);
+
+		return employee;
+	}
+
+	public Employee removeEmployee(Employee employee) {
+		getEmployees().remove(employee);
+		employee.setOffice(null);
+
+		return employee;
+	}
+
+	@Override
+	public String toString() {
+		return "Office [officeCode=" + officeCode + ", city=" + city + ", addressLine1=" + addressLine1
+				+ ", addressLine2=" + addressLine2 + ", country=" + country + ", phone=" + phone + ", postalCode="
+				+ postalCode + ", state=" + state + ", territory=" + territory + "]";
+	}
+
+}
+
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
+import model.*;
+import java.util.*;
+
+@Path("/office")
+public class OfficeService {
+    
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getAll() {
+        OfficeDAO dao=new OfficeDAO();
+        List<Office> data=dao.getAll();
+        if(data.size()>0) {
+        	  return Response
+        			  .status(Response.Status.OK)
+        			  .entity(data)
+        			  .build();
+        }else {
+        	return Response
+      			  .status(Response.Status.NO_CONTENT)      			  
+      			  .build();
+        }
+	}
+	
+	@POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response addOffice(Office o1) {
+		OfficeDAO dao=new OfficeDAO();
+		boolean flag=dao.addOffice(o1);
+		 if(flag) {
+       	  return Response
+       			  .status(Response.Status.OK)
+       			  .entity(o1)
+       			  .build();
+       }else {
+       	return Response
+     			  .status(Response.Status.BAD_REQUEST)
+     			  .entity("addOffice data error")
+     			  .build();
+       }
+	}
+	
+	@POST
+	@Path("/officeemployee")
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response getJSON(Office o1) {
+		List<Employee> emps= o1.getEmployees();
+		emps.forEach(e->e.setOffice(null));
+		System.out.println("office data:"+o1.toString());
+		System.out.println("employees :"+emps.toString());
+		return Response
+				.status(Response.Status.OK).build();
+	}
+	
+	
+}
+    {
+     "officeCode": "8",
+    "phone": "+886 2 23826015",
+    "postalCode": "100",
+    "territory": "ASIA",
+    "addressLine1": "Kung yuan road",
+    "addressLine2": "",
+    "city": "Taiwan",
+    "country": "TW",
+    "employees": [
+      {
+        "email": "dannychen@classicmodelcars.com",       
+        "employeeNumber": 1800,
+        "extension": "x2312",
+        "firstName": "danny",
+        "jobTitle": "Sales Rep",
+        "lastName": "chen",
+        "reportsTo": 1102,
+        "office":{
+            "officeCode": "8",
+            "phone": "+886 2 23826015",
+            "postalCode": "100",
+            "territory": "ASIA",
+            "addressLine1": "Kung yuan road",
+            "addressLine2": "",
+            "city": "Taiwan",
+            "country": "TW"
+        }
+      },
+      {
+        "email": "cindylin@classicmodelcars.com",        
+        "employeeNumber": 1801,
+        "extension": "x103",
+        "firstName": "cindy",
+        "jobTitle": "Sales Rep",
+        "lastName": "lin",
+        "reportsTo": 1102,
+         "office":{
+            "officeCode": "8",
+            "phone": "+886 2 23826015",
+            "postalCode": "100",
+            "territory": "ASIA",
+            "addressLine1": "Kung yuan road",
+            "addressLine2": "",
+            "city": "Taiwan",
+            "country": "TW"
+        }
+      }
+    ]   
+  }
