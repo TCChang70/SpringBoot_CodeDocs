@@ -146,10 +146,10 @@ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 
 # ── JPA 設定 ───────────────────────────────────────────────
 # ddl-auto 說明（初學先用 update，正式環境用 validate 或 none）：
-#   update     → 比對 Entity 與資料表，有新欄位就補上（開發常用）
-#   create     → 每次啟動重建資料表（⚠️ 資料會清空！）
-#   validate   → 只驗證，不修改（生產環境）
-#   none       → 完全不動資料表
+#   update      → 比對 Entity 與資料表，有新欄位就補上（開發常用）
+#   create-drop → 每次啟動重建資料表（⚠️ 資料會清空！）
+#   validate    → 只驗證，不修改（生產環境）
+#   none        → 完全不動資料表
 spring.jpa.hibernate.ddl-auto=update
 
 # 在 console 顯示 JPA 產生的 SQL（學習時非常有幫助！）
