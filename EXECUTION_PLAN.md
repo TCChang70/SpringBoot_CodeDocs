@@ -369,12 +369,11 @@ AI建議：使用 countByStatus(String status) 方法，Spring Data 會自動產
 # 第四筆 commit：前端功能
 git add src/main/resources/templates/dashboard.html
 git commit -m "[AI-USED] 新增看診完成按鈕（dashboard.html）
-
 問AI：Thymeleaf 如何在表格依狀態顯示不同按鈕？fetch 呼叫 PUT API 後如何重新整理頁面？
 AI建議：使用 th:if=\"\${appt.status == 'BOOKED'}\" 控制按鈕顯示，fetch 成功後呼叫 location.reload()
 我的修改：依照 AI 建議實作，並加入 confirm() 確認提示避免誤點，
           完成/取消按鈕共用相同的資料流但傳送不同的 status 值"
-
+# git add src/main/resources/templates/*.html 記得複製其他html
 # 第五筆 commit：文件
 git add README.md
 git commit -m "[NO-AI] 新增 README.md
