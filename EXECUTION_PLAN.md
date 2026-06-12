@@ -433,9 +433,9 @@ git log --format="%s"
    | Key | Value |
    |-----|-------|
    | `SPRING_PROFILES_ACTIVE` | `prod` |
-   | `DATABASE_URL` | 填入步驟 9-1 的 Internal Database URL |
-   | `SPRING_DATASOURCE_USERNAME` | 填入步驟 9-1 的 Username |
-   | `SPRING_DATASOURCE_PASSWORD` | 填入步驟 9-1 的 Password |
+   | `DATABASE_URL` | jdbc:postgresql://host_address/miniclinic |
+   | `SPRING_DATASOURCE_USERNAME` | sa |
+   | `SPRING_DATASOURCE_PASSWORD` | sa |
 
 5. 點擊 **Create Web Service**
 6. 等待部署完成（約 5～10 分鐘，可在 Logs 頁面監看）
