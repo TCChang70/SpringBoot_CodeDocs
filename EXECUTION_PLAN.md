@@ -77,6 +77,7 @@ spring.datasource.driver-class-name=org.sqlite.JDBC
 spring.datasource.url=jdbc:sqlite:miniclinic.db
 spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect
 spring.jpa.hibernate.ddl-auto=update
+spring.sql.init.data-locations= classpath: data.sql
 ```
 
 ### 2-3. 新建 `application-prod.properties`
@@ -252,7 +253,7 @@ WORKDIR /app
 COPY --from=builder /app/target/*.jar app.jar
 
 # 容器啟動時執行 JAR，並明確指定使用 prod Profile
-ENTRYPOINT ["java", "-Dspring.profiles.active=prod", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-Dspring.profiles.active=dev", "-jar", "app.jar"]
 
 # 宣告服務使用的 port（Render 預設讀取此值）
 EXPOSE 8080
