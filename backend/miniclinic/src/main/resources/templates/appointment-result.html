@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>掛號完成 - MiniClinic</title>
+    <style>
+        /* 🌟 維持與主頁面一致的 640px 寬度，版面更舒適 */
+        body { font-family: "Microsoft JhengHei", sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; }
+        h1 { color: #0F2443; }
+        
+        /* 🌟 終結跑版魔法：改用 Flexbox 排版，讓所有選項完美置中、自動均分 */
+        nav { 
+            background: #0F2443; 
+            padding: 14px 16px; 
+            border-radius: 8px; 
+            margin-bottom: 24px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav a { 
+            color: white; 
+            text-decoration: none; 
+            font-weight: bold; 
+            font-size: 14px;
+            white-space: nowrap; /* 🌟 核心關鍵：告訴瀏覽器無論如何「醫師登入」絕對不准折行！ */
+        }
+        nav a:hover { color: #5EEAD4; }
+        
+        .success { background: #D1FAE5; color: #065F46; padding: 16px; border-radius: 6px; margin: 20px 0; font-weight: bold; }
+        .summary { background: #F8FAFC; padding: 20px; border-left: 5px solid #14B8A6; border-radius: 0 6px 6px 0; }
+        dt { font-weight: bold; color: #0F2443; margin-top: 10px; }
+        dd { margin-left: 0; margin-bottom: 4px; color: #334155; }
+        
+        /* 底部超連結美化 */
+        .footer-links { margin-top: 24px; color: #64748B; }
+        .footer-links a { color: #14B8A6; text-decoration: none; font-weight: bold; }
+        .footer-links a:hover { color: #0D9488; }
+    </style>
+</head>
+<body>
+    <h1>掛號成功！</h1>    
+    
+    <nav>
+        <a th:href="@{/}">首頁</a>
+        <a th:href="@{/doctors}">醫師清單</a>
+        <a th:href="@{/appointment/new}">線上掛號</a>
+        <a th:href="@{/patients}">病歷資料</a>
+        <a th:href="@{/appointments}">掛號記錄</a>
+        <a th:href="@{/stats}">統計資訊</a>
+        <a th:href="@{/login}">醫師登入</a>
+    </nav>
+
+    <div class="success">
+        您的掛號已成功寫入資料庫（掛號編號：<span th:text="${appointment.apptId}"></span>）
+    </div>
+
+    <div class="summary">
+        <h2>掛號摘要</h2>
+        <dl>
+            <dt>掛號編號</dt> <dd th:text="${appointment.apptId}">1</dd>
+            <dt>病歷號</dt>   <dd th:text="${appointment.patient.chartNo}">TEST00001</dd>
+            <dt>病患姓名</dt> <dd th:text="${appointment.patient.name}">測試病患甲</dd>
+            <dt>醫師</dt>    <dd th:text="${appointment.doctor.name}">陳志明醫師</dd>
+            <dt>科別</dt>    <dd th:text="${appointment.doctor.department}">家醫科</dd>
+            <dt>日期</dt>    <dd th:text="${appointment.apptDate}">2026-05-01</dd>
+            <dt>時段</dt>    <dd th:text="${appointment.timeSlot}">AM</dd>
+            <dt>狀態</dt>    <dd th:text="${appointment.status}">BOOKED</dd>
+        </dl>
+    </div>
+
+    <p class="footer-links">
+        <a th:href="@{/appointments}">查看所有掛號記錄</a> | 
+        <a th:href="@{/}">← 回首頁</a>
+    </p>
+</body>
+</html>

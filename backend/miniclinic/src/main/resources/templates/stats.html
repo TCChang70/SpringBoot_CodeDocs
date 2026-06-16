@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>統計資訊 - MiniClinic</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; max-width: 640px; margin: 40px auto; padding: 0 20px; }
+        h1 { color: #0F2443; border-bottom: 3px solid #14B8A6; padding-bottom: 8px; }
+        
+        /* 標準美觀導覽列 */
+        nav { 
+            background: #0F2443; 
+            padding: 14px 16px; 
+            border-radius: 8px; 
+            margin-bottom: 24px; 
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        nav a { color: white; text-decoration: none; font-weight: bold; font-size: 14px; white-space: nowrap; }
+        nav a:hover { color: #5EEAD4; }
+
+        /* 統計數字卡片樣式 */
+        .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin: 24px 0; }
+        .stats-card { background: #F8FAFC; border: 1px solid #E2E8F0; border-radius: 8px; padding: 16px; text-align: center; }
+        .stats-card h3 { margin: 0; color: #64748B; font-size: 14px; }
+        .stats-card p { margin: 8px 0 0 0; color: #14B8A6; font-size: 28px; font-weight: bold; }
+
+        /* 表格樣式 */
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #E2E8F0; }
+        th { background: #0F2443; color: white; }
+    </style>
+</head>
+<body>
+    <h1>系統數據統計</h1>
+    <nav>
+        <a th:href="@{/}">首頁</a>
+        <a th:href="@{/doctors}">醫師清單</a>
+        <a th:href="@{/appointment/new}">線上掛號</a>
+        <a th:href="@{/patients}">病歷資料</a>
+        <a th:href="@{/appointments}">掛號記錄</a>
+        <a th:href="@{/stats}">統計資訊</a>
+        <a th:href="@{/login}">醫師登入</a>
+    </nav>
+
+    <div class="stats-grid">
+        <div class="stats-card">
+            <h3>醫師總數</h3>
+            <p th:text="${doctorCount}">0</p>
+        </div>
+        <div class="stats-card">
+            <h3>病患總數</h3>
+            <p th:text="${patientCount}">0</p>
+        </div>
+        <div class="stats-card">
+            <h3>掛號總量</h3>
+            <p th:text="${appointmentCount}">0</p>
+        </div>
+    </div>
+
+    <h2>各科別掛號分布</h2>
+    <p th:if="${deptStats.isEmpty()}">目前暫無掛號數據。</p>
+    
+    <table th:unless="${deptStats.isEmpty()}">
+        <thead>
+            <tr>
+                <th>科別名稱</th>
+                <th>掛號數量</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="entry : ${deptStats}">
+                <td th:text="${entry.key}">內科</td>
+                <td style="font-weight: bold; color: #0F2443;" th:text="${entry.value}">0</td>
+            </tr>
+        </tbody>
+    </table>
+
+</body>
+</html>

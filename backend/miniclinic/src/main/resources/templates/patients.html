@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>病歷資料 - MiniClinic</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 40px auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border-bottom: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #0F2443; color: white; }
+    </style>
+</head>
+<body>
+    <h1>病歷資料清單</h1>
+    <table>
+        <thead>
+            <tr>
+                <th>病歷號</th>
+                <th>姓名</th>
+                <th>性別</th>
+                <th>聯絡電話</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- 使用 Thymeleaf 迴圈顯示資料[cite: 1, 2] -->
+            <tr th:each="p : ${patients}">
+                <td th:text="${p.chartNo}">TEST00001</td>
+                <td th:text="${p.name}">姓名</td>
+                <td th:text="${p.gender}">性別</td>
+                <td th:text="${p.phone}">電話</td>
+            </tr>
+        </tbody>
+    </table>
+    <p><a th:href="@{/}">返回首頁</a></p>
+</body>
+</html>

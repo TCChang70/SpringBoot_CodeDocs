@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-Hant" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>醫師主頁 - MiniClinic</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", sans-serif; max-width: 960px; margin: 40px auto; padding: 0 20px; }
+        
+        /* 老師版本基礎架構 */
+        header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 3px solid #14B8A6; padding-bottom: 12px; margin-bottom: 25px; }
+        h1 { color: #0F2443; margin: 0; }
+        .doctor-info { color: #334155; font-size: 0.9em; margin: 5px 0 0 0; }
+        
+        .nav-buttons { display: flex; align-items: center; gap: 10px; }
+        .btn-pwd { background: #14B8A6; color: white; padding: 6px 14px; border: none; border-radius: 4px; text-decoration: none; font-size: 14px; font-weight: bold; }
+        .logout-form button { background: #94A3B8; color: white; padding: 6px 14px; border: none; border-radius: 4px; cursor: pointer; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 24px; }
+        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #E2E8F0; }
+        th { background: #0F2443; color: white; }
+        
+        .status-BOOKED    { color: #F59E0B; font-weight: bold; }
+        .status-COMPLETED { color: #10B981; font-weight: bold; }
+        .status-CANCELLED { color: #DC2626; font-weight: bold; }
+
+        /* 功能按鈕樣式 */
+        .btn-cancel { padding: 4px 10px; background: #EF4444; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; }
+        .btn-cancel:hover { background: #DC2626; }
+        
+        .btn-complete { padding: 4px 10px; background: #10B981; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 13px; margin-right: 8px; }
+        .btn-complete:hover { background: #059669; }
+    </style>
+</head>
+<body>
+    <header>
+        <div>
+            <h1>醫師主頁</h1>
+            <p class="doctor-info">歡迎，<span th:text="${doctor.name}"></span>（<span th:text="${doctor.department}"></span>）</p>
+        </div>
+        <div class="nav-buttons">
+            <a th:href="@{/password}" class="btn-pwd">修改密碼</a>
+            <form class="logout-form" th:action="@{/logout}" method="get">
+                <button type="submit">登出</button>
+            </form>
+        </div>
+    </header>
+
+    <h2 th:text="|今日掛號：${today}|"></h2>
+
+    <p th:if="${appointments.isEmpty()}">今日沒有掛號。</p>
+
+    <table th:unless="${appointments.isEmpty()}">
+        <thead>
+            <tr>
+                <th>時段</th>
+                <th>病患</th>
+                <th>病歷號</th>
+                <th>狀態</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="appt : ${appointments}">
+                <td th:text="${appt.timeSlot}">AM</td>
+                <td th:text="${appt.patient.name}"></td>
+                <td th:text="${appt.patient.chartNo}"></td>
+                <td>
+                    <span th:text="${appt.status}" th:class="${'status-' + appt.status}" style="margin-right: 15px;"></span>
+                    
+                    <button th:if="${appt.status == 'BOOKED'}"
+                            th:data-id="${appt.apptId}"
+                            class="btn-complete"
+                            onclick="completeAppointment(this)">看診完成</button>
+
+                    <button th:if="${appt.status == 'BOOKED'}"
+                            th:data-id="${appt.apptId}"
+                            class="btn-cancel"
+                            onclick="cancelAppointment(this)">取消</button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <p style="text-align: center; margin-top: 20px;">
+        <a th:href="@{/}">← 回首頁</a>
+    </p>
+
+    <script>
+    // 處理「取消」的邏輯
+    function cancelAppointment(button) {
+        const apptId = button.getAttribute('data-id');
+        if (confirm('確定要取消這筆掛號嗎？')) {
+            fetch(`/api/appointments/${apptId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'CANCELLED' })
+            })
+            .then(response => {
+                if (response.ok) location.reload();
+                else alert('取消失敗，請檢查權限或稍後再試。');
+            });
+        }
+    }
+
+    // 🌟 這是新增的：處理「看診完成」的邏輯
+    function completeAppointment(button) {
+        const apptId = button.getAttribute('data-id');
+        if (confirm('確定這筆掛號已經看診完成了嗎？')) {
+            fetch(`/api/appointments/${apptId}/status`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: 'COMPLETED' })
+            })
+            .then(response => {
+                if (response.ok) location.reload();
+                else alert('狀態更新失敗，請檢查權限或稍後再試。');
+            });
+        }
+    }
+    </script>
+</body>
+</html>
