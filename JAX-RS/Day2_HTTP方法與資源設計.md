@@ -1,7 +1,23 @@
 # Day 2 — HTTP 方法、資源設計與 JSON
 
-> **學習時數**：6–8 小時  
+> **學習時數**：6–8 小時
 > **前置要求**：完成 Day 1、JAX-RS 環境可執行
+> **範例原始碼**：[examples/day2](./examples/day2/)
+
+---
+
+## 目錄
+
+- [學習目標](#學習目標)
+- [第一節：完整 CRUD 操作實作](#第一節完整-crud-操作實作)
+- [第二節：參數取得詳解](#第二節參數取得詳解)
+- [第三節：JSON 設定與 Jackson](#第三節json-設定與-jackson)
+- [第四節：通用 API 回應格式設計](#第四節通用-api-回應格式設計)
+- [第五節：UriInfo 與 Location Header](#第五節uriinfo-與-location-header)
+- [第六節：HTTP 方法冪等性與安全性](#第六節http-方法冪等性與安全性)
+- [Day 2 評估測驗](#day-2-評估測驗)
+- [Day 2 實作題目](#day-2-實作題目)
+- [延伸挑戰](#延伸挑戰)
 
 ---
 
@@ -82,7 +98,6 @@ public class EmployeeResource {
     // ── POST /api/employees ─────────────────────────────────────────
     @POST
     public Response create(Employee emp, @Context UriInfo uriInfo) {
-        // 基本驗證
         if (emp.getName() == null || emp.getName().isBlank()) {
             return Response.status(Response.Status.BAD_REQUEST)
                            .entity("{\"message\":\"Name is required\"}")
@@ -93,7 +108,6 @@ public class EmployeeResource {
         emp.setId(id);
         DB.put(id, emp);
 
-        // 建構 Location Header：/api/employees/{id}
         URI location = uriInfo.getAbsolutePathBuilder()
                               .path(String.valueOf(id))
                               .build();
@@ -156,6 +170,9 @@ public class EmployeeResource {
     }
 }
 ```
+
+> 💡 完整範例（含 `ApiResponse` 包裝、`@BeanParam` 進階查詢）請參考：
+> [`examples/day2/src/main/java/com/example/resource/EmployeeResource.java`](./examples/day2/src/main/java/com/example/resource/EmployeeResource.java)
 
 ---
 
@@ -239,6 +256,9 @@ public Response search(@BeanParam EmployeeFilter filter) {
 }
 ```
 
+> 完整 `EmployeeFilter` 含排序與薪資範圍欄位請參考：
+> [`EmployeeFilter.java`](./examples/day2/src/main/java/com/example/model/EmployeeFilter.java)
+
 ---
 
 ## 第三節：JSON 設定與 Jackson
@@ -281,6 +301,8 @@ public class JacksonConfig implements ContextResolver<ObjectMapper> {
     }
 }
 ```
+
+> 完整程式碼：[`JacksonConfig.java`](./examples/day2/src/main/java/com/example/config/JacksonConfig.java)
 
 ### 3.2 Jackson 常用標注
 
@@ -364,6 +386,7 @@ public class ApiResponse<T> {
 ```
 
 **使用範例：**
+
 ```java
 @GET
 public Response getAll() {
@@ -374,6 +397,9 @@ public Response getAll() {
 // 回應：
 // {"success":true,"message":"OK","data":[...]}
 ```
+
+> 完整 `ApiResponse` 含多重重載工廠方法請參考：
+> [`ApiResponse.java`](./examples/day2/src/main/java/com/example/model/ApiResponse.java)
 
 ---
 
@@ -393,14 +419,14 @@ public Response create(Employee emp, @Context UriInfo uriInfo) {
 }
 
 // 客戶端收到的 Header：
-// Location: http://localhost:8080/jaxrs-demo/api/employees/4
+// Location: http://localhost:8080/jaxrs-demo/api/employees/5
 ```
 
 ---
 
 ## 第六節：HTTP 方法冪等性與安全性
 
-| 方法 | 安全（Safe）| 冪等（Idempotent）| 說明 |
+| 方法 | 安全（Safe） | 冪等（Idempotent） | 說明 |
 |------|-------------|-------------------|------|
 | GET | ✓ | ✓ | 只讀，不修改資源 |
 | HEAD | ✓ | ✓ | 只取 Header，不取 Body |
@@ -412,9 +438,7 @@ public Response create(Employee emp, @Context UriInfo uriInfo) {
 
 ---
 
-## Day 2 評估測驗（共 10 題）
-
----
+## Day 2 評估測驗
 
 **題目 1**（單選）`@POST` 方法成功建立資源後，最符合 REST 規範的做法是？
 
@@ -499,8 +523,7 @@ return Response.created(location).entity(emp).build();
 - 方案 A：`GET /api/getEmployeesByDept?dept=Engineering`
 - 方案 B：`GET /api/employees?dept=Engineering`
 
-**參考答案：**  
-方案 B 較佳。REST URI 應以**資源（名詞）**為中心，`/api/employees` 代表員工這個資源集合，過濾條件（`dept`）透過 Query Parameter 傳遞。方案 A 在 URI 中使用動詞（`getEmployeesByDept`），違反了 REST Uniform Interface 約束。
+**參考答案：** 方案 B 較佳。REST URI 應以**資源（名詞）**為中心，`/api/employees` 代表員工這個資源集合，過濾條件（`dept`）透過 Query Parameter 傳遞。方案 A 在 URI 中使用動詞（`getEmployeesByDept`），違反了 REST Uniform Interface 約束。
 
 ---
 
@@ -508,8 +531,7 @@ return Response.created(location).entity(emp).build();
 
 ### 實作一：完整員工 CRUD API
 
-**需求：**
-擴充 Day 1 的 `EmployeeResource`，實作完整 CRUD：
+**需求：** 擴充 Day 1 的 `EmployeeResource`，實作完整 CRUD：
 
 | 端點 | 方法 | 說明 |
 |------|------|------|
@@ -520,6 +542,7 @@ return Response.created(location).entity(emp).build();
 | `/api/employees/{id}` | DELETE | 刪除員工，回傳 204 |
 
 **Postman 測試序列：**
+
 1. `POST /api/employees` 新增一筆
 2. `GET /api/employees` 確認列表有新增的資料
 3. `PUT /api/employees/{新的id}` 更新薪資
@@ -530,8 +553,7 @@ return Response.created(location).entity(emp).build();
 
 ### 實作二：統一 API 回應格式
 
-**需求：**
-建立 `ApiResponse<T>` 包裝類別，並讓所有端點統一使用此格式回應：
+**需求：** 建立 `ApiResponse<T>` 包裝類別，並讓所有端點統一使用此格式回應：
 
 ```json
 // 成功：
@@ -545,8 +567,8 @@ return Response.created(location).entity(emp).build();
 
 ### 實作三：進階查詢 API
 
-**需求：**
-在 `EmployeeResource` 中加入：
+**需求：** 在 `EmployeeResource` 中加入：
+
 - `GET /api/employees/search?name=alice&minSalary=70000&maxSalary=100000`
 - 支援多條件篩選（空白條件則忽略）
 - 支援 `?sort=salary&order=asc|desc` 排序
@@ -554,9 +576,22 @@ return Response.created(location).entity(emp).build();
 
 ---
 
-## 延伸挑戰（選做）
+## 延伸挑戰
 
 實作 `PATCH /api/employees/{id}`，只更新請求體中有提供的欄位（使用 `Map<String, Object>` 接收 partial update）。
+
+---
+
+## 本日範例檔案索引
+
+| 檔案 | 路徑 |
+|------|------|
+| EmployeeResource（完整 CRUD + `@BeanParam` 進階查詢） | [`examples/day2/src/main/java/com/example/resource/EmployeeResource.java`](./examples/day2/src/main/java/com/example/resource/EmployeeResource.java) |
+| Employee（模型 + Jackson 標注） | [`examples/day2/src/main/java/com/example/model/Employee.java`](./examples/day2/src/main/java/com/example/model/Employee.java) |
+| EmployeeFilter（`@BeanParam` 封裝類） | [`examples/day2/src/main/java/com/example/model/EmployeeFilter.java`](./examples/day2/src/main/java/com/example/model/EmployeeFilter.java) |
+| EmployeeResponse（巢狀 JSON） | [`examples/day2/src/main/java/com/example/model/EmployeeResponse.java`](./examples/day2/src/main/java/com/example/model/EmployeeResponse.java) |
+| ApiResponse（統一回應格式） | [`examples/day2/src/main/java/com/example/model/ApiResponse.java`](./examples/day2/src/main/java/com/example/model/ApiResponse.java) |
+| JacksonConfig（ObjectMapper 設定） | [`examples/day2/src/main/java/com/example/config/JacksonConfig.java`](./examples/day2/src/main/java/com/example/config/JacksonConfig.java) |
 
 ---
 
