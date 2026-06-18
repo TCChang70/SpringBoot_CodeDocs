@@ -162,7 +162,11 @@ cd jaxrs-demo
             <artifactId>jersey-media-json-jackson</artifactId>
             <version>${jersey.version}</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-jaxb-annotations</artifactId>
+            <version>2.18.4</version> <!-- use version matching your Jackson -->
+       </dependency>
         <!-- Servlet API (Tomcat 10.1 提供) -->
         <dependency>
             <groupId>jakarta.servlet</groupId>
