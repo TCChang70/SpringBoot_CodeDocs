@@ -46,6 +46,8 @@ import jakarta.ws.rs.core.*;
 import java.net.URI;
 import java.util.*;
 
+// 注意：@PATCH 需要 Jakarta EE 9+（jakarta.ws.rs.PATCH）
+
 @Path("/employees")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
@@ -171,7 +173,7 @@ public class EmployeeResource {
 }
 ```
 
-> 💡 完整範例（含 `ApiResponse` 包裝、`@BeanParam` 進階查詢）請參考：
+> ⚠️ **常見陷阱**：上述簡化版直接回傳原始物件並用字串拼接 JSON。**正式專案應使用下方 `ApiResponse<T>` 統一包裝**（見第四節），完整範例請參考：
 > [`examples/day2/src/main/java/com/example/resource/EmployeeResource.java`](./examples/day2/src/main/java/com/example/resource/EmployeeResource.java)
 
 ---
@@ -203,6 +205,9 @@ public Response search(
     // ...
 }
 ```
+
+> `@DefaultValue` 可搭配所有 `@*Param` 標注使用，當該參數**完全未出現在請求中**時生效。
+> 注意：若參數出現但值為空字串（`?page=`），`@DefaultValue` **不會**生效，需自行處理。
 
 ### 2.3 @HeaderParam — 請求標頭
 
@@ -277,7 +282,7 @@ import jakarta.ws.rs.ext.Provider;
 
 /**
  * 自訂 Jackson ObjectMapper
- * @Provider 讓 Jersey 自動發現此設定
+ * @Provider 讓 Jersey 自動掃描並註冊此 ContextResolver
  */
 @Provider
 public class JacksonConfig implements ContextResolver<ObjectMapper> {
@@ -422,6 +427,17 @@ public Response create(Employee emp, @Context UriInfo uriInfo) {
 // Location: http://localhost:8080/jaxrs-demo/api/employees/5
 ```
 
+**常用 UriInfo 方法：**
+
+| 方法 | 範例結果 |
+|------|---------|
+| `getAbsolutePath()` | `http://host/api/employees/5` |
+| `getBaseUri()` | `http://host/api/` |
+| `getPath()` | `/employees/5` |
+| `getPathParameters()` | `{id: 5}` |
+| `getQueryParameters()` | `{dept: [Engineering]}` |
+| `getAbsolutePathBuilder()` | 可鏈式呼叫的 Builder |
+
 ---
 
 ## 第六節：HTTP 方法冪等性與安全性
@@ -433,8 +449,8 @@ public Response create(Employee emp, @Context UriInfo uriInfo) {
 | OPTIONS | ✓ | ✓ | 查詢伺服器支援的方法 |
 | POST | ✗ | ✗ | 每次呼叫可能產生不同結果 |
 | PUT | ✗ | ✓ | 相同請求多次執行結果相同 |
-| PATCH | ✗ | ✗（通常） | 部分更新，語義由實作決定 |
-| DELETE | ✗ | ✓ | 刪除後再刪除仍視為成功 |
+| PATCH | ✗ | ✗（通常） | 部分更新，語義由實作決定；若用完整取代語義則可視為冪等 |
+| DELETE | ✗ | ✓ | 首次刪除回傳 204，後續回傳 404，伺服器狀態一致即為冪等 |
 
 ---
 
