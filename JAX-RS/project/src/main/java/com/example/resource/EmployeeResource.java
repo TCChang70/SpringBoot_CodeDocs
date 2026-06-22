@@ -14,6 +14,7 @@ import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -25,6 +26,7 @@ import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.List;
+import java.util.Map;
 
 @Path("/employees")
 @Produces(MediaType.APPLICATION_JSON)
@@ -90,6 +92,25 @@ public class EmployeeResource {
         }
         validateEmployee(emp);
         emp.setId(id);
+        Employee updated = repo.update(emp);
+        return Response.ok(updated).build();
+    }
+
+    @PATCH
+    @Path("/{id}")
+    public Response partialUpdate(@PathParam("id") int id, Map<String, Object> fields) {
+        Employee emp = repo.findById(id)
+            .orElseThrow(() -> new ResourceNotFoundException("Employee", id));
+
+        fields.forEach((key, value) -> {
+            switch (key) {
+                case "name" -> emp.setName((String) value);
+                case "email" -> emp.setEmail((String) value);
+                case "department" -> emp.setDepartment((String) value);
+                case "salary" -> emp.setSalary(((Number) value).doubleValue());
+            }
+        });
+
         Employee updated = repo.update(emp);
         return Response.ok(updated).build();
     }
