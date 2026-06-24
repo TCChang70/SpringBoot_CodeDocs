@@ -85,6 +85,102 @@ public Response getOrder(
 
 #### 常用案例 3：分頁控制
 
+
+** searchItems 與 countItems 完整實作（內建測試資料）： **
+
+```java
+public class Item {
+
+    private int id;
+    private String name;
+    private String category;
+    private double price;
+
+    public Item() {}
+
+    public Item(int id, String name, String category, double price) {
+        this.id = id;
+        this.name = name;
+        this.category = category;
+        this.price = price;
+    }
+
+    public int getId() { return id; }
+    public void setId(int id) { this.id = id; }
+
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
+
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+
+    public double getPrice() { return price; }
+    public void setPrice(double price) { this.price = price; }
+}
+
+// 靜態測試資料庫 — 12 筆商品
+private static final List<Item> ITEMS = List.of(
+    new Item(1, "Java 入門", "圖書", 580),
+    new Item(2, "Spring Boot 實戰", "圖書", 720),
+    new Item(3, "JAX-RS 指南", "圖書", 450),
+    new Item(4, "JavaScript 大全", "圖書", 890),
+    new Item(5, "Python 自動化", "圖書", 620),
+    new Item(6, "機械式鍵盤", "3C", 2500),
+    new Item(7, "無線滑鼠", "3C", 890),
+    new Item(8, "USB-C Hub", "3C", 1200),
+    new Item(9, "27吋螢幕", "3C", 8800),
+    new Item(10, "咖啡豆 500g", "食品", 350),
+    new Item(11, "濾掛咖啡 24入", "食品", 280),
+    new Item(12, "保溫瓶 750ml", "日用", 650)
+);
+
+private List<Item> searchItems(String query, int page, int size) {
+    // 1. 關鍵字過濾（name / category 不分大小寫）
+    Stream<Item> stream = ITEMS.stream();
+    if (query != null && !query.isBlank()) {
+        String q = query.toLowerCase();
+        stream = stream.filter(i ->
+            i.getName().toLowerCase().contains(q) ||
+            i.getCategory().toLowerCase().contains(q));
+    }
+
+    List<Item> filtered = stream.collect(Collectors.toList());
+
+    // 2. 計算分頁邊界
+    int from = (page - 1) * size;
+    if (from >= filtered.size()) return List.of();
+    int to = Math.min(from + size, filtered.size());
+
+    return filtered.subList(from, to);
+}
+
+private int countItems(String query) {
+    if (query == null || query.isBlank()) return ITEMS.size();
+    String q = query.toLowerCase();
+    return (int) ITEMS.stream()
+            .filter(i -> i.getName().toLowerCase().contains(q) ||
+                         i.getCategory().toLowerCase().contains(q))
+            .count();
+}
+```
+
+**測試資料（12 筆）：**
+
+| id | name | category | price |
+|----|------|----------|-------|
+| 1 | Java 入門 | 圖書 | 580 |
+| 2 | Spring Boot 實戰 | 圖書 | 720 |
+| 3 | JAX-RS 指南 | 圖書 | 450 |
+| 4 | JavaScript 大全 | 圖書 | 890 |
+| 5 | Python 自動化 | 圖書 | 620 |
+| 6 | 機械式鍵盤 | 3C | 2500 |
+| 7 | 無線滑鼠 | 3C | 890 |
+| 8 | USB-C Hub | 3C | 1200 |
+| 9 | 27吋螢幕 | 3C | 8800 |
+| 10 | 咖啡豆 500g | 食品 | 350 |
+| 11 | 濾掛咖啡 24入 | 食品 | 280 |
+| 12 | 保溫瓶 750ml | 日用 | 650 |
+
 ```java
 @GET @Path("/search")
 public Response search(
@@ -92,7 +188,7 @@ public Response search(
         @HeaderParam("X-Page") @DefaultValue("1") int page,
         @HeaderParam("X-Per-Page") @DefaultValue("20") int size) {
     List<Item> results = searchItems(query, page, size);
-    return Response.ok(ApiResponse.ok(results))
+    return Response.ok(Response.ok(results))
             .header("X-Page", page)
             .header("X-Per-Page", size)
             .header("X-Total", countItems(query))
