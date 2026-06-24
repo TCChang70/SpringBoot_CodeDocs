@@ -138,7 +138,7 @@ public class EmployeeController {
                 .build();
 
         return Response.created(location)
-                .entity(emp)
+                .entity(Response.ok(emp))
                 .build();
     }
 
