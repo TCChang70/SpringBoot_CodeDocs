@@ -116,6 +116,10 @@ public class Item {
 
     public double getPrice() { return price; }
     public void setPrice(double price) { this.price = price; }
+    @Override
+	public String toString() {
+		return "Item [id=" + id + ", name=" + name + ", category=" + category + ", price=" + price + "]";
+	}
 }
 
 // 靜態測試資料庫 — 12 筆商品
@@ -184,11 +188,11 @@ private int countItems(String query) {
 ```java
 @GET @Path("/search")
 public Response search(
-        @QueryParam("q") String query,
+        @QueryParam("q") @DefaultValue("圖書") String query,
         @HeaderParam("X-Page") @DefaultValue("1") int page,
         @HeaderParam("X-Per-Page") @DefaultValue("20") int size) {
     List<Item> results = searchItems(query, page, size);
-    return Response.ok(Response.ok(results))
+    return Response.ok(results)
             .header("X-Page", page)
             .header("X-Per-Page", size)
             .header("X-Total", countItems(query))
