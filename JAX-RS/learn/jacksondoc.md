@@ -210,11 +210,13 @@ Jersey 掃描 @Provider 類別
 ### POJO 模型
 
 ```java
-package com.example.model;
+package model;
 
 import com.fasterxml.jackson.annotation.*;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 
 public class Product {
 
@@ -230,13 +232,16 @@ public class Product {
     private String internalCode;
 
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    private LocalDateTime createdAt;
+    private Date createdAt;
 
     @JsonInclude(JsonInclude.Include.NON_NULL)
     private String remark;
 
     public Product() {
-        this.createdAt = LocalDateTime.now();
+        this.createdAt =  Date.from(
+        	    LocalDateTime.now().plusHours(8)
+                .atZone(ZoneId.systemDefault()).toInstant()
+        );
     }
 
     public Product(int id, String name, double price) {
@@ -258,12 +263,13 @@ public class Product {
     public String getInternalCode() { return internalCode; }
     public void setInternalCode(String internalCode) { this.internalCode = internalCode; }
 
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+    public Date getCreatedAt() { return createdAt; }
+    public void setCreatedAt(Date createdAt) { this.createdAt = createdAt; }
 
     public String getRemark() { return remark; }
     public void setRemark(String remark) { this.remark = remark; }
 }
+
 ```
 
 ### Resource（示範自動序列化/反序列化）
