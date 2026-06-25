@@ -1,11 +1,28 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.time.LocalDateTime;
+
 public class EmployeeResponse {
 
     private int id;
+
+    @JsonProperty("full_name")
     private String name;
+
     private double salary;
+
+    @JsonProperty("dept")
     private DeptInfo department;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private LocalDateTime queriedAt;
+
+    public EmployeeResponse() {
+        this.queriedAt = LocalDateTime.now();
+    }
 
     public static class DeptInfo {
         private int deptId;
@@ -41,4 +58,7 @@ public class EmployeeResponse {
 
     public DeptInfo getDepartment() { return department; }
     public void setDepartment(DeptInfo department) { this.department = department; }
+
+    public LocalDateTime getQueriedAt() { return queriedAt; }
+    public void setQueriedAt(LocalDateTime queriedAt) { this.queriedAt = queriedAt; }
 }

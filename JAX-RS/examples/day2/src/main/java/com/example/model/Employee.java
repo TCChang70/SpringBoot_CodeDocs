@@ -1,5 +1,6 @@
 package com.example.model;
 
+import com.fasterxml.jackson.annotation.JsonAlias;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -12,6 +13,7 @@ public class Employee {
     private int id;
 
     @JsonProperty("full_name")
+    @JsonAlias({"fullName", "full_name"})
     private String name;
 
     private String department;
