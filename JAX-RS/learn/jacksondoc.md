@@ -26,17 +26,7 @@ Jackson 是 Jersey 的預設 JSON 引擎，**無需手動呼叫 `ObjectMapper`**
 ### pom.xml
 
 ```xml
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
-           http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
-    <groupId>com.example</groupId>
-    <artifactId>jaxrs-json-demo</artifactId>
-    <version>1.0</version>
-    <packaging>war</packaging>
-
-    <properties>
+<properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <jersey.version>3.1.5</jersey.version>
@@ -113,16 +103,6 @@ Jackson 是 Jersey 的預設 JSON 引擎，**無需手動呼叫 `ObjectMapper`**
         </dependency>
     </dependencies>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
-                <version>11.0.20</version>
-            </plugin>
-        </plugins>
-    </build>
-</project>
 ```
 
 > `jersey-media-json-jackson` 會自動引入 `jackson-databind`、`jackson-core`、`jackson-annotations`。
