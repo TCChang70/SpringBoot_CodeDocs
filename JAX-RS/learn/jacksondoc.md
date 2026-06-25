@@ -43,18 +43,68 @@ Jackson 是 Jersey 的預設 JSON 引擎，**無需手動呼叫 `ObjectMapper`**
     </properties>
 
     <dependencies>
-        <!-- Jersey JAX-RS -->
+         <!-- Servlet API (Jakarta EE 10 / Tomcat 10.1) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- JSP API -->
+        <dependency>
+            <groupId>jakarta.servlet.jsp</groupId>
+            <artifactId>jakarta.servlet.jsp-api</artifactId>
+            <version>3.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- JSTL (含 API 與實作) -->
+        <dependency>
+         <groupId>jakarta.servlet.jsp.jstl</groupId>
+         <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+         <version>3.0.0</version>
+        </dependency>
+        <!-- JAX-RS API (Jakarta EE 10 / Tomcat 10.1) -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+
+        <!-- Jersey Core Server -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <!-- Jersey Servlet Container -->
         <dependency>
             <groupId>org.glassfish.jersey.containers</groupId>
             <artifactId>jersey-container-servlet</artifactId>
             <version>${jersey.version}</version>
         </dependency>
-        <!-- Jackson JSON 支援（Jersey 會自動偵測） -->
+
+        <!-- Jersey HK2 Injection -->
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <!-- JSON 支援 (Jackson) -->
         <dependency>
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
             <version>${jersey.version}</version>
         </dependency>
+        <dependency>
+           <groupId>com.fasterxml.jackson.module</groupId>
+           <artifactId>jackson-module-jaxb-annotations</artifactId>
+           <version>2.18.4</version> <!-- use version matching your Jackson -->
+        </dependency>
+        
         <!-- Java 8+ 日期模組 -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
@@ -356,7 +406,7 @@ public class JaxrsApplication extends Application {
 }
 ```
 
-## 完整實作 — 巢狀結構（Order / Customer / Item）
+## 完整實作 — 巢狀結構（Order / OrderItem）
 
 ### 巢狀 POJO
 
@@ -372,9 +422,6 @@ public class Order {
 
     private int orderId;
 
-    @JsonProperty("customer")
-    private Customer customer;
-
     @JsonProperty("items")
     private List<OrderItem> items;
 
@@ -385,10 +432,8 @@ public class Order {
 
     public Order() {}
 
-    public Order(int orderId, Customer customer,
-                 List<OrderItem> items, LocalDateTime orderTime) {
+    public Order(int orderId, List<OrderItem> items, LocalDateTime orderTime) {
         this.orderId = orderId;
-        this.customer = customer;
         this.items = items;
         this.total = items.stream()
                 .mapToDouble(OrderItem::getSubtotal).sum();
@@ -396,31 +441,16 @@ public class Order {
     }
 
     // ── 巢狀類別 ────────────────────────────────────
-    public static class Customer {
-        private int id;
-        private String name;
-        private String phone;
-        // getters/setters (建構子省略)
-        public Customer() {}
-        public Customer(int id, String name, String phone) {
-            this.id = id; this.name = name; this.phone = phone;
-        }
-        public int getId() { return id; }
-        public void setId(int id) { this.id = id; }
-        public String getName() { return name; }
-        public void setName(String name) { this.name = name; }
-        public String getPhone() { return phone; }
-        public void setPhone(String phone) { this.phone = phone; }
-    }
-
     public static class OrderItem {
         private String productName;
         private int quantity;
         private double unitPrice;
-        // getters/setters
+
         public OrderItem() {}
         public OrderItem(String productName, int quantity, double unitPrice) {
-            this.productName = productName; this.quantity = quantity; this.unitPrice = unitPrice;
+            this.productName = productName;
+            this.quantity = quantity;
+            this.unitPrice = unitPrice;
         }
         public double getSubtotal() { return quantity * unitPrice; }
         public String getProductName() { return productName; }
@@ -434,8 +464,6 @@ public class Order {
     // getters/setters
     public int getOrderId() { return orderId; }
     public void setOrderId(int orderId) { this.orderId = orderId; }
-    public Customer getCustomer() { return customer; }
-    public void setCustomer(Customer customer) { this.customer = customer; }
     public List<OrderItem> getItems() { return items; }
     public void setItems(List<OrderItem> items) { this.items = items; }
     public double getTotal() { return total; }
@@ -451,7 +479,6 @@ public class Order {
 package com.example.resource;
 
 import com.example.model.Order;
-import com.example.model.Order.Customer;
 import com.example.model.Order.OrderItem;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
@@ -470,12 +497,11 @@ public class OrderResource {
     private static final AtomicInteger ID_GEN = new AtomicInteger(0);
 
     static {
-        Customer c = new Customer(10, "Alice Chen", "0912-345-678");
         List<OrderItem> items = List.of(
             new OrderItem("iPhone 15", 2, 34900.0),
             new OrderItem("AirPods Pro", 1, 7990.0)
         );
-        DB.put(1001, new Order(1001, c, items, LocalDateTime.now()));
+        DB.put(1001, new Order(1001, items, LocalDateTime.now()));
     }
 
     @GET
@@ -486,18 +512,16 @@ public class OrderResource {
             return Response.status(Response.Status.NOT_FOUND).build();
         }
         return Response.ok(order).build();
-        // 巢狀結構 Order → Customer + List<OrderItem>
+        // 巢狀結構 Order → List<OrderItem>
         // Jackson 自動遞迴序列化所有層級
     }
 
     @POST
     public Response create(Order order, @Context UriInfo uriInfo) {
         // Jackson 自動從 JSON 反序列化巢狀結構
-        // 包含 order.customer, order.items 皆自動完成
+        // order.items 自動完成
         int id = 1000 + ID_GEN.incrementAndGet();
-        Order created = new Order(
-            id, order.getCustomer(), order.getItems(), LocalDateTime.now()
-        );
+        Order created = new Order(id, order.getItems(), LocalDateTime.now());
         DB.put(id, created);
         return Response.created(
             uriInfo.getAbsolutePathBuilder().path(String.valueOf(id)).build()
@@ -672,11 +696,6 @@ mvn jetty:run
           "script": {
             "exec": [
               "pm.test('Status 201', () => pm.response.to.have.status(201));",
-              "pm.test('巢狀 customer 存在', () => {",
-              "  const body = pm.response.json();",
-              "  pm.expect(body).to.have.property('customer');",
-              "  pm.expect(body.customer).to.have.property('name');",
-              "});",
               "pm.test('巢狀 items 為陣列', () => {",
               "  pm.expect(pm.response.json().items).to.be.an('array');",
               "});",
@@ -694,7 +713,7 @@ mvn jetty:run
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"customer\": {\"id\": 20, \"name\": \"Bob Wang\", \"phone\": \"0987-654-321\"}, \"items\": [{\"productName\": \"MacBook Air\", \"quantity\": 1, \"unitPrice\": 45900}, {\"productName\": \"Magic Mouse\", \"quantity\": 1, \"unitPrice\": 2790}]}"
+          "raw": "{\"items\": [{\"productName\": \"MacBook Air\", \"quantity\": 1, \"unitPrice\": 45900}, {\"productName\": \"Magic Mouse\", \"quantity\": 1, \"unitPrice\": 2790}]}"
         },
         "url": "http://localhost:8080/api/orders"
       }
@@ -709,7 +728,6 @@ mvn jetty:run
               "pm.test('Status 200', () => pm.response.to.have.status(200));",
               "pm.test('回傳巢狀結構', () => {",
               "  const body = pm.response.json();",
-              "  pm.expect(body).to.have.property('customer');",
               "  pm.expect(body).to.have.property('items');",
               "  pm.expect(body).to.have.property('orderTime');",
               "});"
