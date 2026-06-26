@@ -275,7 +275,6 @@ public class Product {
 ### Resource（示範自動序列化/反序列化）
 
 ```java
-package com.example.resource;
 
 import com.example.model.Product;
 import jakarta.ws.rs.*;
@@ -288,7 +287,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Path("/products")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class ProductResource {
+public class ProductController {
 
     private static final Map<Integer, Product> DB = new ConcurrentHashMap<>();
     private static final AtomicInteger ID_GEN = new AtomicInteger(3);
@@ -385,8 +384,8 @@ public class JaxrsApplication extends Application {
     @Override
     public Set<Class<?>> getClasses() {
         return Set.of(
-            com.example.resource.ProductResource.class,
-            com.example.config.JacksonConfig.class
+            controller.ProductController.class,
+            config.JacksonConfig.class
         );
     }
 }
@@ -397,7 +396,7 @@ public class JaxrsApplication extends Application {
 ### 巢狀 POJO
 
 ```java
-package com.example.model;
+package model;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -462,10 +461,9 @@ public class Order {
 ### Order Resource
 
 ```java
-package com.example.resource;
 
-import com.example.model.Order;
-import com.example.model.Order.OrderItem;
+import model.Order;
+import model.Order.OrderItem;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.*;
 import java.net.URI;
@@ -477,10 +475,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Path("/orders")
 @Produces(MediaType.APPLICATION_JSON)
 @Consumes(MediaType.APPLICATION_JSON)
-public class OrderResource {
+public class OrderController {
 
     private static final Map<Integer, Order> DB = new ConcurrentHashMap<>();
-    private static final AtomicInteger ID_GEN = new AtomicInteger(0);
+    private static final AtomicInteger ID_GEN = new AtomicInteger(1);
 
     static {
         List<OrderItem> items = List.of(
@@ -517,282 +515,191 @@ public class OrderResource {
 ```
 
 ## Postman 測試
+## Postman 測試資料
 
-### 啟動伺服器
+### 測試 1：@JsonProperty + @JsonIgnore + @JsonFormat（GET）
 
-```bash
-mvn jetty:run
-# 服務位於 http://localhost:8080/api
+查詢員工資料，觀察 JSON 欄位名稱、忽略及日期格式。
+
+**請求：**
+```
+GET http://localhost:8080/api/employees/1
 ```
 
-### 匯入 Postman Collection
-
-建立 `jaxrs-jackson-tests.json`：
-
+**回應（200）：**
 ```json
 {
-  "info": {
-    "name": "JAX-RS Jackson Tests",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
-  },
-  "item": [
-    {
-      "name": "GET /products — 自動序列化 List",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status 200', () => pm.response.to.have.status(200));",
-              "pm.test('回傳陣列', () => {",
-              "  const body = pm.response.json();",
-              "  pm.expect(body).to.be.an('array');",
-              "  pm.expect(body.length).to.be.at.least(1);",
-              "});",
-              "pm.test('product_name 而非 name (@JsonProperty)', () => {",
-              "  pm.expect(pm.response.json()[0]).to.have.property('product_name');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "http://localhost:8080/api/products"
-      }
-    },
-    {
-      "name": "GET /products/stats — Map 自動序列化",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status 200', () => pm.response.to.have.status(200));",
-              "pm.test('回傳物件', () => {",
-              "  const body = pm.response.json();",
-              "  pm.expect(body).to.have.property('total');",
-              "  pm.expect(body).to.have.property('maxPrice');",
-              "  pm.expect(body).to.have.property('categories');",
-              "  pm.expect(body.categories).to.be.an('array');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "http://localhost:8080/api/products/stats"
-      }
-    },
-    {
-      "name": "POST /products — 自動反序列化 JSON → Product",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status 201', () => pm.response.to.have.status(201));",
-              "pm.test('Location header 存在', () => pm.response.to.have.header('Location'));",
-              "pm.test('回傳 product_name (@JsonProperty)', () => {",
-              "  pm.expect(pm.response.json()).to.have.property('product_name');",
-              "});",
-              "pm.test('createdAt 格式正確', () => {",
-              "  const body = pm.response.json();",
-              "  pm.expect(body.createdAt).to.match(/^\\\\d{4}-\\\\d{2}-\\\\d{2} \\\\d{2}:\\\\d{2}:\\\\d{2}$/);",
-              "});",
-              "pm.test('internalCode 被 @JsonIgnore 忽略', () => {",
-              "  pm.expect(pm.response.json()).to.not.have.property('internalCode');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"product_name\": \"MacBook Air\", \"price\": 45900}"
-        },
-        "url": "http://localhost:8080/api/products"
-      }
-    },
-    {
-      "name": "POST /products 測試 @JsonAlias — 使用 productName",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status 201', () => pm.response.to.have.status(201));",
-              "pm.test('product_name 在回應中', () => {",
-              "  pm.expect(pm.response.json()).to.have.property('product_name');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"productName\": \"iPad Pro\", \"price\": 34900}"
-        },
-        "url": "http://localhost:8080/api/products"
-      }
-    },
-    {
-      "name": "POST /products 含額外欄位 — FAIL_ON_UNKNOWN_PROPERTIES=false",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status 201（未因未知欄位噴錯）',",
-              "  () => pm.response.to.have.status(201));"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"product_name\": \"Magic Mouse\", \"price\": 2790, \"unknown_field\": \"忽略此欄位\"}"
-        },
-        "url": "http://localhost:8080/api/products"
-      }
-    },
-    {
-      "name": "POST /orders — 巢狀結構自動反序列化",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status 201', () => pm.response.to.have.status(201));",
-              "pm.test('巢狀 items 為陣列', () => {",
-              "  pm.expect(pm.response.json().items).to.be.an('array');",
-              "});",
-              "pm.test('total 自動計算', () => {",
-              "  pm.expect(pm.response.json().total).to.be.above(0);",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "POST",
-        "header": [
-          { "key": "Content-Type", "value": "application/json" }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\"items\": [{\"productName\": \"MacBook Air\", \"quantity\": 1, \"unitPrice\": 45900}, {\"productName\": \"Magic Mouse\", \"quantity\": 1, \"unitPrice\": 2790}]}"
-        },
-        "url": "http://localhost:8080/api/orders"
-      }
-    },
-    {
-      "name": "GET /orders/1001 — 巢狀結構自動序列化",
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "exec": [
-              "pm.test('Status 200', () => pm.response.to.have.status(200));",
-              "pm.test('回傳巢狀結構', () => {",
-              "  const body = pm.response.json();",
-              "  pm.expect(body).to.have.property('items');",
-              "  pm.expect(body).to.have.property('orderTime');",
-              "});"
-            ]
-          }
-        }
-      ],
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": "http://localhost:8080/api/orders/1001"
-      }
+    "success": true,
+    "data": {
+        "id": 1,
+        "full_name": "Alice Chen",
+        "department": "Engineering",
+        "salary": 85000.0,
+        "createdAt": "2025-06-26 12:30:00"
     }
-  ]
 }
 ```
 
-## 序列化 vs 反序列化 流程對照
+> `full_name` 來自 `@JsonProperty("full_name")`，`password` 因 `@JsonIgnore` 不出現，`createdAt` 格式為 `yyyy-MM-dd HH:mm:ss`（來自 `@JsonFormat`）。
 
+### 測試 2：@JsonInclude (NON_NULL)
+
+`remark` 只在非 null 時出現。
+
+**請求：**
 ```
-┌───────────────────────────────────────────────────────────────────┐
-│                       序列化流程                                   │
-│                                                                   │
-│  @GET /products                                                   │
-│  ┌───────────┐    ┌──────────────────┐    ┌───────────────────┐   │
-│  │Resource   │───→│JacksonJsonWriter │───→│  JSON Response    │   │
-│  │回傳List   │    │.writeTo()        │    │  [                │   │
-│  │<Product>  │    │                  │    │    {"product_     │   │
-│  │           │    │mapper.writeValue │    │     name": "...", │   │
-│  │           │    │(out, list)       │    │     "price": 59900│   │
-│  └───────────┘    └──────────────────┘    │    }              │   │
-│                                           │  ]                │   │
-│                                           └───────────────────┘   │
-├───────────────────────────────────────────────────────────────────┤
-│                       反序列化流程                                 │
-│                                                                   │
-│  @POST /products                                                  │
-│  ┌───────────┐    ┌──────────────────┐    ┌──────────────────┐    │
-│  │JSON Body  │───→│JacksonJsonReader │───→│  Product 物件    │    │
-│  │{          │    │.readFrom()       │    │  .id = 0         │    │
-│  │ "product_ │    │                  │    │  .name = "Mac.." │    │
-│  │ "name":   │    │mapper.readValue  │    │  .price = 45900  │    │
-│  │ "Mac..."  │    │(in, Product.class)│   │                  │    │
-│  │}          │    └──────────────────┘    └──────────────────┘    │
-│  └───────────┘                                                    │
-└───────────────────────────────────────────────────────────────────┘
+PATCH http://localhost:8080/api/employees/1
+Content-Type: application/json
+
+{"remark": "績效優異"}
 ```
 
-## 常見問題
+**回應（200）：**
+```json
+{
+    "success": true,
+    "data": {
+        "id": 1,
+        "full_name": "Alice Chen",
+        "remark": "績效優異",
+        ...
+    }
+}
+```
 
-| 問題 | 原因 | 解決 |
-|------|------|------|
-| `No suitable reader found` | 缺少 `@Consumes(JSON)` | 確認 Resource 方法上有 `@Consumes` |
-| `No suitable writer found` | 缺少 `@Produces(JSON)` | 確認 Resource 方法上有 `@Produces` |
-| `LocalDateTime` 序列化成陣列 | 缺少 `JavaTimeModule` | 在 `JacksonConfig` 中註冊 |
-| 日期格式為時間戳 | `WRITE_DATES_AS_TIMESTAMPS` 未停用 | `mapper.disable(...)` |
-| 未知欄位噴 `UnrecognizedPropertyException` | `FAIL_ON_UNKNOWN_PROPERTIES` 為 true | `mapper.disable(...)` |
-| `@JsonIgnore` 造成 400 Bad Request | 該欄位在建構反序列化物件時為 null | 改用 `Access.WRITE_ONLY` |
-| `@Provider` 未生效 | 類別未被掃描註冊 | 在 `Application.getClasses()` 中加入 |
+> `remark` 出現。若未設定 `remark`，該欄位不會出現在 JSON 中。
 
-## 原始碼目錄結構
+### 測試 3：POST 建立員工（反序列化 + 自動 ID）
+
+**請求：**
+```
+POST http://localhost:8080/api/employees
+Content-Type: application/json
+
+{
+    "full_name": "David Lee",
+    "department": "Engineering",
+    "salary": 78000
+}
+```
+
+**回應（201 Created）：**
+```json
+{
+    "success": true,
+    "data": {
+        "id": 4,
+        "full_name": "David Lee",
+        "department": "Engineering",
+        "salary": 78000.0,
+        "createdAt": "2025-06-26 12:30:00"
+    }
+}
+```
+
+> `id` 自動由伺服器產生（nextId++），`password` 即使傳入也不會被儲存（`@JsonIgnore` 忽略反序列化）。
+
+### 測試 4：@JsonAlias 多種輸入名稱
+
+若 Employee 的 `name` 加上 `@JsonAlias({"fullName", "full_name"})`：
+
+**請求：**
+```
+POST http://localhost:8080/api/employees
+Content-Type: application/json
+
+{"fullName": "Eva Wu", "department": "Marketing", "salary": 65000}
+```
+
+或
+
+```json
+{"full_name": "Eva Wu", "department": "Marketing", "salary": 65000}
+```
+
+> 兩種 JSON 欄位名稱都會成功對應到 `name` 屬性。
+
+### 測試 5：PATCH 部分更新
+
+**請求：**
+```
+PATCH http://localhost:8080/api/employees/1
+Content-Type: application/json
+
+{"salary": 95000, "department": "HR"}
+```
+
+**回應（200）：**
+```json
+{
+    "success": true,
+    "data": {
+        "id": 1,
+        "full_name": "Alice Chen",
+        "department": "HR",
+        "salary": 95000.0,
+        "createdAt": "2025-06-26 12:30:00"
+    }
+}
+```
+
+> 僅更新傳入的欄位，其餘保持不變。
+
+### 測試 6：巢狀 JSON（EmployeeResponse）
+
+**請求：**
+```
+GET http://localhost:8080/api/employees/1?responseType=nested
+```
+
+**回應：**
+```json
+{
+    "success": true,
+    "data": {
+        "id": 1,
+        "name": "Alice Chen",
+        "salary": 85000,
+        "department": {
+            "deptId": 10,
+            "deptName": "Engineering",
+            "location": "Taipei"
+        }
+    }
+}
+```
+
+### Postman 環境變數設定
+
+建立 Postman Environment，設定以下變數以便跨請求使用：
+
+| 變數 | 初始值 | 說明 |
+|------|--------|------|
+| `{{base_url}}` | `http://localhost:8080` | 伺服器位址 |
+| `{{employee_id}}` | `1` | 員工 ID |
+| `{{auth_token}}` | `Bearer eyJhbGci...` | JWT Token |
+
+**範例 Collection 結構：**
 
 ```
-src/main/java/com/example/
-├── JaxrsApplication.java              ─ 註冊 Resource 與 Provider
-├── config/
-│   └── JacksonConfig.java             ─ ObjectMapper 全域設定
-├── model/
-│   ├── Product.java                   ─ 基本 POJO + Jackson 標注
-│   └── Order.java                     ─ 巢狀結構 POJO
-└── resource/
-    ├── ProductResource.java           ─ Product CRUD 端點
-    └── OrderResource.java             ─ Order 端點（巢狀序列化）
+📁 JAX-RS Demo
+┣ 📁 Employee CRUD
+┃ ┣ GET  /api/employees         查詢全部（含篩選分頁）
+┃ ┣ GET  /api/employees/{{employee_id}}  查詢單筆
+┃ ┣ POST /api/employees         新增員工
+┃ ┣ PUT  /api/employees/{{employee_id}}  完整更新
+┃ ┣ PATCH /api/employees/{{employee_id}} 部分更新
+┃ ┗ DELETE /api/employees/{{employee_id}} 刪除
+┣ 📁 Jackson 特性測試
+┃ ┣ GET  /api/employees/1       觀察 @JsonProperty / @JsonIgnore / @JsonFormat
+┃ ┣ POST /api/employees         測試 @JsonAlias 多種輸入名稱
+┃ ┣ PATCH /api/employees/1      測試 @JsonInclude NON_NULL
 ```
 
 ## 練習題
 
-1. 在 `Product` 中加入 `@JsonAlias({"category", "cat"})` 並測試不同 JSON 輸入
-2. 修改 `JacksonConfig` 命名策略為 `SNAKE_CASE`，觀察所有端點的 JSON 輸出變化
-3. 在 `OrderResource` 新增 `GET /orders` 回傳所有訂單列表，測試 List 巢狀序列化
-4. 在 `ProductResource` 新增 `PATCH /products/{id}` 使用 `Map<String, Object>` 接收部分更新
-5. 實作一個自訂 `TrimStringDeserializer` 並在 `Product.name` 上使用
+1. 在 `Employee` 中加入 `@JsonAlias({"gender", "sex"})` 測試反序列化別名
+2. 修改 `JacksonConfig` 將命名策略改為 `SNAKE_CASE`，觀察 JSON 輸出變化
+3. 設計一個 `OrderResponse` 類別包含巢狀的 `CustomerInfo`、`Address` 和 `OrderItem` 列表
+4. 使用 Postman 測試 `@JsonProperty("full_name")` 傳入 `full_name` 與 `name` 的差異
+5. 觀察 `createdAt` 在關閉 `WRITE_DATES_AS_TIMESTAMPS` 前後的 JSON 格式變化

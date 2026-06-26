@@ -31,6 +31,7 @@ public class ProductController {
     @GET
     public Response getAll() {
         List<Product> list = new ArrayList<>(DB.values());
+        list.get(0).setRemark("remark test");
         // 不需要手動 mapper.writeValueAsString()
         // Jersey 自動呼叫 JacksonJsonWriter.writeTo()
         return Response.ok(list).build();
