@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="3.0" xmlns="https://jakarta.ee/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
+	<persistence-unit name="jaxrsPU" transaction-type="RESOURCE_LOCAL">
+
+        <!-- EclipseLink 為 JPA Provider（可省略，EclipseLink 會自動偵測） -->
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+        <class>model.Employee</class>        
+
+        <properties>
+            <!-- 資料庫連線 -->
+            <property name="jakarta.persistence.jdbc.driver"
+                      value="com.mysql.cj.jdbc.Driver"/>
+            <property name="jakarta.persistence.jdbc.url"
+                      value="jdbc:mysql://localhost:3306/jaxrs_demo?useSSL=false&amp;serverTimezone=Asia/Taipei"/>
+            <property name="jakarta.persistence.jdbc.user" value="root"/>
+            <property name="jakarta.persistence.jdbc.password" value="1234"/>
+
+           
+            <!-- DDL 產生策略（開發用 create-or-extend-tables，上線用 none） -->
+            <property name="eclipselink.ddl-generation"
+                      value="none"/>
+
+            <!-- SQL 紀錄 -->
+            <property name="eclipselink.logging.level" value="FINE"/>
+            <property name="eclipselink.logging.level.sql" value="FINE"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+
+            <!-- 連線池（EclipseLink 內建 Connection Pool） -->
+            <property name="eclipselink.jdbc.connections.min" value="3"/>
+            <property name="eclipselink.jdbc.connections.max" value="10"/>
+
+            <!-- 快取設定（開發環境建議關閉二級快取） -->
+            <property name="eclipselink.cache.shared.default" value="false"/>
+
+            <!-- 靜態 Weaving（需要編譯期增強，若不安裝可先設 false） -->
+            <property name="eclipselink.weaving" value="false"/>
+            <property name="javax.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/jaxrs_demo"/>
+            <property name="javax.persistence.jdbc.user" value="root"/>
+            <property name="javax.persistence.jdbc.password" value="1234"/>
+            <property name="javax.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
+        </properties>
+    </persistence-unit>
+</persistence>
