@@ -40,46 +40,84 @@ src/main/java/
 `pom.xml` 中關鍵的依賴群組：
 
 ```xml
-<!-- JAX-RS / Jersey 3.x -->
-<dependency>
-    <groupId>jakarta.ws.rs</groupId>
-    <artifactId>jakarta.ws.rs-api</artifactId>
-    <version>3.1.0</version>
-</dependency>
-<dependency>
-    <groupId>org.glassfish.jersey.core</groupId>
-    <artifactId>jersey-server</artifactId>
-    <version>${jersey.version}</version>
-</dependency>
-<dependency>
-    <groupId>org.glassfish.jersey.containers</groupId>
-    <artifactId>jersey-container-servlet</artifactId>
-    <version>${jersey.version}</version>
-</dependency>
-<dependency>
-    <groupId>org.glassfish.jersey.media</groupId>
-    <artifactId>jersey-media-json-jackson</artifactId>
-    <version>${jersey.version}</version>
-</dependency>
+  <!-- Servlet API (Jakarta EE 10 / Tomcat 10.1) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- JSP API -->
+        <dependency>
+            <groupId>jakarta.servlet.jsp</groupId>
+            <artifactId>jakarta.servlet.jsp-api</artifactId>
+            <version>3.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- JSTL (含 API 與實作) -->
+        <dependency>
+         <groupId>jakarta.servlet.jsp.jstl</groupId>
+         <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+         <version>3.0.0</version>
+        </dependency>
+        <!-- JAX-RS API (Jakarta EE 10 / Tomcat 10.1) -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
 
-<!-- JPA / Hibernate 6.x -->
-<dependency>
-    <groupId>org.hibernate.orm</groupId>
-    <artifactId>hibernate-core</artifactId>
-    <version>6.6.1.Final</version>
-</dependency>
-<dependency>
-    <groupId>org.hibernate.orm</groupId>
-    <artifactId>hibernate-hikaricp</artifactId>
-    <version>6.6.1.Final</version>
-</dependency>
+        <!-- Jersey Core Server -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
 
-<!-- MySQL JDBC 驅動 -->
-<dependency>
-    <groupId>com.mysql</groupId>
-    <artifactId>mysql-connector-j</artifactId>
-    <version>9.2.0</version>
-</dependency>
+        <!-- Jersey Servlet Container -->
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <!-- Jersey HK2 Injection -->
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <!-- JSON 支援 (Jackson) -->
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+        <dependency>
+           <groupId>com.fasterxml.jackson.module</groupId>
+           <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
+           <version>2.17.0</version>
+        </dependency>
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>6.6.1.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-hikaricp</artifactId>
+      <version>6.6.1.Final</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>9.2.0</version>
+    </dependency>
+ 
 ```
 
 ### 注意事項
