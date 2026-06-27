@@ -45,7 +45,7 @@
          <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
          <version>3.0.0</version>
         </dependency>
-         <!-- JAX-RS API (Jakarta EE 10 / Tomcat 10.1) -->
+        <!-- JAX-RS API (Jakarta EE 10 / Tomcat 10.1) -->
         <dependency>
             <groupId>jakarta.ws.rs</groupId>
             <artifactId>jakarta.ws.rs-api</artifactId>
@@ -79,43 +79,28 @@
             <artifactId>jersey-media-json-jackson</artifactId>
             <version>${jersey.version}</version>
         </dependency>
-         <dependency>
-            <groupId>com.fasterxml.jackson.module</groupId>
-            <artifactId>jackson-module-jaxb-annotations</artifactId>
-            <version>2.18.4</version> <!-- use version matching your Jackson -->
-       </dependency>
-         <!-- JPA API -->
+        <dependency>
+           <groupId>com.fasterxml.jackson.module</groupId>
+           <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
+           <version>2.17.0</version>
+        </dependency>
     <dependency>
-        <groupId>jakarta.persistence</groupId>
-        <artifactId>jakarta.persistence-api</artifactId>
-        <version>3.1.0</version>
-    </dependency>
-
-    <!-- EclipseLink (JPA Provider) -->
-    <dependency>
-        <groupId>org.eclipse.persistence</groupId>
-        <artifactId>org.eclipse.persistence.jpa</artifactId>
-        <version>${eclipselink.version}</version>
-    </dependency>
-
-    <!-- MySQL JDBC 驅動 -->
-    <dependency>
-        <groupId>com.mysql</groupId>
-        <artifactId>mysql-connector-j</artifactId>
-        <version>8.3.0</version>
-    </dependency>
-
-    <!-- Bean Validation -->
-    <dependency>
-        <groupId>jakarta.validation</groupId>
-        <artifactId>jakarta.validation-api</artifactId>
-        <version>3.0.2</version>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>6.6.1.Final</version>
     </dependency>
     <dependency>
-        <groupId>org.hibernate.validator</groupId>
-        <artifactId>hibernate-validator</artifactId>
-        <version>8.0.1.Final</version>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-hikaricp</artifactId>
+      <version>6.6.1.Final</version>
     </dependency>
+    
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>9.2.0</version>
+    </dependency>
+ 
     <!-- Jackson 時間支援 -->
     <dependency>
         <groupId>com.fasterxml.jackson.datatype</groupId>
