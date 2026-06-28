@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="3.0"
+             xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+             https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
+
+    <persistence-unit name="dev" transaction-type="RESOURCE_LOCAL">
+        <provider>org.eclipse.persistence.jpa.PersistenceProvider</provider>
+
+        <!-- Day 1 Entities -->
+        <class>com.example.day1.entity.Customer</class>
+        <class>com.example.day1.entity.Order</class>
+        <class>com.example.day1.entity.Product</class>
+        <class>com.example.day1.entity.OrderItem</class>
+
+        <!-- Day 2 Entities -->
+        <class>com.example.day2.entity.Category</class>
+        <class>com.example.day2.entity.Item</class>
+        <class>com.example.day2.entity.Tag</class>
+
+        <!-- Day 3 Entities -->
+        <class>com.example.day3.entity.Event</class>
+        <class>com.example.day3.entity.Ticket</class>
+        <class>com.example.day3.entity.SysConfig</class>
+
+        <exclude-unlisted-classes>true</exclude-unlisted-classes>
+
+        <properties>
+            <!-- MySQL 8.0+ 連線設定 -->
+            <property name="jakarta.persistence.jdbc.driver" value="com.mysql.cj.jdbc.Driver"/>
+            <property name="jakarta.persistence.jdbc.url" value="jdbc:mysql://localhost:3306/eclipselink_course?useSSL=false&amp;allowPublicKeyRetrieval=true&amp;serverTimezone=UTC"/>
+            <property name="jakarta.persistence.jdbc.user" value="root"/>
+            <property name="jakarta.persistence.jdbc.password" value="root"/>
+
+            <!-- EclipseLink 資料庫平台 (MySQL DDL 語法) -->
+            <property name="eclipselink.target-database" value="MySQL"/>
+
+            <!-- DDL: 每次部署重建表格 (開發教學用) -->
+            <property name="eclipselink.ddl-generation" value="drop-and-create-tables"/>
+            <property name="eclipselink.ddl-generation.output-mode" value="database"/>
+            <property name="eclipselink.deploy-on-startup" value="true"/>
+
+            <!-- SQL 日誌 -->
+            <property name="eclipselink.logging.level" value="FINE"/>
+            <property name="eclipselink.logging.level.sql" value="FINE"/>
+            <property name="eclipselink.logging.parameters" value="true"/>
+
+            <!-- L2 Cache: 預設關閉，僅 @Cacheable(true) 啟用 -->
+            <property name="eclipselink.cache.shared.default" value="false"/>
+            <property name="eclipselink.weaving" value="false"/>
+        </properties>
+    </persistence-unit>
+</persistence>
