@@ -77,7 +77,30 @@ mvjpars0626/
 ### 2.3 相依套件詳解
 
 #### (1) Servlet / JSP / JSTL（Web 容器基礎）
-
+```xml
+<!-- Servlet API (Jakarta EE 10 / Tomcat 10.1) -->
+        <dependency>
+            <groupId>jakarta.servlet</groupId>
+            <artifactId>jakarta.servlet-api</artifactId>
+            <version>6.0.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- JSP API -->
+        <dependency>
+            <groupId>jakarta.servlet.jsp</groupId>
+            <artifactId>jakarta.servlet.jsp-api</artifactId>
+            <version>3.1.0</version>
+            <scope>provided</scope>
+        </dependency>
+        
+        <!-- JSTL (含 API 與實作) -->
+        <dependency>
+         <groupId>jakarta.servlet.jsp.jstl</groupId>
+         <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+         <version>3.0.0</version>
+        </dependency>
+```
 | 套件 | 用途 | Scope |
 |------|------|-------|
 | `jakarta.servlet-api` 6.0.0 | Servlet API | `provided` (Tomcat 提供) |
@@ -87,7 +110,41 @@ mvjpars0626/
 > `scope=provided`：部署時由 Tomcat 提供，避免與容器內建 jar 衝突。
 
 #### (2) JAX-RS + Jersey（REST API 框架）
+```xml
+ <!-- JAX-RS API (Jakarta EE 10 / Tomcat 10.1) -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
 
+        <!-- Jersey Core Server -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <!-- Jersey Servlet Container -->
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <!-- Jersey HK2 Injection -->
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+       <!-- JSON 支援 (Jackson) -->
+        <dependency>
+            <groupId>org.glassfish.jersey.media</groupId>
+            <artifactId>jersey-media-json-jackson</artifactId>
+            <version>${jersey.version}</version>
+        </dependency> 
+```
 | 套件 | 用途 |
 |------|------|
 | `jakarta.ws.rs-api` 3.1.0 | JAX-RS 標準 API |
@@ -97,14 +154,43 @@ mvjpars0626/
 | `jersey-media-json-jackson` 3.1.6 | Jersey + Jackson JSON 整合 |
 
 #### (3) Jackson JSON 處理
-
+```xml
+        <dependency>
+           <groupId>com.fasterxml.jackson.module</groupId>
+           <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
+           <version>2.17.0</version>
+        </dependency>
+        <!-- Java 8+ 日期模組 -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.16.1</version>
+        </dependency>
+```
 | 套件 | 用途 |
 |------|------|
 | `jackson-module-jakarta-xmlbind-annotations` 2.17.0 | 支援 Jakarta XML Binding 註解 |
 | `jackson-datatype-jsr310` 2.16.1 | Java 8 日期時間 (LocalDate, LocalDateTime) 序列化 |
 
 #### (4) JPA + Hibernate（資料持久層）
-
+```xml
+<dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-core</artifactId>
+      <version>6.6.1.Final</version>
+    </dependency>
+    <dependency>
+      <groupId>org.hibernate.orm</groupId>
+      <artifactId>hibernate-hikaricp</artifactId>
+      <version>6.6.1.Final</version>
+    </dependency>
+    
+    <dependency>
+      <groupId>com.mysql</groupId>
+      <artifactId>mysql-connector-j</artifactId>
+      <version>9.2.0</version>
+    </dependency>
+```
 | 套件 | 用途 |
 |------|------|
 | `hibernate-core` 6.6.1.Final | Hibernate ORM 核心（JPA 實作） |
