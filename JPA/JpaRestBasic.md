@@ -225,9 +225,9 @@ mvjpars0626/
 ## 三、persistence.xml：JPA 持久化設定解析
 
 ```xml
-<persistence version="3.0"
-    xmlns="https://jakarta.ee/xml/ns/persistence"
-    ...>
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence version="3.0" xmlns="https://jakarta.ee/xml/ns/persistence" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd">
+
     <persistence-unit name="jaxrsPU" transaction-type="RESOURCE_LOCAL">
         <class>model.Employee</class>
         <properties>
