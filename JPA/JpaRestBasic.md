@@ -195,6 +195,14 @@ CREATE TABLE employees (
     created_at  DATETIME,
     updated_at  DATETIME
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- 測試資料
+INSERT INTO employees (name, email, department, salary, hire_date, created_at, updated_at) VALUES
+('Alice Chen',   'alice@example.com',   'Engineering', 85000, '2020-03-15', NOW(), NOW()),
+('Bob Wang',     'bob@example.com',     'Marketing',   72000, '2021-07-01', NOW(), NOW()),
+('Carol Lin',    'carol@example.com',   'Engineering', 95000, '2019-11-20', NOW(), NOW()),
+('David Lee',    'david@example.com',   'HR',          65000, '2022-01-10', NOW(), NOW()),
+('Eva Wu',       'eva@example.com',     'Marketing',   78000, '2022-06-15', NOW(), NOW());
 ```
 
 ---
