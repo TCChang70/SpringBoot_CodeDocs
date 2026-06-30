@@ -103,40 +103,113 @@ INSERT INTO orders (customer_id, product_id, quantity, unit_price) VALUES
 ### 1.2 Maven 依賴
 
 ```xml
-<!-- JPA 3.0 API -->
-<dependency>
-    <groupId>jakarta.persistence</groupId>
-    <artifactId>jakarta.persistence-api</artifactId>
-    <version>3.0.0</version>
-</dependency>
+<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<maven.compiler.source>21</maven.compiler.source>
+		<maven.compiler.target>21</maven.compiler.target>
+		<jackson.version>2.16.1</jackson.version>
+        <jersey.version>3.1.6</jersey.version>
+	</properties>
 
-<!-- Hibernate ORM 6.x -->
-<dependency>
-    <groupId>org.hibernate.orm</groupId>
-    <artifactId>hibernate-core</artifactId>
-    <version>6.2.0.Final</version>
-</dependency>
+	<dependencies>
+		<!-- Servlet API (Jakarta EE 10 / Tomcat 10.1) -->
+		<dependency>
+			<groupId>jakarta.servlet</groupId>
+			<artifactId>jakarta.servlet-api</artifactId>
+			<version>6.0.0</version>
+			<scope>provided</scope>
+		</dependency>
 
-<!-- MySQL JDBC -->
-<dependency>
-    <groupId>mysql</groupId>
-    <artifactId>mysql-connector-java</artifactId>
-    <version>8.0.33</version>
-</dependency>
+		<!-- JSP API -->
+		<dependency>
+			<groupId>jakarta.servlet.jsp</groupId>
+			<artifactId>jakarta.servlet.jsp-api</artifactId>
+			<version>3.1.0</version>
+			<scope>provided</scope>
+		</dependency>
 
-<!-- Jersey 3.x (Jakarta REST) -->
-<dependency>
-    <groupId>org.glassfish.jersey.containers</groupId>
-    <artifactId>jersey-servlet</artifactId>
-    <version>3.1.0</version>
-</dependency>
+		<!-- JSTL (含 API 與實作) -->
+		<dependency>
+			<groupId>jakarta.servlet.jsp.jstl</groupId>
+			<artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+        <!-- JAX-RS API (Jakarta EE 10 / Tomcat 10.1) -->
+        <dependency>
+            <groupId>jakarta.ws.rs</groupId>
+            <artifactId>jakarta.ws.rs-api</artifactId>
+            <version>3.1.0</version>
+        </dependency>
+        <!-- Jersey Core Server -->
+        <dependency>
+            <groupId>org.glassfish.jersey.core</groupId>
+            <artifactId>jersey-server</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
 
-<!-- Jackson JSON -->
-<dependency>
-    <groupId>org.glassfish.jersey.media</groupId>
-    <artifactId>jersey-media-json-jackson</artifactId>
-    <version>3.1.0</version>
-</dependency>
+        <!-- Jersey Servlet Container -->
+        <dependency>
+            <groupId>org.glassfish.jersey.containers</groupId>
+            <artifactId>jersey-container-servlet</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+
+        <!-- Jersey HK2 Injection -->
+        <dependency>
+            <groupId>org.glassfish.jersey.inject</groupId>
+            <artifactId>jersey-hk2</artifactId>
+            <version>${jersey.version}</version>
+        </dependency>
+		<!-- JPA 3.0 API -->
+		<dependency>
+			<groupId>jakarta.persistence</groupId>
+			<artifactId>jakarta.persistence-api</artifactId>
+			<version>3.0.0</version>
+		</dependency>
+
+		<!-- Hibernate ORM 6.x -->
+		<dependency>
+          <groupId>org.hibernate.orm</groupId>
+          <artifactId>hibernate-core</artifactId>
+          <version>6.6.1.Final</version>
+        </dependency>
+       <dependency>
+          <groupId>org.hibernate.orm</groupId>
+          <artifactId>hibernate-hikaricp</artifactId>
+          <version>6.6.1.Final</version>
+        </dependency>
+
+		<!-- MySQL JDBC -->
+		<dependency>
+           <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+           <version>9.2.0</version>
+        </dependency>
+
+		<!-- Jackson JSON -->
+		<dependency>
+			<groupId>org.glassfish.jersey.media</groupId>
+			<artifactId>jersey-media-json-jackson</artifactId>
+			<version>3.1.0</version>
+		</dependency>
+		  <dependency>
+           <groupId>com.fasterxml.jackson.module</groupId>
+           <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
+           <version>2.17.0</version>
+        </dependency>
+         <!-- Jackson 時間支援 -->
+    <dependency>
+        <groupId>com.fasterxml.jackson.datatype</groupId>
+        <artifactId>jackson-datatype-jsr310</artifactId>
+        <version>${jackson.version}</version>
+    </dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.13.1</version>
+			<scope>test</scope>
+		</dependency>
+	</dependencies>
 ```
 
 > **版本對照**：`jakarta.persistence:jakarta.persistence-api:3.0.0` 取代舊的 `javax.persistence:javax.persistence-api:2.2`；Jersey 3.x 使用 `jakarta.ws.rs` 套件。
