@@ -160,11 +160,11 @@ INSERT INTO orders (customer_id, product_id, quantity, unit_price) VALUES
             <artifactId>jersey-hk2</artifactId>
             <version>${jersey.version}</version>
         </dependency>
-		<!-- JPA 3.0 API -->
+		<!-- JPA 3.1 API -->
 		<dependency>
 			<groupId>jakarta.persistence</groupId>
 			<artifactId>jakarta.persistence-api</artifactId>
-			<version>3.0.0</version>
+			<version>3.1.0</version>
 		</dependency>
 
 		<!-- Hibernate ORM 6.x -->
