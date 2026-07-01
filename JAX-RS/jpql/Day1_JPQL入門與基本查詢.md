@@ -242,11 +242,7 @@ INSERT INTO orders (customer_id, product_id, quantity, unit_price) VALUES
             <property name="jakarta.persistence.jdbc.url"
                       value="jdbc:mysql://localhost:3306/jaxrs_jpql_demo?useSSL=false&amp;serverTimezone=Asia/Taipei"/>
             <property name="jakarta.persistence.jdbc.user"     value="root"/>
-            <property name="jakarta.persistence.jdbc.password" value="yourpassword"/>
-
-            <property name="hibernate.dialect"    value="org.hibernate.dialect.MySQLDialect"/>
-            <property name="hibernate.show_sql"   value="true"/>
-            <property name="hibernate.format_sql" value="true"/>
+            <property name="jakarta.persistence.jdbc.password" value="yourpassword"/>            
         </properties>
     </persistence-unit>
 </persistence>
@@ -257,7 +253,7 @@ INSERT INTO orders (customer_id, product_id, quantity, unit_price) VALUES
 ### 1.4 EntityManagerFactory 工具類
 
 ```java
-package com.example.config;
+package config;
 
 import jakarta.persistence.*;
 
@@ -277,7 +273,39 @@ public class JpaUtil {
     }
 }
 ```
+```java
+package config;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import jakarta.ws.rs.ext.ContextResolver;
+import jakarta.ws.rs.ext.Provider;
+
+@Provider
+public class JacksonConfig implements ContextResolver<ObjectMapper> {
+
+    private final ObjectMapper mapper;
+
+    public JacksonConfig() {
+        mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
+    }
+
+    @Override
+    public ObjectMapper getContext(Class<?> type) {
+        return mapper;
+    }
+}
+
+```
 ---
 
 ### 1.5 建立 Entity 類別
@@ -285,10 +313,14 @@ public class JpaUtil {
 #### Product.java
 
 ```java
-package com.example.entity;
+package model;
 
 import jakarta.persistence.*;
+
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @Entity
 @Table(name = "products")
@@ -302,19 +334,21 @@ public class Product {
     private String name;
 
     @Column(nullable = false, precision = 12, scale = 2)
-    private Double price;
+    private BigDecimal price;
 
     @Column(nullable = false)
     private Integer stock;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
+    @JsonIgnoreProperties("products") // 序列化時忽略 Categoey 中的 Products 屬性避免遞迴
     private Category category;
 
     @Column(length = 20, nullable = false)
     private String status = "ACTIVE";
 
     @Column(name = "created_at", updatable = false)
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime createdAt;
 
     @PrePersist
@@ -326,8 +360,8 @@ public class Product {
     public void setId(Integer id) { this.id = id; }
     public String getName() { return name; }
     public void setName(String name) { this.name = name; }
-    public Double getPrice() { return price; }
-    public void setPrice(Double price) { this.price = price; }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
     public Integer getStock() { return stock; }
     public void setStock(Integer stock) { this.stock = stock; }
     public Category getCategory() { return category; }
@@ -361,6 +395,7 @@ public class Category {
     @Column(length = 200)
     private String description;
 
+    @JsonIgnore 
     @OneToMany(mappedBy = "category", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<Product> products = new ArrayList<>();
 
@@ -422,9 +457,10 @@ public class Customer {
 #### Order.java
 
 ```java
-package com.example.entity;
+package model;
 
 import jakarta.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
@@ -447,7 +483,7 @@ public class Order {
     private Integer quantity;
 
     @Column(name = "unit_price", nullable = false, precision = 12, scale = 2)
-    private Double unitPrice;
+    private BigDecimal unitPrice;
 
     @Column(name = "order_date", updatable = false)
     private LocalDateTime orderDate;
@@ -465,10 +501,11 @@ public class Order {
     public void setProduct(Product product) { this.product = product; }
     public Integer getQuantity() { return quantity; }
     public void setQuantity(Integer quantity) { this.quantity = quantity; }
-    public Double getUnitPrice() { return unitPrice; }
-    public void setUnitPrice(Double unitPrice) { this.unitPrice = unitPrice; }
+    public BigDecimal getUnitPrice() { return unitPrice; }
+    public void setUnitPrice(BigDecimal unitPrice) { this.unitPrice = unitPrice; }
     public LocalDateTime getOrderDate() { return orderDate; }
 }
+
 ```
 
 ---
