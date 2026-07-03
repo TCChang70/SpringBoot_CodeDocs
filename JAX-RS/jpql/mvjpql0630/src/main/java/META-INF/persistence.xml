@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<persistence xmlns="https://jakarta.ee/xml/ns/persistence"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             xsi:schemaLocation="https://jakarta.ee/xml/ns/persistence
+              https://jakarta.ee/xml/ns/persistence/persistence_3_0.xsd"
+             version="3.0">
+
+    <persistence-unit name="jpqlPU" transaction-type="RESOURCE_LOCAL">       
+
+        <class>model.Product</class>
+        <class>model.Category</class>
+        <class>model.Customer</class>
+        <class>model.Order</class>
+
+        <properties>
+            <property name="jakarta.persistence.jdbc.driver"
+                      value="com.mysql.cj.jdbc.Driver"/>
+            <property name="jakarta.persistence.jdbc.url"
+                      value="jdbc:mysql://localhost:3306/jaxrs_jpql_demo?useSSL=false&amp;serverTimezone=Asia/Taipei"/>
+            <property name="jakarta.persistence.jdbc.user"     value="root"/>
+            <property name="jakarta.persistence.jdbc.password" value="1234"/>           
+        </properties>
+    </persistence-unit>
+</persistence>

@@ -5,7 +5,7 @@
 <body>
 
 <%
-   response.sendRedirect("api/test");
+   response.sendRedirect("api/products");
 %>
 
 </body>
