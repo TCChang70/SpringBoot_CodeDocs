@@ -1039,17 +1039,17 @@ curl http://localhost:8080/mvjpars0626/api/employees
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                   Postman (Client)                    │
+│                   Postman (Client)                  │
 ├─────────────────────────────────────────────────────┤
-│               EmployeeController (Controller)         │  ← REST API 層
+│               EmployeeController (Controller)       │  ← REST API 層
 ├─────────────────────────────────────────────────────┤
-│           EmployeeRepository (Repository/DAO)         │  ← 資料存取層
+│           EmployeeRepository (Repository/DAO)       │  ← 資料存取層
 ├─────────────────────────────────────────────────────┤
-│                 JpaUtil (EntityManager)                │  ← JPA 工具層
+│                 JpaUtil (EntityManager)             │  ← JPA 工具層
 ├─────────────────────────────────────────────────────┤
-│               Employee (Entity / Model)               │  ← 資料模型層
+│               Employee (Entity / Model)             │  ← 資料模型層
 ├─────────────────────────────────────────────────────┤
-│                  MySQL Database                       │  ← 資料庫
+│                  MySQL Database                     │  ← 資料庫
 └─────────────────────────────────────────────────────┘
 ```
 
