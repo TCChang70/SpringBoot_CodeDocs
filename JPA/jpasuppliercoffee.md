@@ -59,12 +59,30 @@ jparsonemany/
 - **mysql-connector-j** (9.2.0) — MySQL JDBC 驅動
 
 ```xml
-<!-- 關鍵：jersey-media-json-jackson 讓 REST API 自動處理 JSON -->
-<dependency>
-    <groupId>org.glassfish.jersey.media</groupId>
-    <artifactId>jersey-media-json-jackson</artifactId>
-    <version>${jersey.version}</version>
-</dependency>
+ <dependency>
+           <groupId>com.fasterxml.jackson.module</groupId>
+             <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+              
+        <dependency>
+            <groupId>com.fasterxml.jackson.module</groupId>
+            <artifactId>jackson-module-jaxb-annotations</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+        
+        <!-- Old javax.xml.bind API (required by jackson-module-jaxb-annotations; jakarta.xml.bind-api 4.x uses jakarta.* namespace) -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+            <version>2.3.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.17.0</version>
+        </dependency>
+        
 ```
 
 `packaging` 為 `war`，表示部署到 Tomcat 這類 Servlet 容器。
@@ -285,24 +303,37 @@ public Response getCoffeesBySupplier(@PathParam("id") int id) {
 #### 7.4 POST /suppliers — 新增供應商
 
 ```java
-@POST
-@Consumes(MediaType.APPLICATION_JSON)
-public Response create(Supplier supplier) {
-    EntityManager em = JpaUtil.getEntityManager();
-    try {
-        em.getTransaction().begin();     // 開始交易
-        em.persist(supplier);            // 新增至資料庫
-        em.getTransaction().commit();    // 提交交易
-        return Response.status(201).build();  // 201 Created
-    } catch (RuntimeException e) {
-        if (em.getTransaction().isActive()) {
-            em.getTransaction().rollback();  // 異常時復原
-        }
-        throw e;                         // 讓 Jersey 處理錯誤回應
-    } finally {
-        em.close();
-    }
-}
+    @POST
+	@Consumes(MediaType.APPLICATION_JSON)
+	public Response create(Supplier supplier) {
+		Supplier sp = SupplierDAO.addSupplier(supplier);
+		if (sp != null)
+			return Response.status(201).build(); // 201 Created
+		else
+			return Response.noContent().build();
+
+	}
+  public static Supplier addSupplier(Supplier supplier) {
+		EntityManager em = JpaUtil.createEntityManager();
+		try {
+			Supplier found=em.find(Supplier.class, supplier.getSupId());
+			if(found==null) {
+	           em.getTransaction().begin();     // 開始交易
+	           em.persist(supplier);            // 新增至資料庫
+	           em.getTransaction().commit();    // 提交交易
+	           return supplier;  
+			}else {
+				return null;
+			}
+	    } catch (RuntimeException e) {
+	        if (em.getTransaction().isActive()) {
+	            em.getTransaction().rollback();  // 異常時復原
+	        }
+	        throw e;                         // 讓 Jersey 處理錯誤回應
+	    } finally {
+	        em.close();
+	    }
+	}
 ```
 
 **說明**：
