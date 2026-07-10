@@ -265,3 +265,35 @@ public class ConditionalConfig {
 2. 建立 `@Component` 類別加上 `@Scope("prototype")`，在另一個 Singleton Bean 中注入兩次，觀察是否不同實例
 3. 加入 `@PostConstruct` / `@PreDestroy` 方法，觀察生命週期輸出順序
 4. 使用 `@Profile("dev")` 讓某個 Bean 只在開發環境啟用，測試時加上 `--spring.profiles.active=prod` 觀察變化
+
+---
+
+## 7. 優化與進階學習
+
+### 優化建議
+關於本文件的優化修改意見，請參考：[優化修改意見](springboot-day02-optimization-suggestions.md)
+
+### 實作練習
+為了加深對 Spring Bean 進階知識的理解，我們提供了完整的實作練習文件，包含 7 個梯度式練習：
+- **練習 1**：Bean Scope 實作 ⭐
+- **練習 2**：Bean 生命週期實作 ⭐⭐
+- **練習 3**：@Configuration 和 @Bean 實作 ⭐⭐
+- **練習 4**：Profile 環境切換實作 ⭐⭐
+- **練習 5**：@Conditional 條件註冊實作 ⭐⭐⭐
+- **練習 6**：Bean Scope 在 Web 應用中的實作 ⭐⭐
+- **練習 7**：綜合實戰 - 設定管理系統 ⭐⭐⭐
+
+**實作練習文件**：[Spring Boot Day 02 實作練習](springboot-day02-practice.md)
+
+### 學習建議
+1. **循序漸進**：按照練習順序完成，先掌握基礎再挑戰進階
+2. **動手實作**：不要只看程式碼，務必親自輸入並執行
+3. **觀察輸出**：注意主控台輸出，理解 Bean 的建立和銷毀過程
+4. **除錯練習**：故意製造錯誤，學習如何排除問題
+5. **擴展功能**：在完成基礎練習後，嘗試加入新功能或優化現有程式碼
+
+### 常見問題
+在學習過程中遇到問題時，可以參考：
+- [實作練習 - 常見問題排除](springboot-day02-practice.md#常見問題排除)
+- [Spring Boot 官方文件](https://spring.io/projects/spring-boot)
+- [Spring Framework 官方文件](https://docs.spring.io/spring-framework/reference/)

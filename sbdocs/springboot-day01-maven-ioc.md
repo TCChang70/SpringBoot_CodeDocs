@@ -297,3 +297,36 @@ curl http://localhost:8080/hello?name=Alice
 3. 執行 `mvn spring-boot:run` 啟動
 4. 瀏覽器訪問 `http://localhost:8080/hello?name=你的名字`
 5. 練習將 `GreetingService` 改為介面 + 實作，體會鬆耦合的好處
+
+---
+
+## 8. 優化與進階學習
+
+### 優化建議
+關於本文件的優化修改意見，請參考：[優化修改意見](springboot-day01-optimization-suggestions.md)
+
+### 實作練習
+為了加深對 Spring Boot 基礎的理解，我們提供了完整的實作練習文件，包含 8 個梯度式練習：
+- **練習 1**：建立基礎 Spring Boot 應用程式 ⭐
+- **練習 2**：建立 Service 層和依賴注入 ⭐⭐
+- **練習 3**：多種依賴注入方式比較 ⭐⭐
+- **練習 4**：Bean 註冊方式實作 ⭐⭐
+- **練習 5**：建立完整的使用者管理 API ⭐⭐⭐
+- **練習 6**：整合單元測試 ⭐⭐
+- **練習 7**：配置檔使用 ⭐⭐
+- **練習 8**：整合 Swagger API 文檔 ⭐⭐⭐
+
+**實作練習文件**：[Spring Boot Day 01 實作練習](springboot-day01-practice.md)
+
+### 學習建議
+1. **循序漸進**：按照練習順序完成，先掌握基礎再挑戰進階
+2. **動手實作**：不要只看程式碼，務必親自輸入並執行
+3. **除錯練習**：故意製造錯誤，學習如何排除問題
+4. **擴展功能**：在完成基礎練習後，嘗試加入新功能或優化現有程式碼
+5. **撰寫測試**：為自己的程式碼編寫單元測試，確保程式品質
+
+### 常見問題
+在學習過程中遇到問題時，可以參考：
+- [實作練習 - 常見問題排除](springboot-day01-practice.md#常見問題排除)
+- [Spring Boot 官方文件](https://spring.io/projects/spring-boot)
+- [Spring Framework 官方文件](https://docs.spring.io/spring-framework/reference/)

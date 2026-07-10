@@ -205,3 +205,33 @@ public class PrimaryJpaConfig {
 3. 修改 `ddl-auto` 為 `validate`，確認 Hibernate 與 Flyway 的互動
 4. 練習回滾：修改已套用的 V1 SQL，觀察錯誤
 5. （選做）配置第二資料源，練習寫入不同資料庫
+
+---
+
+## 7. 優化與進階學習
+
+### 優化建議
+關於本文件的優化修改意見，請參考：[優化修改意見](springboot-day09-optimization-suggestions.md)
+
+### 實作練習
+為了加深對 Flyway 和多資料源的理解，我們提供了完整的實作練習文件，包含 5 個梯度式練習：
+- **練習 1**：基本 Flyway 遷移實作 ⭐
+- **練習 2**：Flyway 進階功能實作 ⭐⭐
+- **練習 3**：基本多資料源配置實作 ⭐⭐
+- **練習 4**：動態資料源切換實作 ⭐⭐⭐
+- **練習 5**：整合測試與最佳實踐實作 ⭐⭐⭐
+
+**實作練習文件**：[Spring Boot Day 09 實作練習](springboot-day09-practice.md)
+
+### 學習建議
+1. **循序漸進**：按照練習順序完成，先掌握基礎再挑戰進階
+2. **動手實作**：不要只看程式碼，務必親自輸入並執行
+3. **觀察遷移過程**：啟動應用時觀察 Flyway 的遷移日誌
+4. **測試切換**：使用 Postman 或 curl 測試動態資料源切換功能
+5. **擴展功能**：在完成基礎練習後，嘗試整合 Spring Batch 或微服務架構
+
+### 常見問題
+在學習過程中遇到問題時，可以參考：
+- [實作練習 - 常見問題排除](springboot-day09-practice.md#常見問題排除)
+- [Flyway 官方文件](https://flywaydb.org/documentation/)
+- [Spring Boot 多資料源配置](https://spring.io/guides/gs/multi-datasource/)

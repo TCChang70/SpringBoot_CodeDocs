@@ -182,3 +182,33 @@ public Page<User> searchUsers(String keyword, Pageable pageable) {
 3. 實作轉帳邏輯：扣款 → 入款，中間故意拋例外驗證 rollback
 4. 練習 `REQUIRES_NEW`：轉帳後記錄操作日誌（獨立交易）
 5. 練習 `readOnly = true`：查詢帳戶時設定
+
+---
+
+## 8. 優化與進階學習
+
+### 優化建議
+關於本文件的優化修改意見，請參考：[優化修改意見](springboot-day08-optimization-suggestions.md)
+
+### 實作練習
+為了加深對 Spring 交易管理的理解，我們提供了完整的實作練習文件，包含 5 個梯度式練習：
+- **練習 1**：基本交易管理實作 ⭐
+- **練習 2**：交易傳播行為實作 ⭐⭐
+- **練習 3**：交易隔離層級實作 ⭐⭐
+- **練習 4**：交易失效情境實作 ⭐⭐
+- **練習 5**：進階交易管理實作 ⭐⭐⭐
+
+**實作練習文件**：[Spring Boot Day 08 實作練習](springboot-day08-practice.md)
+
+### 學習建議
+1. **循序漸進**：按照練習順序完成，先掌握基礎再挑戰進階
+2. **動手實作**：不要只看程式碼，務必親自輸入並執行
+3. **觀察交易日誌**：啟動 `debug` 級別的日誌，觀察交易的開始、提交和回滾過程
+4. **測試回滾**：故意拋出例外，驗證交易是否正確回滾
+5. **擴展功能**：在完成基礎練習後，嘗試整合異步處理或事件機制
+
+### 常見問題
+在學習過程中遇到問題時，可以參考：
+- [實作練習 - 常見問題排除](springboot-day08-practice.md#常見問題排除)
+- [Spring Boot 官方文件](https://spring.io/projects/spring-boot)
+- [Spring 交易管理官方文件](https://docs.spring.io/spring-framework/reference/data-access/transaction.html)

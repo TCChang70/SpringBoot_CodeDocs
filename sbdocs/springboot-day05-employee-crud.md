@@ -245,3 +245,34 @@ spring.jpa.defer-datasource-initialization=true
 3. 啟動後用 Postman 測試所有端點
 4. 測試錯誤情境：查詢不存在的 ID（應回傳 404）
 5. 使用 MySQL Workbench 或 `mysql` 指令確認資料已寫入
+
+---
+
+## 8. 優化與進階學習
+
+### 優化建議
+關於本文件的優化修改意見，請參考：[優化修改意見](springboot-day05-optimization-suggestions.md)
+
+### 實作練習
+為了加深對 Employee CRUD 和 MySQL 整合的理解，我們提供了完整的實作練習文件，包含 6 個梯度式練習：
+- **練習 1**：基礎 Employee CRUD 實作 ⭐
+- **練習 2**：Service 層分離實作 ⭐⭐
+- **練習 3**：分頁、搜尋、排序進階實作 ⭐⭐
+- **練習 4**：例外處理和驗證實作 ⭐⭐
+- **練習 5**：資料初始化和測試資料管理 ⭐⭐
+- **練習 6**：綜合實戰 - 完整的 Employee 管理系統 ⭐⭐⭐
+
+**實作練習文件**：[Spring Boot Day 05 實作練習](springboot-day05-practice.md)
+
+### 學習建議
+1. **循序漸進**：按照練習順序完成，先掌握基礎再挑戰進階
+2. **動手實作**：不要只看程式碼，務必親自輸入並執行
+3. **測試 API**：使用 Postman 或 curl 測試每個 API 端點
+4. **觀察資料庫**：使用 MySQL 工具觀察資料的變化
+5. **擴展功能**：在完成基礎練習後，嘗試加入新功能或優化現有程式碼
+
+### 常見問題
+在學習過程中遇到問題時，可以參考：
+- [實作練習 - 常見問題排除](springboot-day05-practice.md#常見問題排除)
+- [Spring Boot 官方文件](https://spring.io/projects/spring-boot)
+- [Spring Data JPA 官方文件](https://spring.io/projects/spring-data-jpa)

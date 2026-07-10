@@ -271,3 +271,33 @@ Page<Employee> findByDepartment(@Param("dept") String dept, Pageable pageable);
 3. 加入 `findByNameContaining(String)` 方法
 4. 加入 `@Query` 方法查詢薪資大於某值的員工
 5. 實作分頁查詢 `GET /api/employees?page=0&size=5&sort=name,asc`
+
+---
+
+## 9. 優化與進階學習
+
+### 優化建議
+關於本文件的優化修改意見，請參考：[優化修改意見](springboot-day06-optimization-suggestions.md)
+
+### 實作練習
+為了加深對 Spring Data JPA 的理解，我們提供了完整的實作練習文件，包含 5 個梯度式練習：
+- **練習 1**：JPA 基礎操作實作 ⭐
+- **練習 2**：Derived Query Methods 實作 ⭐⭐
+- **練習 3**：@Query 自訂 JPQL 實作 ⭐⭐
+- **練習 4**：分頁與排序進階實作 ⭐⭐⭐
+- **練習 5**：Repository 測試實作 ⭐⭐
+
+**實作練習文件**：[Spring Boot Day 06 實作練習](springboot-day06-practice.md)
+
+### 學習建議
+1. **循序漸進**：按照練習順序完成，先掌握基礎再挑戰進階
+2. **動手實作**：不要只看程式碼，務必親自輸入並執行
+3. **觀察 SQL**：啟動 `show-sql` 產生的 SQL 語句，理解查詢過程
+4. **測試查詢**：使用 Postman 或 curl 測試每個查詢方法
+5. **擴展功能**：在完成基礎練習後，嘗試加入新查詢方法或優化現有查詢
+
+### 常見問題
+在學習過程中遇到問題時，可以參考：
+- [實作練習 - 常見問題排除](springboot-day06-practice.md#常見問題排除)
+- [Spring Boot 官方文件](https://spring.io/projects/spring-boot)
+- [Spring Data JPA 官方文件](https://spring.io/projects/spring-data-jpa)

@@ -204,3 +204,35 @@ public class AuthService {
 2. 建立 `dev` / `prod` profile 設定檔，啟動時指定 `--spring.profiles.active=prod` 測試切換
 3. 自訂 `app.features` 屬性群（例如 `app.features.maintenance=false`），用 `@ConfigurationProperties` 繫結
 4. 練習用命令列參數覆蓋設定：`--server.port=9090`
+
+---
+
+## 6. 優化與進階學習
+
+### 優化建議
+關於本文件的優化修改意見，請參考：[優化修改意見](springboot-day04-optimization-suggestions.md)
+
+### 實作練習
+為了加深對 Spring Boot 自動配置和配置管理的理解，我們提供了完整的實作練習文件，包含 7 個梯度式練習：
+- **練習 1**：自動配置原理實作 ⭐
+- **練習 2**：application.properties 進階設定 ⭐⭐
+- **練習 3**：多環境 Profile 實作 ⭐⭐
+- **練習 4**：@ConfigurationProperties 進階實作 ⭐⭐
+- **練習 5**：屬性驗證實作 ⭐⭐⭐
+- **練習 6**：配置檔加密實作 ⭐⭐⭐
+- **練習 7**：綜合實戰 - 完整的配置管理系統 ⭐⭐⭐
+
+**實作練習文件**：[Spring Boot Day 04 實作練習](springboot-day04-practice.md)
+
+### 學習建議
+1. **循序漸進**：按照練習順序完成，先掌握基礎再挑戰進階
+2. **動手實作**：不要只看程式碼，務必親自輸入並執行
+3. **觀察自動配置**：注意主控台輸出，理解自動配置的過程
+4. **測試配置變更**：嘗試修改配置檔，觀察應用程式的行為變化
+5. **擴展功能**：在完成基礎練習後，嘗試加入新功能或優化現有配置
+
+### 常見問題
+在學習過程中遇到問題時，可以參考：
+- [實作練習 - 常見問題排除](springboot-day04-practice.md#常見問題排除)
+- [Spring Boot 官方文件](https://spring.io/projects/spring-boot)
+- [Spring Boot 配置檔](https://docs.spring.io/spring-boot/docs/current/reference/html/features.html#features.external-config)

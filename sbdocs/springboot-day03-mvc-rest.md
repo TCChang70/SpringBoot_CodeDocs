@@ -293,3 +293,35 @@ public ResponseEntity<ApiResponse<User>> getById(@PathVariable Long id) {
    - **DELETE** `/api/users/1` → 刪除，再次 GET 應得到 404
 3. 練習 `@RequestParam` 實作分頁：`GET /api/users?page=0&size=10`
 4. 將回傳格式改為 `ApiResponse<T>` 統一結構
+
+---
+
+## 7. 優化與進階學習
+
+### 優化建議
+關於本文件的優化修改意見，請參考：[優化修改意見](springboot-day03-optimization-suggestions.md)
+
+### 實作練習
+為了加深對 Spring MVC 和 REST API 的理解，我們提供了完整的實作練習文件，包含 7 個梯度式練習：
+- **練習 1**：基礎 REST API 實作 ⭐
+- **練習 2**：請求參數綁定實作 ⭐⭐
+- **練習 3**：ResponseEntity 進階實作 ⭐⭐
+- **練習 4**：統一回應格式實作 ⭐⭐
+- **練習 5**：參數驗證實作 ⭐⭐
+- **練習 6**：錯誤處理實作 ⭐⭐⭐
+- **練習 7**：綜合實戰 - 完整的產品管理 API ⭐⭐⭐
+
+**實作練習文件**：[Spring Boot Day 03 實作練習](springboot-day03-practice.md)
+
+### 學習建議
+1. **循序漸進**：按照練習順序完成，先掌握基礎再挑戰進階
+2. **動手實作**：不要只看程式碼，務必親自輸入並執行
+3. **測試 API**：使用 Postman 或 curl 測試每個 API 端點
+4. **觀察回應**：注意 HTTP 狀態碼和回應標頭
+5. **擴展功能**：在完成基礎練習後，嘗試加入新功能或優化現有程式碼
+
+### 常見問題
+在學習過程中遇到問題時，可以參考：
+- [實作練習 - 常見問題排除](springboot-day03-practice.md#常見問題排除)
+- [Spring Boot 官方文件](https://spring.io/projects/spring-boot)
+- [Spring MVC 官方文件](https://docs.spring.io/spring-framework/reference/web/web-mvc.html)

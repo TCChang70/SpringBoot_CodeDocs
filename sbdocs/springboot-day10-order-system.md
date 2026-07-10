@@ -569,3 +569,33 @@ spring.flyway.baseline-on-migrate=true
    - 取消訂單並驗證庫存已歸還
 4. 測試非預期情境：庫存不足、客戶不存在
 5. 練習 Flyway：新增 V3 腳本加入 `orders.discount` 欄位
+
+---
+
+## 11. 優化與進階學習
+
+### 優化建議
+關於本文件的優化修改意見，請參考：[優化修改意見](springboot-day10-optimization-suggestions.md)
+
+### 實作練習
+為了加深對訂單系統整合實作的理解，我們提供了完整的實作練習文件，包含 5 個梯度式練習：
+- **練習 1**：基本訂單系統實作 ⭐
+- **練習 2**：異常處理與輸入驗證 ⭐⭐
+- **練習 3**：完整 DTO 設計與資料轉換 ⭐⭐
+- **練習 4**：Service 層完整實作 ⭐⭐
+- **練習 5**：Controller 層與 API 設計 ⭐⭐⭐
+
+**實作練習文件**：[Spring Boot Day 10 實作練習](springboot-day10-practice.md)
+
+### 學習建議
+1. **循序漸進**：按照練習順序完成，先掌握基礎再挑戰進階
+2. **動手實作**：不要只看程式碼，務必親自輸入並執行
+3. **觀察日誌**：啟動應用時觀察 SQL 日誌與交易過程
+4. **測試 API**：使用 Postman 或 curl 測試完整的 API 流程
+5. **擴展功能**：在完成基礎練習後，嘗試加入認證授權或效能優化
+
+### 常見問題
+在學習過程中遇到問題時，可以參考：
+- [實作練習 - 常見問題排除](springboot-day10-practice.md#常見問題排除)
+- [Spring Boot 官方文件](https://spring.io/projects/spring-boot)
+- [RESTful API 設計最佳實踐](https://restfulapi.net/)
