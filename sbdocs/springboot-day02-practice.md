@@ -546,7 +546,7 @@ public class ProfileDemoController {
     private final Environment environment;
     private final DataSource dataSource;
     private final String message;
-    
+    //   spring.profiles.active=dev  @Qualifier("devMessage") String message 必須匹配
     public ProfileDemoController(Environment environment, 
                                  DataSource dataSource,
                                  @Qualifier("devMessage") String message) {
