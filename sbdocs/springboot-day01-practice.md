@@ -706,134 +706,7 @@ curl http://localhost:8080/api/users/count
 
 ---
 
-## 練習 6：整合單元測試 ⭐⭐
-
-### 任務
-為 Service 層編寫單元測試。
-
-### 程式碼
-
-#### 測試類別 `UserServiceTest.java`
-```java
-package com.example.practice.service;
-
-import com.example.practice.model.User;
-import com.example.practice.repository.UserRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
-@ExtendWith(MockitoExtension.class)
-class UserServiceTest {
-    
-    @Mock
-    private UserRepository userRepository;
-    
-    @InjectMocks
-    private UserService userService;
-    
-    private User testUser;
-    
-    @BeforeEach
-    void setUp() {
-        testUser = new User("Test User", "test@example.com", 30);
-    }
-    
-    @Test
-    void testCreateUser() {
-        // Arrange
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
-        
-        // Act
-        User createdUser = userService.createUser("Test User", "test@example.com", 30);
-        
-        // Assert
-        assertNotNull(createdUser);
-        assertEquals("Test User", createdUser.getName());
-        verify(userRepository, times(1)).save(any(User.class));
-    }
-    
-    @Test
-    void testGetUserById() {
-        // Arrange
-        when(userRepository.findById("1")).thenReturn(Optional.of(testUser));
-        
-        // Act
-        Optional<User> foundUser = userService.getUserById("1");
-        
-        // Assert
-        assertTrue(foundUser.isPresent());
-        assertEquals("Test User", foundUser.get().getName());
-    }
-    
-    @Test
-    void testGetUserByIdNotFound() {
-        // Arrange
-        when(userRepository.findById("999")).thenReturn(Optional.empty());
-        
-        // Act
-        Optional<User> foundUser = userService.getUserById("999");
-        
-        // Assert
-        assertFalse(foundUser.isPresent());
-    }
-    
-    @Test
-    void testGetAllUsers() {
-        // Arrange
-        List<User> users = List.of(testUser);
-        when(userRepository.findAll()).thenReturn(users);
-        
-        // Act
-        List<User> allUsers = userService.getAllUsers();
-        
-        // Assert
-        assertEquals(1, allUsers.size());
-        assertEquals("Test User", allUsers.get(0).getName());
-    }
-    
-    @Test
-    void testDeleteUser() {
-        // Arrange
-        when(userRepository.deleteById("1")).thenReturn(true);
-        
-        // Act
-        boolean deleted = userService.deleteUser("1");
-        
-        // Assert
-        assertTrue(deleted);
-        verify(userRepository, times(1)).deleteById("1");
-    }
-}
-```
-
-### 測試執行
-```bash
-# 執行所有測試
-mvn test
-
-# 執行特定測試類別
-mvn test -Dtest=UserServiceTest
-```
-
-### 學習重點
-- 單元測試的基本結構
-- Mockito 的使用方式
-- 測試覆蓋率的重要性
-
----
-
-## 練習 7：配置檔使用 ⭐⭐
+## 練習 6：配置檔使用 ⭐⭐
 
 ### 任務
 學習使用 `application.properties` 和 `application.yml` 配置檔。
@@ -956,7 +829,7 @@ curl http://localhost:8080/api/config/name
 
 ---
 
-## 練習 8：整合 Swagger API 文檔 ⭐⭐⭐
+## 練習 7：整合 Swagger API 文檔 ⭐⭐⭐
 
 ### 任務
 整合 Swagger UI 來自動產生 API 文檔。
@@ -1120,20 +993,3 @@ mvn clean install -U
 檢查是否有循環依賴或缺少必要依賴。
 
 ---
-
-## 延伸學習
-
-完成本日練習後，建議繼續學習：
-- **Day 02**：Spring Boot 資料庫整合（JPA/Hibernate）
-- **Day 03**：Spring Security 基礎
-- **Day 04**：Spring Boot 測試進階
-- **Day 05**：Spring Boot 部署與監控
-
----
-
-## 參考資源
-
-- [Spring Boot 官方文件](https://spring.io/projects/spring-boot)
-- [Spring Framework 官方文件](https://docs.spring.io/spring-framework/reference/)
-- [Maven 官方文件](https://maven.apache.org/)
-- [Swagger/OpenAPI 規範](https://swagger.io/specification/)
