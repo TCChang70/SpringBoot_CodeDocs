@@ -547,13 +547,13 @@ public class ProfileDemoController {
     private final DataSource dataSource;
     private final String message;
     //   spring.profiles.active=dev  @Qualifier("devMessage") String message 必須匹配
-    public ProfileDemoController(Environment environment, 
-                                 DataSource dataSource,
-                                 @Qualifier("devMessage") String message) {
-        this.environment = environment;
-        this.dataSource = dataSource;
-        this.message = message;
-    }
+   public ProfileDemoController(Environment environment, DataSource dataSource, Map<String, String> messageMap) {
+       String activeProfile = environment.getActiveProfiles().length > 0 ?
+    		                  environment.getActiveProfiles()[0] : "default";
+       this.environment=environment;
+       this.dataSource=dataSource;
+       this.message = messageMap.get(activeProfile + "Message");
+   }
     
     @GetMapping
     public Map<String, Object> getProfileInfo() {
