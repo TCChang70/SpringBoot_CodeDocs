@@ -1,0 +1,7 @@
+{
+  "name": "測試產品",
+  "description": "這是一個測試產品",
+  "price": 50.0,
+  "stock": 10,
+  "contactEmail": "not-an-email"
+}
