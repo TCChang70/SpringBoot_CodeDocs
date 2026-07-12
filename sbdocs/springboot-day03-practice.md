@@ -656,6 +656,13 @@ curl -X POST http://localhost:8080/api/unified/operation
 實作請求參數的驗證，確保資料的正確性。
 
 ### 程式碼
+```xml
+ <dependency>
+    <groupId>jakarta.validation</groupId>
+    <artifactId>jakarta.validation-api</artifactId>
+    <version>3.0.2</version>
+</dependency>
+```
 
 #### 加入驗證的模型 `ValidatedProduct.java`
 ```java
