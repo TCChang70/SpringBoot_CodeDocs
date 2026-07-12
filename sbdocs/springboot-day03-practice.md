@@ -816,13 +816,36 @@ curl -X POST http://localhost:8080/api/validation/product \
 建立一個完整的產品管理 API，綜合運用所有學到的知識。
 
 ### 程式碼
+```java
+package demo.example.model;
 
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
+
+@ResponseStatus(value = HttpStatus.NOT_FOUND)
+public class ResourceNotFoundException extends RuntimeException {
+
+    private final String resourceName;
+    private final String fieldName;
+    private final Object fieldValue;
+
+    public ResourceNotFoundException(String resourceName, String fieldName, Object fieldValue) {
+        super(String.format("%s not found with %s: '%s'", resourceName, fieldName, fieldValue));
+        this.resourceName = resourceName;
+        this.fieldName = fieldName;
+        this.fieldValue = fieldValue;
+    }
+
+    public String getResourceName() { return resourceName; }
+    public String getFieldName() { return fieldName; }
+    public Object getFieldValue() { return fieldValue; }
+}
+```
 #### 完整的產品 Controller `CompleteProductController.java`
 ```java
 package com.example.practice.controller;
 
 import com.example.practice.dto.ApiResponse;
-import com.example.practice.dto.PagedResponse;
 import com.example.practice.exception.ResourceNotFoundException;
 import com.example.practice.model.Product;
 import jakarta.validation.Valid;
@@ -847,35 +870,7 @@ public class CompleteProductController {
         products.add(new Product("MacBook Pro", "Apple 筆記型電腦", new BigDecimal("59999"), 50));
         products.add(new Product("AirPods Pro", "無線耳機", new BigDecimal("7999"), 200));
     }
-    
-    // 取得所有產品（分頁）
-    @GetMapping
-    public ResponseEntity<ApiResponse<PagedResponse<Product>>> getAllProducts(
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size,
-            @RequestParam(required = false) String search) {
-        
-        List<Product> filteredProducts = products;
-        
-        // 搜尋功能
-        if (search != null && !search.trim().isEmpty()) {
-            filteredProducts = products.stream()
-                .filter(p -> p.getName().toLowerCase().contains(search.toLowerCase()))
-                .toList();
-        }
-        
-        // 分頁
-        int start = page * size;
-        int end = Math.min(start + size, filteredProducts.size());
-        List<Product> pageContent = filteredProducts.subList(start, end);
-        
-        PagedResponse<Product> pagedResponse = new PagedResponse<>(
-            pageContent, page, size, filteredProducts.size()
-        );
-        
-        return ResponseEntity.ok(ApiResponse.ok(pagedResponse));
-    }
-    
+          
     // 取得特定產品
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<Product>> getProductById(@PathVariable String id) {
