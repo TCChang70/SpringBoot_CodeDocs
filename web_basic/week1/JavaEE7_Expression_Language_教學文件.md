@@ -1,1072 +1,696 @@
-# JavaEE7 Expression Language (EL) 完整教學指南
+# EL Expression Language 初學者教學
 
 ## 目錄
-1. [Expression Language 概述](#1-expression-language-概述)
+1. [EL 基本概念](#1-el-基本概念)
 2. [EL 語法基礎](#2-el-語法基礎)
 3. [EL 內建物件](#3-el-內建物件)
 4. [EL 運算子](#4-el-運算子)
-5. [在JSP中使用EL](#5-在jsp中使用el)
-6. [EL函數](#6-el函數)
-7. [實作範例](#7-實作範例)
-8. [進階應用](#8-進階應用)
-9. [最佳實踐](#9-最佳實踐)
-10. [常見問題與解決方案](#10-常見問題與解決方案)
+5. [實作範例](#5-實作範例)
+6. [常見問題](#6-常見問題)
 
 ---
 
-## 1. Expression Language 概述
+## 1. EL 基本概念
 
-### 1.1 什麼是 Expression Language (EL)？
+### 什麼是 EL？
 
-Expression Language (表達式語言) 是 JavaEE/Jakarta EE 平台中用於在 JSP 和 JSF 中簡化表達式寫法的語言。EL 提供了一種簡潔的方式來存取 Java 物件的屬性和方法。
+Expression Language（表達式語言）用於在 JSP 中簡化資料存取：
 
-### 1.2 EL 的優勢
+```jsp
+<!-- 舊寫法（複雜） -->
+<%= ((User)session.getAttribute("user")).getName() %>
 
-- **簡化語法**：相比於傳統的 JSP scriptlets，EL 提供更簡潔的語法
-- **空值安全**：自動處理 null 值，避免 NullPointerException
-- **自動類型轉換**：自動處理基本資料類型的轉換
-- **易於維護**：代碼更清晰，易於閱讀和維護
+<!-- EL 寫法（簡單） -->
+${sessionScope.user.name}
+```
 
-### 1.3 EL 版本演進
+### EL 的優勢
 
-- **EL 2.2** (JSP 2.1/Servlet 2.5)：基本功能
-- **EL 3.0** (JSP 2.3/Servlet 3.1)：支援 Lambda 表達式和集合操作
-- **EL 4.0** (JSP 3.0/Servlet 5.0/Jakarta EE 9+)：進一步增強功能
+- **簡潔**：語法簡單易讀
+- **空值安全**：自動處理 null
+- **自動轉換**：自動處理型別轉換
 
 ---
 
 ## 2. EL 語法基礎
 
-### 2.1 基本語法結構
+### 基本語法
 
 ```jsp
-${expression}
+${表達式}
 ```
 
-### 2.2 基本範例
+### 範例
 
 ```jsp
-<!-- 顯示請求參數 -->
-<p>您好，${param.name}！</p>
-
-<!-- 顯示 session 屬性 -->
-<p>歡迎回來，${sessionScope.user.name}！</p>
-
-<!-- 簡單運算 -->
+<p>姓名：${user.name}</p>
+<p>年齡：${user.age}</p>
 <p>總價：${price * quantity}</p>
-```
-
-### 2.3 立即評估 vs 延遲評估
-
-```jsp
-<!-- 立即評估 (Immediate Evaluation) -->
-${expression}
-
-<!-- 延遲評估 (Deferred Evaluation) - 主要用於 JSF -->
-#{expression}
 ```
 
 ---
 
 ## 3. EL 內建物件
 
-### 3.1 範圍物件 (Scope Objects)
+### 範圍物件
 
-| 物件 | 描述 | 範例 |
+| 物件 | 說明 | 範例 |
 |------|------|------|
-| `pageScope` | page 範圍的屬性 | `${pageScope.message}` |
-| `requestScope` | request 範圍的屬性 | `${requestScope.user}` |
-| `sessionScope` | session 範圍的屬性 | `${sessionScope.cart}` |
-| `applicationScope` | application 範圍的屬性 | `${applicationScope.config}` |
+| `pageScope` | page 範圍 | `${pageScope.msg}` |
+| `requestScope` | request 範圍 | `${requestScope.user}` |
+| `sessionScope` | session 範圍 | `${sessionScope.cart}` |
+| `applicationScope` | application 範圍 | `${applicationScope.config}` |
 
-### 3.2 請求物件 (Request Objects)
+### 請求物件
 
-| 物件 | 描述 | 範例 |
+| 物件 | 說明 | 範例 |
 |------|------|------|
-| `param` | 請求參數 (單一值) | `${param.username}` |
-| `paramValues` | 請求參數 (多值) | `${paramValues.hobbies[0]}` |
-| `header` | HTTP 標頭 (單一值) | `${header['User-Agent']}` |
-| `headerValues` | HTTP 標頭 (多值) | `${headerValues.accept[0]}` |
-| `cookie` | Cookie 值 | `${cookie.sessionId.value}` |
-| `initParam` | 初始化參數 | `${initParam.databaseURL}` |
-
-### 3.3 路徑物件 (Path Objects)
-
-| 物件 | 描述 | 範例 |
-|------|------|------|
-| `pageContext` | PageContext 物件 | `${pageContext.request.contextPath}` |
+| `param` | 請求參數 | `${param.name}` |
+| `paramValues` | 多值參數 | `${paramValues.hobby[0]}` |
+| `header` | HTTP 標頭 | `${header['User-Agent']}` |
+| `cookie` | Cookie | `${cookie.id.value}` |
 
 ---
 
 ## 4. EL 運算子
 
-### 4.1 算術運算子
+### 算術運算子
 
 ```jsp
-<!-- 基本算術 -->
-<p>加法：${5 + 3}</p>
-<p>減法：${10 - 4}</p>
-<p>乘法：${6 * 7}</p>
-<p>除法：${20 / 4} 或 ${20 div 4}</p>
-<p>餘數：${17 % 5} 或 ${17 mod 5}</p>
+${5 + 3}    <!-- 8 -->
+${10 - 4}   <!-- 6 -->
+${6 * 7}    <!-- 42 -->
+${20 / 4}   <!-- 5.0 -->
+${17 % 5}   <!-- 2 -->
 ```
 
-### 4.2 比較運算子
+### 比較運算子
 
 ```jsp
-<!-- 數值比較 -->
-<p>${5 > 3}</p>  <!-- true -->
-<p>${5 lt 3}</p> <!-- false (less than) -->
-<p>${5 >= 3}</p> <!-- true -->
-<p>${5 le 3}</p> <!-- false (less than or equal) -->
-<p>${5 == 3}</p> <!-- false -->
-<p>${5 eq 3}</p> <!-- false (equal) -->
-<p>${5 != 3}</p> <!-- true -->
-<p>${5 ne 3}</p> <!-- true (not equal) -->
+${5 > 3}    <!-- true -->
+${5 lt 3}   <!-- false -->
+${5 == 5}   <!-- true -->
+${5 eq 5}   <!-- true -->
+${5 != 3}   <!-- true -->
+${5 ne 3}   <!-- true -->
 ```
 
-### 4.3 邏輯運算子
+### 邏輯運算子
 
 ```jsp
-<!-- 邏輯運算 -->
-<p>${true && false}</p>   <!-- false -->
-<p>${true and false}</p>  <!-- false -->
-<p>${true || false}</p>   <!-- true -->
-<p>${true or false}</p>   <!-- true -->
-<p>${!true}</p>           <!-- false -->
-<p>${not true}</p>        <!-- false -->
+${true && false}   <!-- false -->
+${true || false}   <!-- true -->
+${!true}           <!-- false -->
+${not true}        <!-- false -->
 ```
 
-### 4.4 條件運算子
+### 條件運算子
 
 ```jsp
-<!-- 三元運算子 -->
-<p>${user != null ? user.name : '訪客'}</p>
-
-<!-- Empty 運算子 -->
-<p>${empty param.name ? '請輸入姓名' : param.name}</p>
+${user != null ? user.name : '訪客'}
+${empty param.name ? '請輸入' : param.name}
 ```
 
 ---
 
-## 5. 在JSP中使用EL
+## 5. 實作範例
 
-### 5.1 啟用 EL
+### 範例一：基本 EL 練習
 
-```jsp
-<%-- 確保 EL 已啟用 (JSP 2.0+) --%>
-<%@ page isELIgnored="false" %>
+將以下檔案放入 `webapps/ROOT/` 目錄：
 
-<%-- 或在 web.xml 中設定 --%>
-<!--
-<jsp-config>
-    <jsp-property-group>
-        <url-pattern>*.jsp</url-pattern>
-        <el-ignored>false</el-ignored>
-    </jsp-property-group>
-</jsp-config>
--->
-```
-
-### 5.2 屬性存取
+#### el-basic.jsp
 
 ```jsp
-<!-- 物件屬性存取 -->
-${user.name}        <!-- 相當於 user.getName() -->
-${user['name']}     <!-- 相當於 user.getName() -->
-${user["name"]}     <!-- 相當於 user.getName() -->
-
-<!-- 陣列和列表存取 -->
-${numbers[0]}       <!-- 第一個元素 -->
-${userList[2].name} <!-- 第三個使用者的姓名 -->
-
-<!-- Map 存取 -->
-${userMap['john'].email}
-${userMap.john.email}
-```
-
-### 5.3 方法呼叫 (EL 3.0+)
-
-```jsp
-<!-- 呼叫無參數方法 -->
-${user.getName()}
-
-<!-- 呼叫有參數方法 -->
-${calculator.add(5, 3)}
-
-<!-- 靜態方法呼叫 -->
-${Math.max(10, 20)}
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>EL 基本練習</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", Arial; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .section { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        h2 { color: #333; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        .result { color: #27ae60; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>EL 基本練習</h1>
+    
+    <!-- 設定變數 -->
+    <c:set var="name" value="張小明" />
+    <c:set var="age" value="25" />
+    <c:set var="score" value="85.5" />
+    
+    <!-- 1. 顯示變數 -->
+    <div class="section">
+        <h2>1. 顯示變數</h2>
+        <p>姓名：<span class="result">${name}</span></p>
+        <p>年齡：<span class="result">${age}</span></p>
+        <p>分數：<span class="result">${score}</span></p>
+    </div>
+    
+    <!-- 2. 算術運算 -->
+    <div class="section">
+        <h2>2. 算術運算</h2>
+        <p>10 + 5 = <span class="result">${10 + 5}</span></p>
+        <p>10 - 5 = <span class="result">${10 - 5}</span></p>
+        <p>10 * 5 = <span class="result">${10 * 5}</span></p>
+        <p>10 / 3 = <span class="result">${10 / 3}</span></p>
+        <p>10 % 3 = <span class="result">${10 % 3}</span></p>
+    </div>
+    
+    <!-- 3. 比較運算 -->
+    <div class="section">
+        <h2>3. 比較運算</h2>
+        <p>10 > 5：<span class="result">${10 > 5}</span></p>
+        <p>10 < 5：<span class="result">${10 < 5}</span></p>
+        <p>10 == 10：<span class="result">${10 == 10}</span></p>
+        <p>10 != 5：<span class="result">${10 != 5}</span></p>
+    </div>
+    
+    <!-- 4. 邏輯運算 -->
+    <div class="section">
+        <h2>4. 邏輯運算</h2>
+        <p>true && false：<span class="result">${true && false}</span></p>
+        <p>true || false：<span class="result">${true || false}</span></p>
+        <p>!true：<span class="result">${!true}</span></p>
+    </div>
+    
+    <!-- 5. 條件運算 -->
+    <div class="section">
+        <h2>5. 條件運算</h2>
+        <c:set var="score2" value="75" />
+        <p>成績：${score2}</p>
+        <p>是否及格：<span class="result">${score2 >= 60 ? '及格' : '不及格'}</span></p>
+        <p>等級：<span class="result">${score2 >= 90 ? 'A' : score2 >= 80 ? 'B' : score2 >= 70 ? 'C' : 'D'}</span></p>
+    </div>
+    
+    <!-- 6. empty 運算 -->
+    <div class="section">
+        <h2>6. empty 運算</h2>
+        <c:set var="emptyStr" value="" />
+        <c:set var="nullStr" value="${null}" />
+        <c:set var="hasValue" value="Hello" />
+        <p>空字串 empty ''：<span class="result">${empty emptyStr}</span></p>
+        <p>null empty null：<span class="result">${empty nullStr}</span></p>
+        <p>有值 empty 'Hello'：<span class="result">${empty hasValue}</span></p>
+    </div>
+    
+    <br>
+    <a href="index.jsp">回首頁</a>
+</body>
+</html>
 ```
 
 ---
 
-## 6. EL函數
+### 範例二：內建物件練習
 
-### 6.1 JSTL 函數
+#### el-objects.jsp
 
 ```jsp
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-
-<!-- 字串長度 -->
-<p>字串長度：${fn:length(user.name)}</p>
-
-<!-- 字串包含 -->
-<p>${fn:contains(user.email, '@gmail.com')}</p>
-
-<!-- 字串分割 -->
-<c:forEach var="part" items="${fn:split(user.fullName, ' ')}">
-    <p>${part}</p>
-</c:forEach>
-
-<!-- 字串替換 -->
-<p>${fn:replace(message, 'Hello', 'Hi')}</p>
-
-<!-- 字串大小寫 -->
-<p>${fn:toUpperCase(user.name)}</p>
-<p>${fn:toLowerCase(user.name)}</p>
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>EL 內建物件練習</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", Arial; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .section { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        h2 { color: #333; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        .result { color: #27ae60; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>EL 內建物件練習</h1>
+    
+    <!-- 1. param 物件 -->
+    <div class="section">
+        <h2>1. param 物件（取得 URL 參數）</h2>
+        <p>name 參數：<span class="result">${param.name}</span></p>
+        <p>age 參數：<span class="result">${param.age}</span></p>
+        <form method="get">
+            <label>輸入 name：</label>
+            <input type="text" name="name" value="${param.name}">
+            <label>輸入 age：</label>
+            <input type="text" name="age" value="${param.age}">
+            <button type="submit">送出</button>
+        </form>
+        <p><small>提示：送出後 URL 會變成 ?name=xxx&age=xxx</small></p>
+    </div>
+    
+    <!-- 2. header 物件 -->
+    <div class="section">
+        <h2>2. header 物件（取得瀏覽器資訊）</h2>
+        <p>User-Agent：<span class="result">${header['User-Agent']}</span></p>
+        <p>Accept-Language：<span class="result">${header['Accept-Language']}</span></p>
+    </div>
+    
+    <!-- 3. cookie 物件 -->
+    <div class="section">
+        <h2>3. cookie 物件</h2>
+        <c:set var="cookieName" value="${cookie.JSESSIONID.name}" />
+        <c:set var="cookieValue" value="${cookie.JSESSIONID.value}" />
+        <p>Session Cookie 名稱：<span class="result">${cookieName}</span></p>
+        <p>Session Cookie 值：<span class="result">${cookieValue}</span></p>
+    </div>
+    
+    <!-- 4. pageContext 物件 -->
+    <div class="section">
+        <h2>4. pageContext 物件</h2>
+        <p>Context Path：<span class="result">${pageContext.request.contextPath}</span></p>
+        <p>Request URI：<span class="result">${pageContext.request.requestURI}</span></p>
+        <p>Session ID：<span class="result">${pageContext.session.id}</span></p>
+        <p>Server Info：<span class="result">${pageContext.servletContext.serverInfo}</span></p>
+    </div>
+    
+    <!-- 5. 範圍物件 -->
+    <div class="section">
+        <h2>5. 範圍物件</h2>
+        <c:set var="pageMsg" value="Page 訊息" scope="page" />
+        <c:set var="requestMsg" value="Request 訊息" scope="request" />
+        <c:set var="sessionMsg" value="Session 訊息" scope="session" />
+        <c:set var="appMsg" value="Application 訊息" scope="application" />
+        
+        <p>pageScope：<span class="result">${pageScope.pageMsg}</span></p>
+        <p>requestScope：<span class="result">${requestScope.requestMsg}</span></p>
+        <p>sessionScope：<span class="result">${sessionScope.sessionMsg}</span></p>
+        <p>applicationScope：<span class="result">${applicationScope.appMsg}</span></p>
+    </div>
+    
+    <br>
+    <a href="index.jsp">回首頁</a>
+</body>
+</html>
 ```
 
-### 6.2 自定義 EL 函數
+---
 
-#### 6.2.1 建立 Java 方法
+### 範例三：JavaBean + EL
+
+#### User.java（放入 WEB-INF/classes）
 
 ```java
-package com.example.utils;
+package model;
 
-public class StringUtils {
-    public static String capitalize(String str) {
-        if (str == null || str.isEmpty()) {
-            return str;
-        }
-        return str.substring(0, 1).toUpperCase() + str.substring(1).toLowerCase();
+public class User {
+    private String name;
+    private int age;
+    private String email;
+    private boolean active;
+    
+    public User() {}
+    
+    public User(String name, int age, String email, boolean active) {
+        this.name = name;
+        this.age = age;
+        this.email = email;
+        this.active = active;
     }
     
-    public static boolean isValidEmail(String email) {
-        return email != null && email.matches("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
+    // Getter 方法
+    public String getName() { return name; }
+    public int getAge() { return age; }
+    public String getEmail() { return email; }
+    public boolean isActive() { return active; }
+    
+    // Setter 方法
+    public void setName(String name) { this.name = name; }
+    public void setAge(int age) { this.age = age; }
+    public void setEmail(String email) { this.email = email; }
+    public void setActive(boolean active) { this.active = active; }
+    
+    // 業務方法
+    public boolean isAdult() {
+        return age >= 18;
+    }
+    
+    public String getStatus() {
+        return active ? "啟用" : "停用";
     }
 }
 ```
 
-#### 6.2.2 建立 TLD 檔案
-
-```xml
-<!-- /WEB-INF/tld/custom-functions.tld -->
-<?xml version="1.0" encoding="UTF-8"?>
-<taglib xmlns="http://java.sun.com/xml/ns/javaee"
-        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-        xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
-        http://java.sun.com/xml/ns/javaee/web-jsptaglibrary_2_1.xsd"
-        version="2.1">
-    
-    <tlib-version>1.0</tlib-version>
-    <short-name>custom</short-name>
-    <uri>http://example.com/custom-functions</uri>
-    
-    <function>
-        <name>capitalize</name>
-        <function-class>com.example.utils.StringUtils</function-class>
-        <function-signature>java.lang.String capitalize(java.lang.String)</function-signature>
-    </function>
-    
-    <function>
-        <name>isValidEmail</name>
-        <function-class>com.example.utils.StringUtils</function-class>
-        <function-signature>boolean isValidEmail(java.lang.String)</function-signature>
-    </function>
-</taglib>
-```
-
-#### 6.2.3 在 JSP 中使用
+#### el-bean.jsp
 
 ```jsp
-<%@ taglib prefix="custom" uri="http://example.com/custom-functions" %>
-
-<p>格式化名稱：${custom:capitalize(user.name)}</p>
-<p>Email 有效性：${custom:isValidEmail(user.email)}</p>
-```
-
----
-
-## 7. 實作範例
-
-### 7.1 使用者資訊顯示頁面
-
-```jsp
-<%-- user-profile.jsp --%>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ page import="model.User" %>
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-    <title>使用者資料</title>
     <meta charset="UTF-8">
+    <title>JavaBean + EL 練習</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", Arial; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .section { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        h2 { color: #333; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        .result { color: #27ae60; font-weight: bold; }
+        .active { color: green; }
+        .inactive { color: red; }
+    </style>
 </head>
 <body>
-    <h1>使用者資料</h1>
+    <h1>JavaBean + EL 練習</h1>
     
-    <!-- 基本資訊顯示 -->
-    <div class="user-info">
-        <h2>基本資訊</h2>
-        <p><strong>姓名：</strong>${sessionScope.user.name}</p>
-        <p><strong>Email：</strong>${sessionScope.user.email}</p>
-        <p><strong>年齡：</strong>${sessionScope.user.age}</p>
-        <p><strong>註冊日期：</strong>${sessionScope.user.registrationDate}</p>
+    <%-- 建立 User 物件 --%>
+    <jsp:useBean id="user1" class="model.User" scope="request" />
+    <jsp:setProperty property="name" value="王小華" name="user1" />
+    <jsp:setProperty property="age" value="25" name="user1" />
+    <jsp:setProperty property="email" value="hua@example.com" name="user1" />
+    <jsp:setProperty property="active" value="true" name="user1" />
+    
+    <!-- 1. 使用 EL 存取 Bean 屬性 -->
+    <div class="section">
+        <h2>1. 使用 EL 存取 Bean 屬性</h2>
+        <p>姓名：<span class="result">${user1.name}</span></p>
+        <p>年齡：<span class="result">${user1.age}</span></p>
+        <p>Email：<span class="result">${user1.email}</span></p>
+        <p>狀態：<span class="result ${user1.active ? 'active' : 'inactive'}">${user1.status}</span></p>
+        <p>是否成年：<span class="result">${user1.adult ? '是' : '否'}</span></p>
     </div>
     
-    <!-- 條件顯示 -->
-    <div class="status">
-        <h2>狀態資訊</h2>
-        <p>帳號狀態：
-            ${sessionScope.user.active ? '啟用' : '停用'}
-        </p>
+    <!-- 2. 條件顯示 -->
+    <div class="section">
+        <h2>2. 條件顯示</h2>
+        <c:if test="${user1.active}">
+            <p style="color: green;">✓ 帳號已啟用</p>
+        </c:if>
+        <c:if test="${!user1.active}">
+            <p style="color: red;">✗ 帳號已停用</p>
+        </c:if>
         
-        <p>會員等級：
+        <c:if test="${user1.age >= 18}">
+            <p style="color: green;">✓ 已成年</p>
+        </c:if>
+        <c:if test="${user1.age < 18}">
+            <p style="color: orange;">△ 未成年</p>
+        </c:if>
+    </div>
+    
+    <!-- 3. 使用 c:choose 條件判斷 -->
+    <div class="section">
+        <h2>3. 會員等級判斷</h2>
+        <c:set var="points" value="750" />
+        <p>點數：${points}</p>
+        <p>等級：
             <c:choose>
-                <c:when test="${sessionScope.user.points >= 1000}">黃金會員</c:when>
-                <c:when test="${sessionScope.user.points >= 500}">銀牌會員</c:when>
-                <c:otherwise>一般會員</c:otherwise>
+                <c:when test="${points >= 1000}">
+                    <span class="result" style="color: gold;">黃金會員</span>
+                </c:when>
+                <c:when test="${points >= 500}">
+                    <span class="result" style="color: silver;">銀牌會員</span>
+                </c:when>
+                <c:otherwise>
+                    <span class="result">一般會員</span>
+                </c:otherwise>
             </c:choose>
         </p>
-        
-        <p>點數：${sessionScope.user.points} 點</p>
     </div>
     
-    <!-- 地址資訊 -->
-    <div class="address">
-        <h2>地址資訊</h2>
-        <c:if test="${not empty sessionScope.user.addresses}">
-            <c:forEach var="address" items="${sessionScope.user.addresses}" varStatus="status">
-                <div class="address-item">
-                    <h3>地址 ${status.index + 1}</h3>
-                    <p>${address.street}</p>
-                    <p>${address.city}, ${address.zipCode}</p>
-                    <p>類型：${address.type}</p>
-                </div>
+    <!-- 4. 陣列與 List -->
+    <div class="section">
+        <h2>4. 陣列與 List</h2>
+        <jsp:useBean id="colors" class="java.util.ArrayList" scope="page" />
+        <jsp:setProperty property="empty" value="true" name="colors" />
+        <% colors.add("紅色"); colors.add("藍色"); colors.add("綠色"); %>
+        
+        <p>第一個顏色：<span class="result">${colors[0]}</span></p>
+        <p>第二個顏色：<span class="result">${colors[1]}</span></p>
+        <p>第三個顏色：<span class="result">${colors[2]}</span></p>
+        <p>總共有 <span class="result">${colors.size()}</span> 個顏色</p>
+        
+        <ul>
+            <c:forEach var="color" items="${colors}" varStatus="status">
+                <li>${status.index + 1}. ${color}</li>
             </c:forEach>
-        </c:if>
+        </ul>
+    </div>
+    
+    <!-- 5. Map 使用 -->
+    <div class="section">
+        <h2>5. Map 使用</h2>
+        <jsp:useBean id="scores" class="java.util.HashMap" scope="page" />
+        <jsp:setProperty property="empty" value="true" name="scores" />
+        <% scores.put("國文", 85); scores.put("英文", 92); scores.put("數學", 78); %>
         
-        <c:if test="${empty sessionScope.user.addresses}">
-            <p>尚未設定地址</p>
-        </c:if>
+        <p>國文：<span class="result">${scores['國文']}</span></p>
+        <p>英文：<span class="result">${scores['英文']}</span></p>
+        <p>數學：<span class="result">${scores['數學']}</span></p>
     </div>
     
-    <!-- 計算資訊 -->
-    <div class="calculations">
-        <h2>計算資訊</h2>
-        <p>下次生日還有：${365 - sessionScope.user.daysSinceBirthday} 天</p>
-        <p>帳戶餘額：$${sessionScope.user.balance}</p>
-        <p>可用折扣：${sessionScope.user.balance > 1000 ? '5%' : '0%'}</p>
-    </div>
-    
-    <!-- 表單範例 -->
-    <div class="form-section">
-        <h2>更新資料</h2>
-        <form action="${pageContext.request.contextPath}/updateProfile" method="post">
-            <div>
-                <label for="name">姓名：</label>
-                <input type="text" id="name" name="name" value="${sessionScope.user.name}" required>
-            </div>
-            
-            <div>
-                <label for="email">Email：</label>
-                <input type="email" id="email" name="email" value="${sessionScope.user.email}" required>
-            </div>
-            
-            <div>
-                <label for="age">年齡：</label>
-                <input type="number" id="age" name="age" value="${sessionScope.user.age}" min="1" max="150">
-            </div>
-            
-            <button type="submit">更新資料</button>
-        </form>
-    </div>
-    
-    <!-- 除錯資訊 -->
-    <div class="debug-info" style="background-color: #f0f0f0; padding: 10px; margin-top: 20px;">
-        <h3>除錯資訊</h3>
-        <p>Context Path: ${pageContext.request.contextPath}</p>
-        <p>Session ID: ${pageContext.session.id}</p>
-        <p>Request URI: ${pageContext.request.requestURI}</p>
-        <p>User Agent: ${header['User-Agent']}</p>
-        
-        <!-- 顯示所有請求參數 -->
-        <h4>請求參數：</h4>
-        <c:forEach var="param" items="${param}">
-            <p>${param.key}: ${param.value}</p>
-        </c:forEach>
-    </div>
+    <br>
+    <a href="index.jsp">回首頁</a>
 </body>
 </html>
 ```
 
-### 7.2 商品清單頁面
+---
+
+### 範例四：JSTL + EL 整合
+
+#### el-jstl.jsp
 
 ```jsp
-<%-- product-list.jsp --%>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-
+<%@ page contentType="text/html;charset=UTF-8" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 <!DOCTYPE html>
-<html>
+<html lang="zh-TW">
 <head>
-    <title>商品清單</title>
     <meta charset="UTF-8">
+    <title>JSTL + EL 整合練習</title>
     <style>
-        .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
-        .product-card { border: 1px solid #ddd; padding: 15px; border-radius: 5px; }
-        .price { color: #e74c3c; font-weight: bold; }
-        .discount { color: #27ae60; }
-        .out-of-stock { opacity: 0.5; }
+        body { font-family: "Microsoft JhengHei", Arial; max-width: 800px; margin: 50px auto; padding: 20px; }
+        .section { background: #f9f9f9; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        h2 { color: #333; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+        .result { color: #27ae60; font-weight: bold; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
     </style>
 </head>
 <body>
-    <h1>商品清單</h1>
+    <h1>JSTL + EL 整合練習</h1>
     
-    <!-- 搜尋和篩選 -->
-    <div class="filters">
-        <form action="${pageContext.request.contextPath}/products" method="get">
-            <input type="text" name="search" value="${param.search}" placeholder="搜尋商品...">
-            
-            <select name="category">
-                <option value="">所有分類</option>
-                <option value="electronics" ${param.category eq 'electronics' ? 'selected' : ''}>電子產品</option>
-                <option value="clothing" ${param.category eq 'clothing' ? 'selected' : ''}>服飾</option>
-                <option value="books" ${param.category eq 'books' ? 'selected' : ''}>書籍</option>
-            </select>
-            
-            <select name="priceRange">
-                <option value="">所有價格</option>
-                <option value="0-100" ${param.priceRange eq '0-100' ? 'selected' : ''}>$0 - $100</option>
-                <option value="100-500" ${param.priceRange eq '100-500' ? 'selected' : ''}>$100 - $500</option>
-                <option value="500+" ${param.priceRange eq '500+' ? 'selected' : ''}>$500+</option>
-            </select>
-            
-            <button type="submit">搜尋</button>
-        </form>
+    <!-- 1. c:forEach 迭代 -->
+    <div class="section">
+        <h2>1. c:forEach 迭代</h2>
+        <c:set var="fruits" value="${['蘋果', '香蕉', '橘子', '葡萄', '西瓜']}" />
+        
+        <p>所有水果：</p>
+        <ul>
+            <c:forEach var="fruit" items="${fruits}" varStatus="status">
+                <li>${status.index + 1}. ${fruit}</li>
+            </c:forEach>
+        </ul>
     </div>
     
-    <!-- 商品總數 -->
-    <p>找到 ${fn:length(requestScope.products)} 個商品
-        <c:if test="${not empty param.search}">
-            包含 "${param.search}"
+    <!-- 2. c:if 條件判斷 -->
+    <div class="section">
+        <h2>2. c:if 條件判斷</h2>
+        <c:set var="login" value="true" />
+        <c:set var="isAdmin" value="true" />
+        
+        <c:if test="${login}">
+            <p style="color: green;">✓ 已登入</p>
         </c:if>
+        
+        <c:if test="${isAdmin}">
+            <p style="color: blue;">✓ 您是管理員</p>
+        </c:if>
+    </div>
+    
+    <!-- 3. c:choose 多重條件 -->
+    <div class="section">
+        <h2>3. c:choose 多重條件</h2>
+        <c:set var="temperature" value="28" />
+        <p>目前溫度：${temperature}°C</p>
+        
+        <c:choose>
+            <c:when test="${temperature >= 35}">
+                <p style="color: red;">🔥 炎熱</p>
+            </c:when>
+            <c:when test="${temperature >= 25}">
+                <p style="color: orange;">☀️ 舒適</p>
+            </c:when>
+            <c:when test="${temperature >= 15}">
+                <p style="color: green;">🌤️ 涼爽</p>
+            </c:when>
+            <c:otherwise>
+                <p style="color: blue;">❄️ 寒冷</p>
+            </c:otherwise>
+        </c:choose>
+    </div>
+    
+    <!-- 4. fmt 數值格式化 -->
+    <div class="section">
+        <h2>4. fmt 數值格式化</h2>
+        <c:set var="price" value="1234567.89" />
+        
+        <p>原始值：${price}</p>
+        <p>貨幣格式：<fmt:formatNumber value="${price}" type="currency" currencyCode="TWD" /></p>
+        <p>千分位：<fmt:formatNumber value="${price}" pattern="#,###.##" /></p>
+        <p>百分比：<fmt:formatNumber value="0.856" type="percent" /></p>
+    </div>
+    
+    <!-- 5. fn 函數 -->
+    <div class="section">
+        <h2>5. fn 函數</h2>
+        <c:set var="text" value="Hello World Jakarta EE" />
+        
+        <p>原始字串：${text}</p>
+        <p>字串長度：${fn:length(text)}</p>
+        <p>轉大寫：${fn:toUpperCase(text)}</p>
+        <p>轉小寫：${fn:toLowerCase(text)}</p>
+        <p>包含 "World"：${fn:contains(text, 'World')}</p>
+        <p>取代字串：${fn:replace(text, 'World', 'EE')}</p>
+        <p>子字串：${fn:substring(text, 0, 5)}</p>
+    </div>
+    
+    <!-- 6. 表格顯示 -->
+    <div class="section">
+        <h2>6. 表格顯示</h2>
+        <jsp:useBean id="students" class="java.util.ArrayList" scope="page" />
+        <jsp:setProperty property="empty" value="true" name="students" />
+        <% 
+            students.add(new String[]{"001", "張三", "90"});
+            students.add(new String[]{"002", "李四", "85"});
+            students.add(new String[]{"003", "王五", "92"});
+        %>
+        
+        <table>
+            <tr>
+                <th>學號</th>
+                <th>姓名</th>
+                <th>成績</th>
+            </tr>
+            <c:forEach var="student" items="${students}">
+                <tr>
+                    <td>${student[0]}</td>
+                    <td>${student[1]}</td>
+                    <td>
+                        <c:choose>
+                            <c:when test="${student[2] >= 90}">
+                                <span style="color: gold;">${student[2]} ★</span>
+                            </c:when>
+                            <c:when test="${student[2] >= 80}">
+                                <span style="color: green;">${student[2]}</span>
+                            </c:when>
+                            <c:otherwise>
+                                <span style="color: red;">${student[2]}</span>
+                            </c:otherwise>
+                        </c:choose>
+                    </td>
+                </tr>
+            </c:forEach>
+        </table>
+    </div>
+    
+    <br>
+    <a href="index.jsp">回首頁</a>
+</body>
+</html>
+```
+
+---
+
+### 首頁：index.jsp
+
+```jsp
+<%@ page contentType="text/html;charset=UTF-8" %>
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>EL 學習網站</title>
+    <style>
+        body { font-family: "Microsoft JhengHei", Arial; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .menu { background: #f9f9f9; padding: 20px; border-radius: 10px; }
+        h1 { color: #333; text-align: center; }
+        a { display: block; padding: 15px; margin: 10px 0; background: #3498db; color: white; text-decoration: none; border-radius: 5px; text-align: center; }
+        a:hover { background: #2980b9; }
+    </style>
+</head>
+<body>
+    <h1>EL Expression Language 學習網站</h1>
+    
+    <div class="menu">
+        <a href="el-basic.jsp">1. EL 基本練習</a>
+        <a href="el-objects.jsp">2. EL 內建物件練習</a>
+        <a href="el-bean.jsp">3. JavaBean + EL 練習</a>
+        <a href="el-jstl.jsp">4. JSTL + EL 整合練習</a>
+    </div>
+    
+    <p style="text-align: center; color: #666; margin-top: 30px;">
+        Tomcat 10.1 + Jakarta EE 10
     </p>
-    
-    <!-- 商品清單 -->
-    <div class="product-grid">
-        <c:forEach var="product" items="${requestScope.products}" varStatus="status">
-            <div class="product-card ${product.stock eq 0 ? 'out-of-stock' : ''}">
-                <h3>${product.name}</h3>
-                <p class="description">${fn:substring(product.description, 0, 100)}
-                    <c:if test="${fn:length(product.description) > 100}">...</c:if>
-                </p>
-                
-                <!-- 價格顯示 -->
-                <div class="pricing">
-                    <c:choose>
-                        <c:when test="${product.discountPrice > 0 and product.discountPrice < product.price}">
-                            <span class="original-price" style="text-decoration: line-through;">
-                                $<fmt:formatNumber value="${product.price}" pattern="#,##0.00"/>
-                            </span>
-                            <span class="price discount">
-                                $<fmt:formatNumber value="${product.discountPrice}" pattern="#,##0.00"/>
-                            </span>
-                            <span class="discount-percent">
-                                (-${Math.round((product.price - product.discountPrice) / product.price * 100)}%)
-                            </span>
-                        </c:when>
-                        <c:otherwise>
-                            <span class="price">
-                                $<fmt:formatNumber value="${product.price}" pattern="#,##0.00"/>
-                            </span>
-                        </c:otherwise>
-                    </c:choose>
-                </div>
-                
-                <!-- 庫存狀態 -->
-                <div class="stock-info">
-                    <c:choose>
-                        <c:when test="${product.stock eq 0}">
-                            <span style="color: red;">缺貨</span>
-                        </c:when>
-                        <c:when test="${product.stock le 5}">
-                            <span style="color: orange;">僅剩 ${product.stock} 件</span>
-                        </c:when>
-                        <c:otherwise>
-                            <span style="color: green;">現貨供應</span>
-                        </c:otherwise>
-                    </c:choose>
-                </div>
-                
-                <!-- 評分 -->
-                <div class="rating">
-                    <c:if test="${product.averageRating > 0}">
-                        評分：
-                        <c:forEach begin="1" end="5" var="star">
-                            <span style="color: ${star <= product.averageRating ? 'gold' : 'gray'};">★</span>
-                        </c:forEach>
-                        (${product.averageRating}/5.0, ${product.reviewCount} 評論)
-                    </c:if>
-                </div>
-                
-                <!-- 操作按鈕 -->
-                <div class="actions">
-                    <c:if test="${product.stock > 0}">
-                        <form action="${pageContext.request.contextPath}/cart/add" method="post" style="display: inline;">
-                            <input type="hidden" name="productId" value="${product.id}">
-                            <input type="number" name="quantity" value="1" min="1" max="${product.stock}" style="width: 60px;">
-                            <button type="submit">加入購物車</button>
-                        </form>
-                    </c:if>
-                    
-                    <a href="${pageContext.request.contextPath}/products/${product.id}">詳細資訊</a>
-                </div>
-                
-                <!-- 商品標籤 -->
-                <div class="tags">
-                    <c:if test="${product.isNew}">
-                        <span class="tag new">新品</span>
-                    </c:if>
-                    <c:if test="${product.isHot}">
-                        <span class="tag hot">熱銷</span>
-                    </c:if>
-                    <c:if test="${product.discountPrice > 0 and product.discountPrice < product.price}">
-                        <span class="tag sale">特價</span>
-                    </c:if>
-                </div>
-            </div>
-        </c:forEach>
-    </div>
-    
-    <!-- 空結果處理 -->
-    <c:if test="${empty requestScope.products}">
-        <div class="no-results">
-            <h2>沒有找到商品</h2>
-            <p>請嘗試調整搜尋條件</p>
-            <a href="${pageContext.request.contextPath}/products">查看所有商品</a>
-        </div>
-    </c:if>
-    
-    <!-- 分頁 -->
-    <c:if test="${requestScope.totalPages > 1}">
-        <div class="pagination">
-            <!-- 上一頁 -->
-            <c:if test="${requestScope.currentPage > 1}">
-                <a href="?page=${requestScope.currentPage - 1}&search=${param.search}&category=${param.category}&priceRange=${param.priceRange}">
-                    上一頁
-                </a>
-            </c:if>
-            
-            <!-- 頁碼 -->
-            <c:forEach begin="1" end="${requestScope.totalPages}" var="pageNum">
-                <c:choose>
-                    <c:when test="${pageNum eq requestScope.currentPage}">
-                        <span class="current-page">${pageNum}</span>
-                    </c:when>
-                    <c:otherwise>
-                        <a href="?page=${pageNum}&search=${param.search}&category=${param.category}&priceRange=${param.priceRange}">
-                            ${pageNum}
-                        </a>
-                    </c:otherwise>
-                </c:choose>
-            </c:forEach>
-            
-            <!-- 下一頁 -->
-            <c:if test="${requestScope.currentPage < requestScope.totalPages}">
-                <a href="?page=${requestScope.currentPage + 1}&search=${param.search}&category=${param.category}&priceRange=${param.priceRange}">
-                    下一頁
-                </a>
-            </c:if>
-        </div>
-    </c:if>
-</body>
-</html>
-```
-
-### 7.3 表單驗證範例
-
-```jsp
-<%-- registration-form.jsp --%>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-
-<!DOCTYPE html>
-<html>
-<head>
-    <title>會員註冊</title>
-    <meta charset="UTF-8">
-    <style>
-        .error { color: red; font-size: 0.9em; }
-        .form-group { margin-bottom: 15px; }
-        .required { color: red; }
-        input[type="text"], input[type="email"], input[type="password"], select {
-            width: 100%; padding: 8px; margin: 5px 0;
-        }
-    </style>
-</head>
-<body>
-    <h1>會員註冊</h1>
-    
-    <!-- 顯示全域錯誤訊息 -->
-    <c:if test="${not empty requestScope.globalError}">
-        <div class="error global-error">
-            <strong>錯誤：</strong>${requestScope.globalError}
-        </div>
-    </c:if>
-    
-    <!-- 顯示成功訊息 -->
-    <c:if test="${not empty requestScope.successMessage}">
-        <div class="success">
-            <strong>成功：</strong>${requestScope.successMessage}
-        </div>
-    </c:if>
-    
-    <form action="${pageContext.request.contextPath}/register" method="post">
-        <!-- 使用者名稱 -->
-        <div class="form-group">
-            <label for="username">使用者名稱 <span class="required">*</span></label>
-            <input type="text" id="username" name="username" 
-                   value="${param.username}" 
-                   class="${not empty requestScope.errors.username ? 'error-input' : ''}"
-                   required>
-            <c:if test="${not empty requestScope.errors.username}">
-                <div class="error">${requestScope.errors.username}</div>
-            </c:if>
-            <small>使用者名稱長度必須在 3-20 字元之間</small>
-        </div>
-        
-        <!-- Email -->
-        <div class="form-group">
-            <label for="email">Email <span class="required">*</span></label>
-            <input type="email" id="email" name="email" 
-                   value="${param.email}"
-                   class="${not empty requestScope.errors.email ? 'error-input' : ''}"
-                   required>
-            <c:if test="${not empty requestScope.errors.email}">
-                <div class="error">${requestScope.errors.email}</div>
-            </c:if>
-        </div>
-        
-        <!-- 密碼 -->
-        <div class="form-group">
-            <label for="password">密碼 <span class="required">*</span></label>
-            <input type="password" id="password" name="password"
-                   class="${not empty requestScope.errors.password ? 'error-input' : ''}"
-                   required>
-            <c:if test="${not empty requestScope.errors.password}">
-                <div class="error">${requestScope.errors.password}</div>
-            </c:if>
-            <small>密碼長度至少 8 字元，需包含英文字母和數字</small>
-        </div>
-        
-        <!-- 確認密碼 -->
-        <div class="form-group">
-            <label for="confirmPassword">確認密碼 <span class="required">*</span></label>
-            <input type="password" id="confirmPassword" name="confirmPassword"
-                   class="${not empty requestScope.errors.confirmPassword ? 'error-input' : ''}"
-                   required>
-            <c:if test="${not empty requestScope.errors.confirmPassword}">
-                <div class="error">${requestScope.errors.confirmPassword}</div>
-            </c:if>
-        </div>
-        
-        <!-- 姓名 -->
-        <div class="form-group">
-            <label for="fullName">真實姓名 <span class="required">*</span></label>
-            <input type="text" id="fullName" name="fullName" 
-                   value="${param.fullName}"
-                   class="${not empty requestScope.errors.fullName ? 'error-input' : ''}"
-                   required>
-            <c:if test="${not empty requestScope.errors.fullName}">
-                <div class="error">${requestScope.errors.fullName}</div>
-            </c:if>
-        </div>
-        
-        <!-- 年齡 -->
-        <div class="form-group">
-            <label for="age">年齡</label>
-            <input type="number" id="age" name="age" 
-                   value="${param.age}" 
-                   min="13" max="120"
-                   class="${not empty requestScope.errors.age ? 'error-input' : ''}">
-            <c:if test="${not empty requestScope.errors.age}">
-                <div class="error">${requestScope.errors.age}</div>
-            </c:if>
-            <small>年齡必須在 13-120 歲之間</small>
-        </div>
-        
-        <!-- 性別 -->
-        <div class="form-group">
-            <label>性別</label>
-            <div>
-                <input type="radio" id="male" name="gender" value="male" 
-                       ${param.gender eq 'male' ? 'checked' : ''}>
-                <label for="male">男性</label>
-                
-                <input type="radio" id="female" name="gender" value="female"
-                       ${param.gender eq 'female' ? 'checked' : ''}>
-                <label for="female">女性</label>
-                
-                <input type="radio" id="other" name="gender" value="other"
-                       ${param.gender eq 'other' ? 'checked' : ''}>
-                <label for="other">其他</label>
-            </div>
-            <c:if test="${not empty requestScope.errors.gender}">
-                <div class="error">${requestScope.errors.gender}</div>
-            </c:if>
-        </div>
-        
-        <!-- 興趣愛好 (多選) -->
-        <div class="form-group">
-            <label>興趣愛好</label>
-            <div>
-                <input type="checkbox" id="reading" name="hobbies" value="reading"
-                       ${fn:contains(paramValues.hobbies, 'reading') ? 'checked' : ''}>
-                <label for="reading">閱讀</label>
-                
-                <input type="checkbox" id="sports" name="hobbies" value="sports"
-                       ${fn:contains(paramValues.hobbies, 'sports') ? 'checked' : ''}>
-                <label for="sports">運動</label>
-                
-                <input type="checkbox" id="music" name="hobbies" value="music"
-                       ${fn:contains(paramValues.hobbies, 'music') ? 'checked' : ''}>
-                <label for="music">音樂</label>
-                
-                <input type="checkbox" id="travel" name="hobbies" value="travel"
-                       ${fn:contains(paramValues.hobbies, 'travel') ? 'checked' : ''}>
-                <label for="travel">旅行</label>
-            </div>
-        </div>
-        
-        <!-- 國家 -->
-        <div class="form-group">
-            <label for="country">國家</label>
-            <select id="country" name="country">
-                <option value="">請選擇國家</option>
-                <option value="TW" ${param.country eq 'TW' ? 'selected' : ''}>台灣</option>
-                <option value="US" ${param.country eq 'US' ? 'selected' : ''}>美國</option>
-                <option value="JP" ${param.country eq 'JP' ? 'selected' : ''}>日本</option>
-                <option value="KR" ${param.country eq 'KR' ? 'selected' : ''}>韓國</option>
-                <option value="CN" ${param.country eq 'CN' ? 'selected' : ''}>中國</option>
-            </select>
-        </div>
-        
-        <!-- 同意條款 -->
-        <div class="form-group">
-            <input type="checkbox" id="agreeTerms" name="agreeTerms" value="true"
-                   ${param.agreeTerms eq 'true' ? 'checked' : ''}
-                   required>
-            <label for="agreeTerms">
-                我同意 <a href="${pageContext.request.contextPath}/terms" target="_blank">服務條款</a>
-                和 <a href="${pageContext.request.contextPath}/privacy" target="_blank">隱私政策</a>
-                <span class="required">*</span>
-            </label>
-            <c:if test="${not empty requestScope.errors.agreeTerms}">
-                <div class="error">${requestScope.errors.agreeTerms}</div>
-            </c:if>
-        </div>
-        
-        <!-- 送出按鈕 -->
-        <div class="form-group">
-            <button type="submit">註冊</button>
-            <button type="reset">清除</button>
-        </div>
-    </form>
-    
-    <!-- 其他選項 -->
-    <div class="other-options">
-        <p>已有帳號？<a href="${pageContext.request.contextPath}/login">立即登入</a></p>
-    </div>
-    
-    <!-- JavaScript 前端驗證 -->
-    <script>
-        // 密碼強度檢查
-        document.getElementById('password').addEventListener('input', function() {
-            const password = this.value;
-            const strength = calculatePasswordStrength(password);
-            // 顯示密碼強度
-        });
-        
-        // 確認密碼檢查
-        document.getElementById('confirmPassword').addEventListener('input', function() {
-            const password = document.getElementById('password').value;
-            const confirmPassword = this.value;
-            
-            if (password !== confirmPassword) {
-                this.style.borderColor = 'red';
-            } else {
-                this.style.borderColor = 'green';
-            }
-        });
-        
-        function calculatePasswordStrength(password) {
-            // 密碼強度計算邏輯
-            let score = 0;
-            if (password.length >= 8) score++;
-            if (/[a-z]/.test(password)) score++;
-            if (/[A-Z]/.test(password)) score++;
-            if (/\d/.test(password)) score++;
-            if (/[^a-zA-Z\d]/.test(password)) score++;
-            return score;
-        }
-    </script>
 </body>
 </html>
 ```
 
 ---
 
-## 8. 進階應用
+## 6. 常見問題
 
-### 8.1 EL 3.0 Lambda 表達式
+### Q1：EL 不起作用
 
+**解決方案**：
 ```jsp
-<!-- 集合操作 -->
-<c:set var="numbers" value="${[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}" />
-
-<!-- 篩選偶數 -->
-<p>偶數：${numbers.stream().filter(x -> x % 2 == 0).toList()}</p>
-
-<!-- 計算平方和 -->
-<p>平方和：${numbers.stream().map(x -> x * x).sum()}</p>
-
-<!-- 使用者清單操作 -->
-<c:set var="users" value="${requestScope.userList}" />
-
-<!-- 篩選活躍使用者 -->
-<c:set var="activeUsers" value="${users.stream().filter(u -> u.active).toList()}" />
-
-<!-- 取得所有使用者名稱 -->
-<c:set var="userNames" value="${users.stream().map(u -> u.name).toList()}" />
+<%@ page isELIgnored="false" %>
 ```
 
-### 8.2 複雜的條件邏輯
+### Q2：顯示 null
 
+**解決方案**：
 ```jsp
-<!-- 複雜的會員等級判斷 -->
-<c:set var="memberLevel" value="${
-    user.points >= 10000 ? 'DIAMOND' :
-    user.points >= 5000 ? 'PLATINUM' :
-    user.points >= 1000 ? 'GOLD' :
-    user.points >= 500 ? 'SILVER' : 'BRONZE'
-}" />
-
-<!-- 動態CSS類別 -->
-<div class="user-badge ${
-    user.online ? 'online' : 'offline'
-} ${
-    user.premium ? 'premium' : 'standard'
-} ${
-    user.verified ? 'verified' : ''
-}">
-    ${user.name}
-</div>
-
-<!-- 複雜的權限檢查 -->
-<c:if test="${
-    (user.role eq 'ADMIN') or 
-    (user.role eq 'MODERATOR' and user.active) or
-    (user.role eq 'USER' and user.verified and resource.owner eq user.id)
-}">
-    <button>編輯</button>
-</c:if>
+${empty user ? '訪客' : user.name}
 ```
 
-### 8.3 自定義標籤與 EL 整合
+### Q3：中文亂碼
 
+**解決方案**：
 ```jsp
-<!-- 自定義標籤使用 EL -->
-<%@ taglib prefix="custom" uri="/WEB-INF/tld/custom-tags.tld" %>
+<%@ page contentType="text/html;charset=UTF-8" pageEncoding="UTF-8" %>
+```
 
-<custom:formatCurrency amount="${product.price}" currency="TWD" />
-<custom:userAvatar user="${sessionScope.user}" size="large" />
-<custom:pagination currentPage="${param.page}" totalPages="${requestScope.totalPages}" />
+### Q4：JSTL 標籤無法使用
+
+**解決方案**：使用 Jakarta EE 10 版本
+```jsp
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fmt" uri="jakarta.tags.fmt" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+```
+
+Maven 依賴：
+```xml
+<dependency>
+    <groupId>jakarta.servlet.jsp.jstl</groupId>
+    <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+    <version>3.0.0</version>
+</dependency>
 ```
 
 ---
 
-## 9. 最佳實踐
+## 快速參考
 
-### 9.1 性能優化
-
-```jsp
-<!-- 避免在循環中進行複雜計算 -->
-<!-- 不好的做法 -->
-<c:forEach var="item" items="${items}">
-    <p>價格：${item.price * (1 - item.discount / 100) * 1.05}</p>
-</c:forEach>
-
-<!-- 較好的做法 -->
-<c:forEach var="item" items="${items}">
-    <c:set var="finalPrice" value="${item.price * (1 - item.discount / 100) * 1.05}" />
-    <p>價格：${finalPrice}</p>
-</c:forEach>
-```
-
-### 9.2 安全性考慮
-
-```jsp
-<!-- 防止 XSS 攻擊 -->
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
-
-<!-- 轉義使用者輸入 -->
-<p>歡迎：${fn:escapeXml(param.username)}</p>
-
-<!-- 或使用 JSTL c:out -->
-<p>歡迎：<c:out value="${param.username}" /></p>
-```
-
-### 9.3 可維護性
-
-```jsp
-<!-- 使用有意義的變數名稱 -->
-<c:set var="isUserLoggedIn" value="${not empty sessionScope.user}" />
-<c:set var="hasAdminPrivileges" value="${sessionScope.user.role eq 'ADMIN'}" />
-<c:set var="canEditPost" value="${isUserLoggedIn and (hasAdminPrivileges or post.author eq sessionScope.user.id)}" />
-
-<!-- 條件邏輯清晰易懂 -->
-<c:if test="${canEditPost}">
-    <a href="edit-post.jsp?id=${post.id}">編輯</a>
-</c:if>
-```
-
-### 9.4 錯誤處理
-
-```jsp
-<!-- 安全的屬性存取 -->
-<p>使用者名稱：${not empty sessionScope.user ? sessionScope.user.name : '訪客'}</p>
-
-<!-- 陣列安全存取 -->
-<p>第一個地址：${not empty user.addresses and fn:length(user.addresses) > 0 ? user.addresses[0].street : '未設定'}</p>
-
-<!-- Map 安全存取 -->
-<p>設定值：${not empty configMap['setting.name'] ? configMap['setting.name'] : '預設值'}</p>
-```
+| 運算子 | 說明 | 範例 |
+|--------|------|------|
+| `+` `-` `*` `/` `%` | 算術 | `${5 + 3}` |
+| `==` `!=` `>` `<` `>=` `<=` | 比較 | `${5 == 5}` |
+| `&&` `\|\|` `!` | 邏輯 | `${true && false}` |
+| `? :` | 條件 | `${x > 0 ? '正' : '負'}` |
+| `empty` | 空值檢查 | `${empty list}` |
 
 ---
 
-## 10. 常見問題與解決方案
-
-### 10.1 EL 不起作用
-
-**問題**：EL 表達式被當作純文字顯示
-
-**解決方案**：
-```jsp
-<!-- 檢查 JSP 版本聲明 -->
-<%@ page contentType="text/html;charset=UTF-8" language="java" isELIgnored="false" %>
-
-<!-- 或在 web.xml 中設定 -->
-<web-app version="3.1" ...>
-    <jsp-config>
-        <jsp-property-group>
-            <url-pattern>*.jsp</url-pattern>
-            <el-ignored>false</el-ignored>
-        </jsp-property-group>
-    </jsp-config>
-</web-app>
-```
-
-### 10.2 空值處理
-
-**問題**：NullPointerException 或空值顯示
-
-**解決方案**：
-```jsp
-<!-- 使用 empty 運算子 -->
-${empty user.name ? '未設定' : user.name}
-
-<!-- 使用 null-safe 運算子 (EL 3.0+) -->
-${user?.name ?: '未設定'}
-
-<!-- 多層級空值檢查 -->
-${not empty user and not empty user.profile ? user.profile.displayName : '訪客'}
-```
-
-### 10.3 類型轉換問題
-
-**問題**：數值計算錯誤或類型不匹配
-
-**解決方案**：
-```jsp
-<!-- 明確類型轉換 -->
-<c:set var="numericValue" value="${Integer.parseInt(param.value)}" />
-
-<!-- 使用 JSTL 數值格式化 -->
-<%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<fmt:parseNumber var="price" value="${param.price}" type="number" />
-```
-
-### 10.4 集合操作問題
-
-**問題**：集合為空或索引越界
-
-**解決方案**：
-```jsp
-<!-- 安全的集合存取 -->
-<c:if test="${not empty userList and fn:length(userList) > index}">
-    ${userList[index].name}
-</c:if>
-
-<!-- 使用 varStatus 進行安全迭代 -->
-<c:forEach var="item" items="${itemList}" varStatus="status">
-    <c:if test="${status.index < 10}">
-        <!-- 只顯示前 10 個項目 -->
-        ${item.name}
-    </c:if>
-</c:forEach>
-```
-
-### 10.5 字元編碼問題
-
-**問題**：中文字元顯示亂碼
-
-**解決方案**：
-```jsp
-<%@ page contentType="text/html;charset=UTF-8" language="java" pageEncoding="UTF-8" %>
-
-<!-- web.xml 設定 -->
-<filter>
-    <filter-name>CharacterEncodingFilter</filter-name>
-    <filter-class>org.springframework.web.filter.CharacterEncodingFilter</filter-class>
-    <init-param>
-        <param-name>encoding</param-name>
-        <param-value>UTF-8</param-value>
-    </init-param>
-    <init-param>
-        <param-name>forceEncoding</param-name>
-        <param-value>true</param-value>
-    </init-param>
-</filter>
-```
-
----
-
-## 結語
-
-Expression Language (EL) 是 JavaEE/Jakarta EE 開發中非常重要的技術，它大大簡化了在 JSP 頁面中存取 Java 物件的複雜度。通過本教學文件，您應該已經掌握了：
-
-1. **EL 的基本語法和概念**
-2. **各種內建物件的使用方法**
-3. **運算子和表達式的編寫**
-4. **在實際專案中的應用技巧**
-5. **性能優化和安全性考慮**
-6. **常見問題的解決方案**
-
-建議在學習過程中多實作練習，逐步熟悉 EL 的各種用法。隨著 Jakarta EE 的發展，EL 也會持續演進，保持學習新功能將有助於提升開發效率。
-
-## 參考資源
-
-- [Jakarta Expression Language Specification](https://jakarta.ee/specifications/expression-language/)
-- [JSP 2.3 Specification](https://jakarta.ee/specifications/pages/)
-- [JSTL Documentation](https://jakarta.ee/specifications/tags/)
-- [Apache Tomcat Documentation](https://tomcat.apache.org/tomcat-10.1-doc/)
-
----
-
-*最後更新：2025年10月*
+**文件結束**
