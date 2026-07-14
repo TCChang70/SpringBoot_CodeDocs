@@ -47,10 +47,52 @@ ${expression}
 ## 測試你的第一個 EL 頁面
 
 創建一個 JSP 檔案 (例如：`test-el.jsp`)：
+```xml
+### 1.2 JSTL 版本和依賴
 
+```xml
+<!-- Maven 依賴 (pom.xml) -->
+<!-- Jakarta Servlet JSP JSTL API -->
+<dependency>
+    <groupId>jakarta.servlet.jsp.jstl</groupId>
+    <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+    <version>3.0.0</version>
+</dependency>
+
+<!-- Jakarta Servlet JSP JSTL Implementation (Glassfish) -->
+<dependency>
+    <groupId>org.glassfish.web</groupId>
+    <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+    <version>3.0.1</version>
+</dependency>
+
+<!-- Jakarta Servlet API -->
+<dependency>
+    <groupId>jakarta.servlet</groupId>
+    <artifactId>jakarta.servlet-api</artifactId>
+    <version>6.0.0</version>
+    <scope>provided</scope>
+</dependency>
+
+<!-- Jakarta JSP API -->
+<dependency>
+    <groupId>jakarta.servlet.jsp</groupId>
+    <artifactId>jakarta.servlet.jsp-api</artifactId>
+    <version>3.1.0</version>
+    <scope>provided</scope>
+</dependency>
+
+<!-- Jakarta Expression Language API -->
+<dependency>
+    <groupId>jakarta.el</groupId>
+    <artifactId>jakarta.el-api</artifactId>
+    <version>5.0.0</version>
+    <scope>provided</scope>
+</dependency>
+```
 ```jsp
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
 
 <!DOCTYPE html>
 <html>
@@ -138,7 +180,7 @@ ${expression}
 ## 整合 JSTL (需要額外的函數庫)
 
 ```jsp
-<%@ taglib prefix="fn" uri="http://java.sun.com/jsp/jstl/functions" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
 
 <!-- 字串長度 -->
 <p>姓名長度：${fn:length(user.name)}</p>
@@ -176,15 +218,3 @@ ${expression}
 3. 啟動 Tomcat 並訪問該頁面
 4. 嘗試修改和擴展程式碼
 
-## 下一步學習
-
-1. 深入學習 JSTL 標籤庫
-2. 了解自定義 EL 函數
-3. 學習在 Servlet 中準備資料供 JSP 使用
-4. 探索 EL 3.0+ 的進階功能（如 Lambda 表達式）
-
-## 參考資源
-
-- 完整教學文件：`JavaEE7_Expression_Language_教學文件.md`
-- 實用範例：`el-simple-demo.jsp`
-- 進階範例：`el-examples/` 資料夾中的各種範例檔案

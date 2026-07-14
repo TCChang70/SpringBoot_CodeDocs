@@ -15,17 +15,23 @@
 
 ### 系統需求
 - **作業系統**：Windows 10/11 或 Linux/macOS
-- **Java版本**：JDK 8 或以上版本
-- **Tomcat版本**：Apache Tomcat 9.x
+- **Java 版本**：JDK 11 或以上版本（Tomcat 10.1 最低要求）
+- **Tomcat 版本**：Apache Tomcat 10.1.x
 - **文字編輯器**：記事本、VS Code、或任何文字編輯器
 
 ### 確認 Tomcat 安裝
-確保 Apache Tomcat 9.x 已成功安裝並可正常啟動：
+確保 Apache Tomcat 10.1.x 已成功安裝並可正常啟動：
 
 ```bash
 # 檢查 Tomcat 是否正常運行
 http://localhost:8080
 ```
+
+### Jakarta EE 10 重要說明
+Tomcat 10.1 基於 **Jakarta EE 10**，主要差異：
+- 套件名稱從 `javax.servlet` 改為 `jakarta.servlet`
+- Servlet API 版本從 4.0 升級到 6.0
+- 所有 Jakarta EE API 使用 `jakarta.*` 命名空間
 
 ---
 
@@ -38,7 +44,7 @@ http://localhost:8080
 2. 在「系統變數」中新增或修改 `CLASSPATH`：
 
 ```
-CLASSPATH=.;C:\apache-tomcat-9.0.24\lib\servlet-api.jar;C:\apache-tomcat-9.0.24\lib\jsp-api.jar
+CLASSPATH=.;C:\apache-tomcat-10.1.0\lib\servlet-api.jar;C:\apache-tomcat-10.1.0\lib\jsp-api.jar
 ```
 
 #### Linux/macOS 系統設定
@@ -56,6 +62,14 @@ echo %CLASSPATH%  # Windows
 echo $CLASSPATH   # Linux/macOS
 ```
 
+### 3. 驗證 Java 版本
+確保使用 JDK 11 或以上版本：
+
+```bash
+java -version
+javac -version
+```
+
 ---
 
 ## Servlet 程式開發
@@ -69,19 +83,19 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import javax.servlet.ServletException;
-import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * HelloServlet - 基礎 Servlet 範例
  * 展示 HTTP GET 請求處理和 HTML 回應生成
  * 
  * @author TCChang70
- * @version 1.0
- * @since 2025-10-15
+ * @version 2.0
+ * @since 2026-07-11
  */
 @WebServlet(
     name = "HelloServlet", 
@@ -151,23 +165,25 @@ public class HelloServlet extends HttpServlet {
         out.println("        .info-box { background-color: #ecf0f1; padding: 15px; border-radius: 5px; margin: 15px 0; }");
         out.println("        .highlight { color: #e74c3c; font-weight: bold; }");
         out.println("        .success { color: #27ae60; font-weight: bold; }");
+        out.println("        code { background-color: #f0f0f0; padding: 2px 6px; border-radius: 3px; }");
         out.println("    </style>");
         out.println("</head>");
         out.println("<body>");
         out.println("    <div class='container'>");
-        out.println("        <h1>🎉 HelloServlet 成功運行！</h1>");
-        out.println("        <p class='success'>恭喜！您的第一個 Java Servlet 已成功部署並執行。</p>");
+        out.println("        <h1>HelloServlet 成功運行！</h1>");
+        out.println("        <p class='success'>恭喜！您的第一個 Jakarta Servlet 已成功部署並執行。</p>");
         out.println("        ");
         out.println("        <div class='info-box'>");
-        out.println("            <h3>📊 系統資訊</h3>");
+        out.println("            <h3>系統資訊</h3>");
         out.println("            <p><strong>伺服器時間：</strong><span class='highlight'>" + currentTime + "</span></p>");
         out.println("            <p><strong>客戶端 IP：</strong>" + clientIP + "</p>");
         out.println("            <p><strong>瀏覽器資訊：</strong>" + userAgent + "</p>");
-        out.println("            <p><strong>Servlet 版本：</strong>v1.0</p>");
+        out.println("            <p><strong>Servlet 版本：</strong>v2.0 (Jakarta EE 10)</p>");
+        out.println("            <p><strong>Tomcat 版本：</strong>10.1.x</p>");
         out.println("        </div>");
         out.println("        ");
         out.println("        <div class='info-box'>");
-        out.println("            <h3>🔗 可用的 URL 路徑</h3>");
+        out.println("            <h3>可用的 URL 路徑</h3>");
         out.println("            <ul>");
         out.println("                <li><code>http://localhost:8080/HelloServlet</code></li>");
         out.println("                <li><code>http://localhost:8080/hello</code></li>");
@@ -175,13 +191,13 @@ public class HelloServlet extends HttpServlet {
         out.println("        </div>");
         out.println("        ");
         out.println("        <div class='info-box'>");
-        out.println("            <h3>📚 學習重點</h3>");
+        out.println("            <h3>學習重點</h3>");
         out.println("            <ul>");
-        out.println("                <li>✅ Servlet 基本結構與生命週期</li>");
-        out.println("                <li>✅ HTTP GET/POST 請求處理</li>");
-        out.println("                <li>✅ HTML 內容動態生成</li>");
-        out.println("                <li>✅ 客戶端資訊取得</li>");
-        out.println("                <li>✅ 手動編譯與部署流程</li>");
+        out.println("                <li>Servlet 基本結構與生命週期</li>");
+        out.println("                <li>HTTP GET/POST 請求處理</li>");
+        out.println("                <li>HTML 內容動態生成</li>");
+        out.println("                <li>客戶端資訊取得</li>");
+        out.println("                <li>手動編譯與部署流程</li>");
         out.println("            </ul>");
         out.println("        </div>");
         out.println("    </div>");
@@ -210,14 +226,24 @@ public class HelloServlet extends HttpServlet {
 
 ### 2. 程式碼結構說明
 
-|     組件             |    功能      |           說明              |
-|----------------------|-------------|-----------------------------|
-| `@WebServlet`        | 註解配置     | 定義 Servlet 名稱和 URL 對應 |
-| `doGet()`            | GET 請求處理 | 處理 HTTP GET 請求的主要方法  |
-| `doPost()`           | POST 請求處理| 處理 HTTP POST 請求          |
-| `PrintWriter`        |   輸出串流   | 用於輸出 HTML 內容到客戶端    |
-| `HttpServletRequest` |   請求物件   | 包含客戶端請求資訊            |
-| `HttpServletResponse`|   回應物件   | 用於設定回應內容和標頭        |
+| 組件 | 功能 | 說明 |
+|------|------|------|
+| `@WebServlet` | 註解配置 | 定義 Servlet 名稱和 URL 對應 |
+| `doGet()` | GET 請求處理 | 處理 HTTP GET 請求的主要方法 |
+| `doPost()` | POST 請求處理 | 處理 HTTP POST 請求 |
+| `PrintWriter` | 輸出串流 | 用於輸出 HTML 內容到客戶端 |
+| `HttpServletRequest` | 請求物件 | 包含客戶端請求資訊 |
+| `HttpServletResponse` | 回應物件 | 用於設定回應內容和標頭 |
+
+### 3. Jakarta EE 10 套件對照
+
+| 舊版 (javax.servlet) | 新版 (jakarta.servlet) |
+|----------------------|------------------------|
+| `javax.servlet.ServletException` | `jakarta.servlet.ServletException` |
+| `javax.servlet.annotation.WebServlet` | `jakarta.servlet.annotation.WebServlet` |
+| `javax.servlet.http.HttpServlet` | `jakarta.servlet.http.HttpServlet` |
+| `javax.servlet.http.HttpServletRequest` | `jakarta.servlet.http.HttpServletRequest` |
+| `javax.servlet.http.HttpServletResponse` | `jakarta.servlet.http.HttpServletResponse` |
 
 ---
 
@@ -240,14 +266,14 @@ ls -la HelloServlet.class  # Linux/macOS
 
 ```bash
 # 建立 classes 目錄
-mkdir C:\apache-tomcat-9.0.24\webapps\ROOT\WEB-INF\classes
+mkdir C:\apache-tomcat-10.1.0\webapps\ROOT\WEB-INF\classes
 ```
 
 ### 3. 部署編譯檔案
 
 ```bash
 # 複製 class 檔案到部署目錄
-copy HelloServlet.class C:\apache-tomcat-9.0.24\webapps\ROOT\WEB-INF\classes\
+copy HelloServlet.class C:\apache-tomcat-10.1.0\webapps\ROOT\WEB-INF\classes\
 ```
 
 ### 4. 配置 web.xml（傳統方式）
@@ -256,11 +282,11 @@ copy HelloServlet.class C:\apache-tomcat-9.0.24\webapps\ROOT\WEB-INF\classes\
 
 ```xml name=web.xml
 <?xml version="1.0" encoding="UTF-8"?>
-<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+<web-app xmlns="https://jakarta.ee/xml/ns/jakartaee"
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee 
-         http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
-         version="4.0">
+         xsi:schemaLocation="https://jakarta.ee/xml/ns/jakartaee
+         https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd"
+         version="6.0">
     
     <!-- Servlet 宣告 -->
     <servlet>
@@ -287,6 +313,14 @@ copy HelloServlet.class C:\apache-tomcat-9.0.24\webapps\ROOT\WEB-INF\classes\
 </web-app>
 ```
 
+### 5. web.xml 版本對照
+
+| 項目 | 舊版 (Tomcat 9) | 新版 (Tomcat 10.1) |
+|------|-----------------|---------------------|
+| 命名空間 | `http://xmlns.jcp.org/xml/ns/javaee` | `https://jakarta.ee/xml/ns/jakartaee` |
+| Schema 位置 | `http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd` | `https://jakarta.ee/xml/ns/jakartaee/web-app_6_0.xsd` |
+| 版本號 | `version="4.0"` | `version="6.0"` |
+
 ---
 
 ## 測試與驗證
@@ -295,7 +329,7 @@ copy HelloServlet.class C:\apache-tomcat-9.0.24\webapps\ROOT\WEB-INF\classes\
 
 #### Windows
 ```bash
-C:\apache-tomcat-9.0.24\bin\startup.bat
+C:\apache-tomcat-10.1.0\bin\startup.bat
 ```
 
 #### Linux/macOS
@@ -317,8 +351,21 @@ $TOMCAT_HOME/bin/startup.sh
 - 歡迎訊息
 - 系統時間
 - 客戶端資訊
+- Tomcat 版本資訊
 - 可用 URL 路徑
 - 學習重點說明
+
+### 4. 檢查 Tomcat 日誌
+
+如果遇到問題，檢查 Tomcat 日誌：
+
+```bash
+# Windows
+type C:\apache-tomcat-10.1.0\logs\catalina.out
+
+# Linux/macOS
+tail -f $TOMCAT_HOME/logs/catalina.out
+```
 
 ---
 
@@ -361,7 +408,7 @@ out.println("<h2>歡迎，" + name + "！</h2>");
 
 ```java
 // 取得或建立 Session
-HttpSession session = request.getSession();
+jakarta.servlet.http.HttpSession session = request.getSession();
 Integer visitCount = (Integer) session.getAttribute("visitCount");
 if (visitCount == null) {
     visitCount = 1;
@@ -391,6 +438,22 @@ public class HelloServlet extends HttpServlet {
 }
 ```
 
+### 5. Servlet 生命週期
+
+```java
+@Override
+public void init() throws ServletException {
+    // Servlet 初始化，只執行一次
+    logger.info("Servlet 初始化完成");
+}
+
+@Override
+public void destroy() {
+    // Servlet 銷毀前的清理工作
+    logger.info("Servlet 銷毀");
+}
+```
+
 ---
 
 ## 故障排除
@@ -399,11 +462,17 @@ public class HelloServlet extends HttpServlet {
 
 #### 1. 編譯錯誤
 
-**問題**：`package javax.servlet does not exist`
+**問題**：`package jakarta.servlet does not exist`
 
 **解決方案**：
 - 確認 CLASSPATH 包含 `servlet-api.jar`
 - 檢查 JAR 檔案路徑是否正確
+- 確認使用 Jakarta EE 10 的 JAR 檔案
+
+```bash
+# 編譯時指定 classpath
+javac -cp "C:\apache-tomcat-10.1.0\lib\servlet-api.jar" HelloServlet.java
+```
 
 #### 2. 404 錯誤
 
@@ -413,6 +482,7 @@ public class HelloServlet extends HttpServlet {
 - 確認 class 檔案在正確位置
 - 檢查 URL 對應設定
 - 重新啟動 Tomcat
+- 確認 `@WebServlet` 註解的 `urlPatterns` 設定正確
 
 #### 3. 500 錯誤
 
@@ -422,6 +492,7 @@ public class HelloServlet extends HttpServlet {
 - 檢查 Tomcat logs 目錄中的錯誤日誌
 - 確認程式碼沒有語法錯誤
 - 檢查相依性是否完整
+- 確認所有 import 語句使用 `jakarta.servlet` 而非 `javax.servlet`
 
 #### 4. 中文亂碼
 
@@ -433,7 +504,16 @@ response.setContentType("text/html;charset=UTF-8");
 response.setCharacterEncoding("UTF-8");
 ```
 
+#### 5. Jakarta EE 命名空間錯誤
 
+**問題**：`The absolute uri: [https://jakarta.ee/xml/ns/jakartaee] cannot be resolved`
+
+**解決方案**：
+- 確認 web.xml 使用正確的 Jakarta EE 命名空間
+- 確認 Tomcat 版本為 10.1.x 或以上
+- 檢查 JAR 檔案是否為 Jakarta EE 10 版本
+
+---
 
 ## 學習重點總結
 
@@ -442,16 +522,18 @@ response.setCharacterEncoding("UTF-8");
 2. **HTTP 方法**：GET、POST、PUT、DELETE
 3. **請求/回應處理**：參數取得、標頭設定、內容輸出
 4. **部署描述符**：web.xml 配置 vs 註解配置
+5. **Jakarta EE 10 套件命名空間**：所有 Jakarta API 使用 `jakarta.*`
 
 ### 最佳實務
 1. **安全性**：輸入驗證、XSS 防護、CSRF 保護
 2. **效能**：連線池、快取策略、資源管理
 3. **維護性**：模組化設計、異常處理、日誌記錄
+4. **相容性**：確保使用正確的 Jakarta EE 命名空間
 
 ### 下一步學習
 1. **JSP 技術**：檢視層分離
 2. **MVC 架構**：Model-View-Controller
-3. **框架整合**：Spring、Struts
+3. **框架整合**：Spring Boot、Jakarta Faces
 4. **資料庫連接**：JDBC、JPA
 
 ---
@@ -460,7 +542,7 @@ response.setCharacterEncoding("UTF-8");
 
 ### A. 完整目錄結構
 ```
-apache-tomcat-9.0.24/
+apache-tomcat-10.1.0/
 ├── webapps/
 │   └── ROOT/
 │       ├── WEB-INF/
@@ -478,7 +560,7 @@ apache-tomcat-9.0.24/
 ### B. 相關指令快速參考
 ```bash
 # 編譯
-javac -cp "servlet-api.jar" HelloServlet.java
+javac -cp "C:\apache-tomcat-10.1.0\lib\servlet-api.jar" HelloServlet.java
 
 # 啟動 Tomcat
 startup.bat / startup.sh
@@ -493,7 +575,13 @@ java -version
 javap -verbose HelloServlet
 ```
 
+### C. Jakarta EE 10 遷移檢查清單
+- [ ] 所有 `javax.servlet.*` 改為 `jakarta.servlet.*`
+- [ ] web.xml 命名空間改為 `https://jakarta.ee/xml/ns/jakartaee`
+- [ ] web.xml 版本號改為 `6.0`
+- [ ] 使用 JDK 11 或以上版本
+- [ ] 使用 Tomcat 10.1.x 或以上版本
+
 ---
 
 **文件結束**
-
