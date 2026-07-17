@@ -1,38 +1,37 @@
-# Spring Boot + Controller + Thymeleaf Web MVC 學習文件
+# Spring Boot + Thymeleaf Web MVC 完整學習文件
 
 ## 學習目標
 
 1. 理解 Spring Boot Web MVC 架構
-2. 掌握 Controller 的使用方式
+2. 掌握 `@Controller` 與 `@RestController` 的差異
 3. 學會 Thymeleaf 模板引擎語法
-4. 了解 MVC 資料傳遞流程
+4. 為每個控制器方法製作對應的 Thymeleaf 頁面
 
 ---
 
 ## 1. MVC 架構概述
 
 ```
-┌───────────────────────────────────────────────────────┐
-│                    瀏覽器 (Browser)                    │
-│                    發送 HTTP 請求                      │
-└──────────────────────┬────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│                   Controller                            │
-│              接收請求、處理邏輯                           │
-│              準備 Model 資料                             │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
-┌─────────────────────────────────────────────────────────┐
-│              Thymeleaf 模板                             │
-│              渲染 HTML 頁面                              │
-│              嵌入 Model 資料                             │
-└──────────────────────┬──────────────────────────────────┘
-                       │
-                       ▼
 ┌────────────────────────────────────────────────────────┐
+│                   瀏覽器 (Browser)                      │
+│                   發送 HTTP 請求                        │
+└───────────────────────┬────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────┐
+│                     Controller                          │
+│            接收請求、處理邏輯、準備 Model 資料            │
+└───────────────────────┬─────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────┐
+│                  Thymeleaf 模板                         │
+│                  渲染 HTML 頁面                         │
+│                  嵌入 Model 資料                        │
+└───────────────────────┬─────────────────────────────────┘
+                        │
+                        ▼
+┌─────────────────────────────────────────────────────────┐
 │                   瀏覽器 (Browser)                      │
 │                    顯示頁面結果                          │
 └─────────────────────────────────────────────────────────┘
@@ -40,31 +39,70 @@
 
 ---
 
-## 2. 專案結構
+## 2. @Controller vs @RestController
+
+| 特性 | @Controller | @RestController |
+|------|-------------|-----------------|
+| 回傳值 | 視圖名稱 (HTML) | 資料 (JSON/XML) |
+| 用途 | Thymeleaf 頁面 | REST API |
+| 註解 | `@Controller` | `@RestController` |
+| 範例 | `return "index"` | `return ResponseEntity.ok(data)` |
+
+**說明：**
+- `@Controller` + `@ResponseBody` = `@RestController`
+- Thymeleaf 專案使用 `@Controller`
+- REST API 專案使用 `@RestController`
+
+---
+
+## 3. 專案結構
 
 ```
 my-webapp/
 ├── src/
 │   ├── main/
 │   │   ├── java/
-│   │   │   └── com/example/demo/
-│   │   │       ├── DemoApplication.java      # 主程式進入點
-│   │   │       └── controller/
-│   │   │           └── HomeController.java   # Controller
+│   │   │   └── demo/example/
+│   │   │       ├── DemoApplication.java
+│   │   │       ├── controller/
+│   │   │       │   ├── HomeController.java
+│   │   │       │   ├── UserController.java
+│   │   │       │   ├── ProductController.java
+│   │   │       │   └── ...
+│   │   │       ├── model/
+│   │   │       │   ├── User.java
+│   │   │       │   ├── Product.java
+│   │   │       │   └── ...
+│   │   │       └── service/
+│   │   │           └── ...
 │   │   └── resources/
-│   │       ├── application.properties        # 設定檔
-│   │       ├── static/                       # 靜態資源 (CSS/JS/圖片)
-│   │       └── templates/                    # Thymeleaf 模板
+│   │       ├── application.properties
+│   │       ├── static/
+│   │       │   └── css/
+│   │       │       └── style.css
+│   │       └── templates/          # Thymeleaf 模板
 │   │           ├── index.html
-│   │           └── greeting.html
+│   │           ├── home/
+│   │           │   └── greeting.html
+│   │           ├── user/
+│   │           │   ├── list.html
+│   │           │   ├── form.html
+│   │           │   └── detail.html
+│   │           ├── product/
+│   │           │   ├── list.html
+│   │           │   ├── form.html
+│   │           │   └── detail.html
+│   │           └── layout/
+│   │               ├── header.html
+│   │               └── footer.html
 │   └── test/
-├── pom.xml                                   # Maven 依賴
+├── pom.xml
 └── target/
 ```
 
 ---
 
-## 3. POM 依賴設定
+## 4. POM 依賴設定
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -92,7 +130,7 @@ my-webapp/
     </properties>
 
     <dependencies>
-        <!-- Spring Boot Web Starter (內含 Tomcat + Spring MVC) -->
+        <!-- Spring Boot Web Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -102,9 +140,8 @@ my-webapp/
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-thymeleaf</artifactId>
-        </dependency>
+        </dependency>      
 
-        <!-- Spring Boot Test Starter -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -125,10 +162,10 @@ my-webapp/
 
 ---
 
-## 4. 主程式進入點
+## 5. 主程式進入點
 
 ```java
-package com.example.demo;
+package demo.example;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -148,99 +185,7 @@ public class DemoApplication {
 
 ---
 
-## 5. Controller 基礎
-
-### 5.1 基本 Controller
-
-```java
-package com.example.demo.controller;
-
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
-
-@Controller
-public class HomeController {
-
-    @GetMapping("/")
-    public String index() {
-        return "index";  // 返回 templates/index.html
-    }
-}
-```
-
-**說明：**
-- `@Controller` 標註為 Spring MVC Controller
-- `@GetMapping("/")` 對應 HTTP GET 請求
-- 回傳值 `"index"` 會自動解析為 `templates/index.html`
-
-### 5.2 傳遞資料到畫面
-
-```java
-@GetMapping("/greeting")
-public String greeting(@RequestParam(name = "name", required = false, 
-                       defaultValue = "World") String name, 
-                       Model model) {
-    model.addAttribute("name", name);
-    model.addAttribute("message", "歡迎使用 Spring Boot!");
-    return "greeting";
-}
-```
-
-**說明：**
-- `@RequestParam` 從 URL 參數取得值（如 `/greeting?name=Tom`）
-- `Model` 用來傳遞資料給 Thymeleaf 模板
-
-### 5.3 完整 Controller 範例
-
-```java
-package com.example.demo.controller;
-
-import org.springframework.stereotype.Controller;
-import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
-import java.util.*;
-
-@Controller
-public class UserController {
-
-    // GET 請求 - 顯示表單
-    @GetMapping("/user/form")
-    public String showForm() {
-        return "user-form";
-    }
-
-    // POST 請求 - 處理表單
-    @PostMapping("/user/submit")
-    public String submitForm(
-            @RequestParam String username,
-            @RequestParam String email,
-            @RequestParam String gender,
-            @RequestParam List<String> hobbies,
-            Model model) {
-        
-        model.addAttribute("username", username);
-        model.addAttribute("email", email);
-        model.addAttribute("gender", gender);
-        model.addAttribute("hobbies", hobbies);
-        
-        return "user-result";
-    }
-
-    // 動態路由
-    @GetMapping("/user/{id}")
-    public String getUser(@PathVariable int id, Model model) {
-        model.addAttribute("userId", id);
-        return "user-detail";
-    }
-}
-```
-
----
-
-## 6. Thymeleaf 模板語法
+## 6. Thymeleaf 模板語法大全
 
 ### 6.1 基本設定
 
@@ -255,8 +200,6 @@ public class UserController {
 </body>
 </html>
 ```
-
-**重點：** 必須加入 `xmlns:th="http://www.thymeleaf.org"` 命名空間
 
 ### 6.2 文字輸出
 
@@ -330,62 +273,9 @@ public class UserController {
         <td th:text="${stat.last}">是否最後一筆</td>
     </tr>
 </table>
-
-<!-- 迭代 Map -->
-<div th:each="entry : ${userMap}">
-    <p th:text="${entry.key} + ': ' + ${entry.value}">Map 內容</p>
-</div>
 ```
 
-### 6.6 表單處理
-
-```html
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <title>表單範例</title>
-</head>
-<body>
-    <h2>會員註冊</h2>
-    
-    <!-- th:action - 表單提交位址 -->
-    <!-- th:object - 綁定表單物件 -->
-    <form th:action="@{/register}" method="post" th:object="${user}">
-        
-        <div>
-            <label>姓名：</label>
-            <!-- th:value - 綁定表單欄位值 -->
-            <input type="text" name="username" th:value="${user.username}">
-        </div>
-        
-        <div>
-            <label>Email：</label>
-            <input type="email" name="email" th:value="${user.email}">
-        </div>
-        
-        <div>
-            <label>性別：</label>
-            <input type="radio" name="gender" value="male" 
-                   th:checked="${user.gender == 'male'}"> 男性
-            <input type="radio" name="gender" value="female" 
-                   th:checked="${user.gender == 'female'}"> 女性
-        </div>
-        
-        <div>
-            <label>興趣：</label>
-            <input type="checkbox" name="hobbies" value="reading" 
-                   th:checked="${#lists.contains(user.hobbies, 'reading')}"> 閱讀
-            <input type="checkbox" name="hobbies" value="sports" 
-                   th:checked="${#lists.contains(user.hobbies, 'sports')}"> 運動
-        </div>
-        
-        <button type="submit">送出</button>
-    </form>
-</body>
-</html>
-```
-
-### 6.7 內建物件
+### 6.6 內建物件
 
 ```html
 <!-- #request - HttpServletRequest -->
@@ -410,279 +300,732 @@ public class UserController {
 <p th:text="${#numbers.formatDecimal(price, 1, 2)}">價格</p>
 ```
 
----
+### 6.7 URL 表達式
 
-## 7. Controller 傳資料到 Thymeleaf
+```html
+<!-- 靜態 URL -->
+<a href="/home">首頁</a>
 
-### 7.1 使用 Model
+<!-- Thymeleaf URL (自動加入 Context Path) -->
+<a th:href="@{/home}">首頁</a>
 
-```java
-@GetMapping("/products")
-public String productList(Model model) {
-    List<Product> products = productService.getAll();
-    model.addAttribute("products", products);
-    model.addAttribute("title", "商品列表");
-    return "product-list";
-}
-```
+<!-- 帶參數的 URL -->
+<a th:href="@{/user(id=${userId})}">使用者詳情</a>
 
-### 7.2 使用 ModelAndView
+<!-- 多個參數 -->
+<a th:href="@{/search(keyword=${keyword}, page=${page})}">搜尋</a>
 
-```java
-@GetMapping("/products")
-public ModelAndView productList() {
-    ModelAndView mav = new ModelAndView("product-list");
-    mav.addObject("products", productService.getAll());
-    mav.addObject("title", "商品列表");
-    return mav;
-}
-```
-
-### 7.3 使用 @ModelAttribute
-
-```java
-// 自動將表單欄位綁定到物件
-@PostMapping("/register")
-public String register(@ModelAttribute User user, Model model) {
-    model.addAttribute("user", user);
-    return "register-result";
-}
+<!-- POST 表單 -->
+<form th:action="@{/submit}" method="post">
+    <button type="submit">送出</button>
+</form>
 ```
 
 ---
 
-## 8. 完整範例：會員系統
+## 7.  HelloController 對應 Thymeleaf
 
-### 8.1 Model 類別
+### 7.1 HelloController (原 @RestController)
 
 ```java
-package com.example.demo.model;
+package demo.example.controller;
 
-public class User {
-    private String username;
-    private String email;
-    private String gender;
-    private List<String> hobbies;
+import org.springframework.web.bind.annotation.*;
+import demo.example.service.GreetingService;
 
-    // 建構子
-    public User() {}
-
-    // Getter & Setter
-    public String getUsername() { return username; }
-    public void setUsername(String username) { this.username = username; }
+@RestController
+@RequestMapping("/api")
+public class HelloController {
     
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
+    private final GreetingService greetingService;
     
-    public String getGender() { return gender; }
-    public void setGender(String gender) { this.gender = gender; }
+    public HelloController(GreetingService greetingService) {
+        this.greetingService = greetingService;
+    }
     
-    public List<String> getHobbies() { return hobbies; }
-    public void setHobbies(List<String> hobbies) { this.hobbies = hobbies; }
+    @GetMapping("/hello")
+    public String hello(@RequestParam(defaultValue = "World") String name) {
+        return greetingService.greet(name);
+    }
+    
+    @GetMapping("/welcome")
+    public String welcome() {
+        return greetingService.getWelcomeMessage();
+    }
 }
 ```
 
-### 8.2 Controller
+### 7.2 HelloWebController (Thymeleaf 版本)
 
 ```java
-package com.example.demo.controller;
+package demo.example.controller;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
-import com.example.demo.model.User;
-import java.util.Arrays;
+import demo.example.service.GreetingService;
 
 @Controller
-public class UserController {
-
-    // 顯示註冊表單
-    @GetMapping("/register")
-    public String showRegisterForm(Model model) {
-        model.addAttribute("user", new User());
-        return "register-form";
+@RequestMapping("/web")
+public class HelloWebController {
+    
+    private final GreetingService greetingService;
+    
+    public HelloWebController(GreetingService greetingService) {
+        this.greetingService = greetingService;
     }
-
-    // 處理註冊
-    @PostMapping("/register")
-    public String register(@ModelAttribute User user, Model model) {
-        model.addAttribute("user", user);
-        return "register-result";
+    
+    @GetMapping("/hello")
+    public String hello(@RequestParam(defaultValue = "World") String name, Model model) {
+        model.addAttribute("name", name);
+        model.addAttribute("message", greetingService.greet(name));
+        return "home/hello";
     }
-
-    // 會員列表
-    @GetMapping("/members")
-    public String memberList(Model model) {
-        model.addAttribute("users", Arrays.asList(
-            new User("tom", "tom@example.com", "male", Arrays.asList("reading", "sports")),
-            new User("jerry", "jerry@example.com", "male", Arrays.asList("music")),
-            new User("mary", "mary@example.com", "female", Arrays.asList("travel", "gaming"))
-        ));
-        return "member-list";
+    
+    @GetMapping("/welcome")
+    public String welcome(Model model) {
+        model.addAttribute("message", greetingService.getWelcomeMessage());
+        return "home/welcome";
     }
 }
 ```
 
-### 8.3 註冊表單 (register-form.html)
+### 7.3 hello.html
 
 ```html
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>會員註冊</title>
-    <style>
-        body { font-family: Arial, sans-serif; max-width: 500px; margin: 40px auto; }
-        .form-group { margin-bottom: 15px; }
-        .error { color: red; }
-        button { background: #007bff; color: white; padding: 8px 20px; border: none; }
-    </style>
+    <title>Hello Page</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
 </head>
 <body>
-    <h2>會員註冊</h2>
-    
-    <form th:action="@{/register}" method="post" th:object="${user}">
-        <div class="form-group">
-            <label>姓名：</label>
-            <input type="text" th:field="*{username}" required>
-        </div>
-        
-        <div class="form-group">
-            <label>Email：</label>
-            <input type="email" th:field="*{email}" required>
-        </div>
-        
-        <div class="form-group">
-            <label>性別：</label>
-            <input type="radio" th:field="*{gender}" value="male"> 男性
-            <input type="radio" th:field="*{gender}" value="female"> 女性
-        </div>
-        
-        <div class="form-group">
-            <label>興趣：</label>
-            <input type="checkbox" th:field="*{hobbies}" value="reading"> 閱讀
-            <input type="checkbox" th:field="*{hobbies}" value="sports"> 運動
-            <input type="checkbox" th:field="*{hobbies}" value="music"> 音樂
-            <input type="checkbox" th:field="*{hobbies}" value="travel"> 旅行
-        </div>
-        
-        <button type="submit">註冊</button>
-    </form>
-</body>
-</html>
-```
-
-### 8.4 註冊結果 (register-result.html)
-
-```html
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
-<head>
-    <meta charset="UTF-8">
-    <title>註冊結果</title>
-</head>
-<body>
-    <h2>註冊成功!</h2>
-    
-    <div class="result">
-        <p><strong>姓名：</strong> <span th:text="${user.username}">-</span></p>
-        <p><strong>Email：</strong> <span th:text="${user.email}">-</span></p>
-        <p><strong>性別：</strong> 
-            <span th:if="${user.gender == 'male'}">男性</span>
-            <span th:if="${user.gender == 'female'}">女性</span>
-        </p>
-        <p><strong>興趣：</strong>
-            <span th:each="hobby, stat : ${user.hobbies}">
-                <span th:switch="${hobby}">
-                    <span th:case="'reading'">閱讀</span>
-                    <span th:case="'sports'">運動</span>
-                    <span th:case="'music'">音樂</span>
-                    <span th:case="'travel'">旅行</span>
-                </span>
-                <span th:if="${!stat.last}">、</span>
-            </span>
-        </p>
+    <div class="container">
+        <h1 th:text="'Hello, ' + ${name} + '!'">Hello, World!</h1>
+        <p th:text="${message}">歡迎訊息</p>
+        <a th:href="@{/web/welcome}">返回首頁</a>
     </div>
-    
-    <a th:href="@{/register}">返回註冊</a>
 </body>
 </html>
 ```
 
-### 8.5 會員列表 (member-list.html)
+### 7.4 welcome.html
 
 ```html
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
-    <title>會員列表</title>
-    <style>
-        table { border-collapse: collapse; width: 100%; }
-        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-        th { background-color: #f2f2f2; }
-    </style>
+    <title>Welcome</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
 </head>
 <body>
-    <h2>會員列表</h2>
-    
-    <table>
-        <thead>
-            <tr>
-                <th>編號</th>
-                <th>姓名</th>
-                <th>Email</th>
-                <th>性別</th>
-                <th>興趣</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr th:each="user, stat : ${users}">
-                <td th:text="${stat.count}">1</td>
-                <td th:text="${user.username}">姓名</td>
-                <td th:text="${user.email}">Email</td>
-                <td th:switch="${user.gender}">
-                    <span th:case="'male'">男性</span>
-                    <span th:case="'female'">女性</span>
-                </td>
-                <td>
-                    <span th:each="hobby, stat : ${user.hobbies}">
-                        <span th:switch="${hobby}">
-                            <span th:case="'reading'">閱讀</span>
-                            <span th:case="'sports'">運動</span>
-                            <span th:case="'music'">音樂</span>
-                            <span th:case="'travel'">旅行</span>
-                            <span th:case="'gaming'">遊戲</span>
-                        </span>
-                        <span th:if="${!stat.last}">、</span>
-                    </span>
-                </td>
-            </tr>
-        </tbody>
-    </table>
-    
-    <p>共 <span th:text="${#lists.size(users)}">0</span> 位會員</p>
+    <div class="container">
+        <h1>歡迎頁面</h1>
+        <p th:text="${message}">歡迎訊息</p>
+        <a th:href="@{/web/hello?name=Spring}">測試 Hello</a>
+    </div>
 </body>
 </html>
 ```
 
 ---
 
-## 9. 啟動與執行
+## 8. UserController 對應 Thymeleaf
 
-### 9.1 設定檔 (application.properties)
+### 8.1 UserController (原 @RestController)
+
+```java
+package demo.example.controller;
+
+import demo.example.model.User;
+import demo.example.service.UserService;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+    
+    private final UserService userService;
+    
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
+    
+    @PostMapping
+    public ResponseEntity<User> createUser(@RequestBody User user) {
+        User createdUser = userService.createUser(user.getName(), user.getEmail(), user.getAge());
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdUser);
+    }
+    
+    @GetMapping
+    public ResponseEntity<List<User>> getAllUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getUserById(@PathVariable String id) {
+        return userService.getUserById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    @PutMapping("/{id}")
+    public ResponseEntity<User> updateUser(@PathVariable String id, @RequestBody User user) {
+        User updatedUser = userService.updateUser(id, user.getName(), user.getEmail(), user.getAge());
+        return ResponseEntity.ok(updatedUser);
+    }
+    
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteUser(@PathVariable String id) {
+        if (userService.deleteUser(id)) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+    
+    @GetMapping("/count")
+    public ResponseEntity<Map<String, Long>> getUserCount() {
+        return ResponseEntity.ok(Map.of("count", userService.getUserCount()));
+    }
+}
+```
+
+### 8.2 UserWebController (Thymeleaf 版本)
+
+```java
+package demo.example.controller;
+
+import demo.example.model.User;
+import demo.example.service.UserService;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+
+@Controller
+@RequestMapping("/web/users")
+public class UserWebController {
+    
+    private final UserService userService;
+    
+    public UserWebController(UserService userService) {
+        this.userService = userService;
+    }
+    
+    // 顯示使用者列表
+    @GetMapping
+    public String listUsers(Model model) {
+        model.addAttribute("users", userService.getAllUsers());
+        model.addAttribute("userCount", userService.getUserCount());
+        return "user/list";
+    }
+    
+    // 顯示使用者詳情
+    @GetMapping("/{id}")
+    public String getUserDetail(@PathVariable String id, Model model) {
+        return userService.getUserById(id)
+                .map(user -> {
+                    model.addAttribute("user", user);
+                    return "user/detail";
+                })
+                .orElse("redirect:/web/users");
+    }
+    
+    // 顯示建立表單
+    @GetMapping("/create")
+    public String showCreateForm(Model model) {
+        model.addAttribute("user", new User());
+        model.addAttribute("isEdit", false);
+        return "user/form";
+    }
+    
+    // 處理建立表單
+    @PostMapping("/create")
+    public String createUser(@ModelAttribute User user, RedirectAttributes redirectAttributes) {
+        User createdUser = userService.createUser(user.getName(), user.getEmail(), user.getAge());
+        redirectAttributes.addFlashAttribute("successMessage", "使用者建立成功！");
+        return "redirect:/web/users/" + createdUser.getId();
+    }
+    
+    // 顯示編輯表單
+    @GetMapping("/{id}/edit")
+    public String showEditForm(@PathVariable String id, Model model) {
+        return userService.getUserById(id)
+                .map(user -> {
+                    model.addAttribute("user", user);
+                    model.addAttribute("isEdit", true);
+                    return "user/form";
+                })
+                .orElse("redirect:/web/users");
+    }
+    
+    // 處理編輯表單
+    @PostMapping("/{id}/edit")
+    public String updateUser(@PathVariable String id, @ModelAttribute User user, 
+                            RedirectAttributes redirectAttributes) {
+        userService.updateUser(id, user.getName(), user.getEmail(), user.getAge());
+        redirectAttributes.addFlashAttribute("successMessage", "使用者更新成功！");
+        return "redirect:/web/users/" + id;
+    }
+    
+    // 刪除使用者
+    @PostMapping("/{id}/delete")
+    public String deleteUser(@PathVariable String id, RedirectAttributes redirectAttributes) {
+        if (userService.deleteUser(id)) {
+            redirectAttributes.addFlashAttribute("successMessage", "使用者刪除成功！");
+        }
+        return "redirect:/web/users";
+    }
+}
+```
+
+### 8.3 user/list.html - 使用者列表
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>使用者列表</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #4CAF50; color: white; }
+        tr:hover { background-color: #f5f5f5; }
+        .btn { padding: 5px 10px; text-decoration: none; border-radius: 4px; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-danger { background: #dc3545; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .alert { padding: 10px; margin: 10px 0; border-radius: 4px; }
+        .alert-success { background: #d4edda; color: #155724; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>使用者列表</h1>
+        
+        <!-- 成功訊息 -->
+        <div th:if="${successMessage}" class="alert alert-success" 
+             th:text="${successMessage}">成功訊息</div>
+        
+        <!-- 統計資訊 -->
+        <p>共 <span th:text="${userCount}">0</span> 位使用者</p>
+        
+        <!-- 建立按鈕 -->
+        <a th:href="@{/web/users/create}" class="btn btn-success">建立新使用者</a>
+        
+        <!-- 使用者表格 -->
+        <table>
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>姓名</th>
+                    <th>Email</th>
+                    <th>年齡</th>
+                    <th>操作</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="user : ${users}">
+                    <td th:text="${user.id}">ID</td>
+                    <td th:text="${user.name}">姓名</td>
+                    <td th:text="${user.email}">Email</td>
+                    <td th:text="${user.age}">年齡</td>
+                    <td>
+                        <a th:href="@{/web/users/{id}(id=${user.id})}" class="btn btn-primary">詳情</a>
+                        <a th:href="@{/web/users/{id}/edit(id=${user.id})}" class="btn btn-primary">編輯</a>
+                        <form th:action="@{/web/users/{id}/delete(id=${user.id})}" method="post" 
+                              style="display:inline;">
+                            <button type="submit" class="btn btn-danger" 
+                                    onclick="return confirm('確定要刪除嗎？')">刪除</button>
+                        </form>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        
+        <a th:href="@{/web/}">返回首頁</a>
+    </div>
+</body>
+</html>
+```
+
+### 8.4 user/form.html - 使用者表單
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${isEdit} ? '編輯使用者' : '建立使用者'">使用者表單</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 8px; box-sizing: border-box; }
+        .btn { padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 th:text="${isEdit} ? '編輯使用者' : '建立新使用者'">使用者表單</h1>
+        
+        <!-- 編輯模式 -->
+        <form th:action="${isEdit} ? @{/web/users/{id}/edit(id=${user.id})} : @{/web/users/create}" 
+              method="post" th:object="${user}">
+            
+            <div class="form-group">
+                <label for="name">姓名：</label>
+                <input type="text" id="name" th:field="*{name}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="email">Email：</label>
+                <input type="email" id="email" th:field="*{email}" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="age">年齡：</label>
+                <input type="number" id="age" th:field="*{age}" required>
+            </div>
+            
+            <button type="submit" class="btn btn-primary" 
+                    th:text="${isEdit} ? '更新' : '建立'">建立</button>
+            <a th:href="@{/web/users}">取消</a>
+        </form>
+    </div>
+</body>
+</html>
+```
+
+### 8.5 user/detail.html - 使用者詳情
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>使用者詳情</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .detail-card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; max-width: 500px; }
+        .detail-row { margin-bottom: 10px; }
+        .detail-label { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>使用者詳情</h1>
+        
+        <div class="detail-card">
+            <div class="detail-row">
+                <span class="detail-label">ID：</span>
+                <span th:text="${user.id}">ID</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">姓名：</span>
+                <span th:text="${user.name}">姓名</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">Email：</span>
+                <span th:text="${user.email}">Email</span>
+            </div>
+            <div class="detail-row">
+                <span class="detail-label">年齡：</span>
+                <span th:text="${user.age}">年齡</span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <a th:href="@{/web/users/{id}/edit(id=${user.id})}">編輯</a>
+            <a th:href="@{/web/users}">返回列表</a>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+---
+
+## 9. NotificationController 對應 Thymeleaf
+
+### 9.1 NotificationController (原 @RestController)
+
+```java
+package demo.example.controller;
+
+import demo.example.service.NotificationService;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/notification")
+public class NotificationController {
+    
+    private final NotificationService emailService;
+    private final NotificationService smsService;
+    
+    public NotificationController(
+            @Qualifier("emailNotificationService") NotificationService emailService,
+            @Qualifier("smsNotificationService") NotificationService smsService) {
+        this.emailService = emailService;
+        this.smsService = smsService;
+    }
+    
+    @GetMapping("/email")
+    public String sendEmail() {
+        return emailService.sendNotification("這是一封電子郵件");
+    }
+    
+    @GetMapping("/sms")
+    public String sendSms() {
+        return smsService.sendNotification("這是一條簡訊");
+    }
+}
+```
+
+### 9.2 NotificationWebController (Thymeleaf 版本)
+
+```java
+package demo.example.controller;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import demo.example.service.NotificationService;
+
+@Controller
+@RequestMapping("/web/notification")
+public class NotificationWebController {
+    
+    private final NotificationService emailService;
+    private final NotificationService smsService;
+    
+    public NotificationWebController(
+            @Qualifier("emailNotificationService") NotificationService emailService,
+            @Qualifier("smsNotificationService") NotificationService smsService) {
+        this.emailService = emailService;
+        this.smsService = smsService;
+    }
+    
+    @GetMapping("/email")
+    public String sendEmail(Model model) {
+        String result = emailService.sendNotification("這是一封電子郵件");
+        model.addAttribute("result", result);
+        model.addAttribute("type", "電子郵件");
+        return "notification/result";
+    }
+    
+    @GetMapping("/sms")
+    public String sendSms(Model model) {
+        String result = smsService.sendNotification("這是一條簡訊");
+        model.addAttribute("result", result);
+        model.addAttribute("type", "簡訊");
+        return "notification/result";
+    }
+}
+```
+
+### 9.3 notification/result.html - 通知結果頁面
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>通知結果</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .result-box { 
+            border: 2px solid #28a745; 
+            padding: 20px; 
+            border-radius: 8px; 
+            background: #d4edda;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>通知發送結果</h1>
+        
+        <div class="result-box">
+            <h2 th:text="${type} + '發送成功'">發送成功</h2>
+            <p th:text="${result}">結果訊息</p>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <a th:href="@{/web/notification/email}">發送電子郵件</a> |
+            <a th:href="@{/web/notification/sms}">發送簡訊</a> |
+            <a th:href="@{/web/}">返回首頁</a>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+---
+
+## 10. UtilController 對應 Thymeleaf
+
+### 10.1 UtilController (原 @RestController)
+
+```java
+package demo.example.controller;
+
+import demo.example.service.UtilService;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/api/util")
+public class UtilController {
+    
+    private final UtilService utilService;
+    private final String appInfo;
+    
+    public UtilController(UtilService utilService, 
+                         @Qualifier("appInfo") String appInfo) {
+        this.utilService = utilService;
+        this.appInfo = appInfo;
+    }
+    
+    @GetMapping("/time")
+    public String getTime() {
+        return utilService.getCurrentTime();
+    }
+    
+    @GetMapping("/uuid")
+    public String getUuid() {
+        return utilService.generateUuid();
+    }
+    
+    @GetMapping("/info")
+    public String getAppInfo() {
+        return appInfo;
+    }
+}
+```
+
+### 10.2 UtilWebController (Thymeleaf 版本)
+
+```java
+package demo.example.controller;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import demo.example.service.UtilService;
+
+@Controller
+@RequestMapping("/web/util")
+public class UtilWebController {
+    
+    private final UtilService utilService;
+    private final String appInfo;
+    
+    public UtilWebController(UtilService utilService, @Qualifier("appInfo") String appInfo) {
+        this.utilService = utilService;
+        this.appInfo = appInfo;
+    }
+    
+    @GetMapping("/time")
+    public String getTime(Model model) {
+        model.addAttribute("currentTime", utilService.getCurrentTime());
+        model.addAttribute("title", "目前時間");
+        return "util/info";
+    }
+    
+    @GetMapping("/uuid")
+    public String getUuid(Model model) {
+        model.addAttribute("uuid", utilService.generateUuid());
+        model.addAttribute("title", "UUID 產生器");
+        return "util/info";
+    }
+    
+    @GetMapping("/info")
+    public String getAppInfo(Model model) {
+        model.addAttribute("appInfo", appInfo);
+        model.addAttribute("title", "應用程式資訊");
+        return "util/info";
+    }
+}
+```
+
+### 10.3 util/info.html - 工具資訊頁面
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title th:text="${title}">工具資訊</title>
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .info-box { 
+            border: 1px solid #17a2b8; 
+            padding: 20px; 
+            border-radius: 8px; 
+            background: #d1ecf1;
+            max-width: 500px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 th:text="${title}">工具資訊</h1>
+        
+        <div class="info-box">
+            <p th:if="${currentTime}" th:text="'目前時間：' + ${currentTime}">時間</p>
+            <p th:if="${uuid}" th:text="'UUID：' + ${uuid}">UUID</p>
+            <p th:if="${appInfo}" th:text="'應用資訊：' + ${appInfo}">資訊</p>
+        </div>
+        
+        <div style="margin-top: 20px;">
+            <a th:href="@{/web/util/time}">取得時間</a> |
+            <a th:href="@{/web/util/uuid}">產生 UUID</a> |
+            <a th:href="@{/web/util/info}">應用資訊</a> |
+            <a th:href="@{/web/}">返回首頁</a>
+        </div>
+    </div>
+</body>
+</html>
+```
+
+---
+
+## 11. 啟動與執行
+
+### 11.1 設定檔 (application.properties)
 
 ```properties
 # 伺服器設定
 server.port=8080
 
 # Thymeleaf 設定
-spring.thymeleaf.cache=false  # 開發時關閉快取
+spring.thymeleaf.cache=false
 spring.thymeleaf.prefix=classpath:/templates/
 spring.thymeleaf.suffix=.html
+spring.thymeleaf.encoding=UTF-8
+spring.thymeleaf.mode=HTML
 ```
 
-### 9.2 執行方式
+### 11.2 執行方式
 
 ```bash
 # Maven 執行
@@ -693,63 +1036,25 @@ mvn clean package
 java -jar target/demo-0.0.1-SNAPSHOT.jar
 ```
 
-### 9.3 測試網址
+### 11.3 測試網址
 
 ```
-http://localhost:8080/register      # 註冊表單
-http://localhost:8080/members       # 會員列表
-http://localhost:8080/greeting?name=Tom  # 問候頁面
-```
+# Day01 - Hello
+http://localhost:8080/web/hello?name=Tom
+http://localhost:8080/web/welcome
 
----
+# Day01 - User
+http://localhost:8080/web/users
+http://localhost:8080/web/users/create
 
-## 10. Thymeleaf vs JSP 比較
+# Day01 - Notification
+http://localhost:8080/web/notification/email
+http://localhost:8080/web/notification/sms
 
-| 特性 | Thymeleaf | JSP |
-|------|-----------|-----|
-| 語法 | `th:text` | `<%= %>` / EL `${}` |
-| 模板位置 | `resources/templates/` | `WEB-INF/` |
-| 快取 | 支援 | 不支援 |
-| 靜態預覽 | 可直接瀏覽器開啟 | 需啟動伺服器 |
-| Spring 整合 | 原生支援 | 需額外配置 |
-| 學習曲線 | 中 | 低 |
-| 建議用途 | Spring Boot 專案 | 傳統 JavaEE 專案 |
-
----
-
-## 11. 常見錯誤
-
-| 錯誤訊息 | 原因 | 解決方法 |
-|----------|------|----------|
-| `TemplateInputException` | 模板檔案路徑錯誤 | 確認在 `templates/` 目錄下 |
-| `ELException` | Thymeleaf 語法錯誤 | 檢查 `${}` 和 `th:*` 語法 |
-| `ServletException` | Controller 回傳值錯誤 | 確認回傳模板名稱正確 |
-| `BeanCreationException` | Bean 注入失敗 | 檢查 `@Component` 註解 |
-
----
-
-## 12. 學習路徑
-
-```
-1. Java 基礎
-       │
-       ▼
-2. Spring Boot 基礎
-       │
-       ▼
-3. Controller + Model
-       │
-       ▼
-4. Thymeleaf 語法
-       │
-       ▼
-5. 表單處理 (GET/POST)
-       │
-       ▼
-6. 資料庫整合 (JPA)
-       │
-       ▼
-7. 進階功能 (REST API, Security)
+# Day01 - Util
+http://localhost:8080/web/util/time
+http://localhost:8080/web/util/uuid
+http://localhost:8080/web/util/info
 ```
 
 ---
@@ -759,3 +1064,23 @@ http://localhost:8080/greeting?name=Tom  # 問候頁面
 - Spring Boot 官方文件：https://spring.io/projects/spring-boot
 - Thymeleaf 官方文件：https://www.thymeleaf.org/documentation.html
 - Spring MVC 官方文件：https://docs.spring.io/spring-framework/reference/web/webmvc.html
+
+---
+
+## 控制器對照總表
+
+| 原始 @RestController | Thymeleaf @Controller | URL 前綴 | 功能 |
+|----------------------|----------------------|----------|------|
+| HelloController | HelloWebController | `/web/hello`, `/web/welcome` | 問候訊息、歡迎頁面 |
+| UserController | UserWebController | `/web/users` | 使用者 CRUD、列表、詳情、表單 |
+| NotificationController | NotificationWebController | `/web/notification` | 電子郵件、簡訊發送 |
+| UtilController | UtilWebController | `/web/util` | 時間、UUID、應用資訊 |
+
+### 關鍵差異總結
+
+| 特性 | @RestController | @Controller |
+|------|-----------------|-------------|
+| 返回值 | `ResponseEntity<T>` 或物件 (JSON) | 視圖名稱 (String) |
+| 資料傳遞 | `@ResponseBody` 自動序列化 | `model.addAttribute()` |
+| URL 映射 | `/api/...` | `/web/...` |
+| 適用場景 | 前後端分離、AJAX 呼叫 | 伺服器端渲染、表單處理 |
