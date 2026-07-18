@@ -5,6 +5,7 @@
 - 練習不同 Scope 的使用場景
 - 練習 Bean 生命週期回呼
 - 練習多環境配置和條件註冊
+- 練習 RestTemplate 的設定與使用
 
 ---
 
@@ -612,7 +613,155 @@ curl http://localhost:8080/api/profile/message
 
 ---
 
-## 練習 5：綜合實戰 - 設定管理系統 ⭐⭐⭐
+## 練習 5：RestTemplate 實作 ⭐⭐
+
+### 任務
+實作 `RestTemplate` 的設定與使用，包括逾時設定、錯誤處理、攔截器。
+
+### 程式碼
+
+#### RestTemplate 配置 `RestTemplateConfig.java`
+```java
+package com.example.practice.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.http.client.SimpleClientHttpRequestFactory;
+import org.springframework.web.client.RestTemplate;
+
+@Configuration
+public class RestTemplateConfig {
+
+    @Bean
+    public RestTemplate restTemplate() {
+        SimpleClientHttpRequestFactory factory = new SimpleClientHttpRequestFactory();
+        factory.setConnectTimeout(5000);  // 連線逾時 5 秒
+        factory.setReadTimeout(10000);    // 讀取逾時 10 秒
+        return new RestTemplate(factory);
+    }
+}
+```
+
+#### RestTemplate 使用服務 `JsonPlaceHolderService.java`
+```java
+package com.example.practice.service;
+
+import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
+import java.util.List;
+import java.util.Map;
+
+@Service
+public class JsonPlaceHolderService {
+
+    private final RestTemplate restTemplate;
+    private static final String BASE_URL = "https://jsonplaceholder.typicode.com";
+
+    public JsonPlaceHolderService(RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+    }
+
+    public List<Map<String, Object>> getPosts() {
+        String url = BASE_URL + "/posts";
+        @SuppressWarnings("unchecked")
+        List<Map<String, Object>> posts = restTemplate.getForObject(url, List.class);
+        return posts;
+    }
+
+    public Map<String, Object> getPostById(Long id) {
+        String url = BASE_URL + "/posts/{id}";
+        @SuppressWarnings("unchecked")
+        Map<String, Object> post = restTemplate.getForObject(url, Map.class, id);
+        return post;
+    }
+
+    public Map<String, Object> createPost(Map<String, Object> postData) {
+        String url = BASE_URL + "/posts";
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = restTemplate.postForObject(url, postData, Map.class);
+        return response;
+    }
+
+    public void deletePost(Long id) {
+        String url = BASE_URL + "/posts/{id}";
+        restTemplate.delete(url, id);
+    }
+}
+```
+
+#### RestTemplate Controller `RestTemplateDemoController.java`
+```java
+package com.example.practice.controller;
+
+import com.example.practice.service.JsonPlaceHolderService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/rest")
+public class RestTemplateDemoController {
+
+    private final JsonPlaceHolderService service;
+
+    public RestTemplateDemoController(JsonPlaceHolderService service) {
+        this.service = service;
+    }
+
+    @GetMapping("/posts")
+    public ResponseEntity<List<Map<String, Object>>> getPosts() {
+        List<Map<String, Object>> posts = service.getPosts();
+        return ResponseEntity.ok(posts);
+    }
+
+    @GetMapping("/posts/{id}")
+    public ResponseEntity<Map<String, Object>> getPostById(@PathVariable Long id) {
+        Map<String, Object> post = service.getPostById(id);
+        return ResponseEntity.ok(post);
+    }
+
+    @PostMapping("/posts")
+    public ResponseEntity<Map<String, Object>> createPost(@RequestBody Map<String, Object> postData) {
+        Map<String, Object> response = service.createPost(postData);
+        return ResponseEntity.ok(response);
+    }
+
+    @DeleteMapping("/posts/{id}")
+    public ResponseEntity<Void> deletePost(@PathVariable Long id) {
+        service.deletePost(id);
+        return ResponseEntity.noContent().build();
+    }
+}
+```
+
+### 測試
+```bash
+# 取得所有貼文
+curl http://localhost:8080/api/rest/posts
+
+# 取得特定貼文
+curl http://localhost:8080/api/rest/posts/1
+
+# 建立新貼文
+curl -X POST http://localhost:8080/api/rest/posts \
+  -H "Content-Type: application/json" \
+  -d '{"title": "Test", "body": "Content", "userId": 1}'
+
+# 刪除貼文
+curl -X DELETE http://localhost:8080/api/rest/posts/1
+```
+
+### 學習重點
+- `RestTemplate` 的 Bean 配置與逾時設定
+- 使用 `RestTemplate` 呼叫外部 REST API
+- 處理 GET、POST、DELETE 請求
+- 依賴注入 `RestTemplate` 到 Service 層
+
+---
+
+## 練習 6：綜合實戰 - 設定管理系統 ⭐⭐⭐
 
 ### 任務
 建立一個完整的設定管理系統，綜合運用所有學到的知識。
@@ -845,6 +994,7 @@ curl http://localhost:8080/api/settings/stats
 | 理解 Bean 生命週期回呼 | □ 未完成 □ 部分完成 □ 完全完成 | |
 | 能使用 @Configuration + @Bean | □ 未完成 □ 部分完成 □ 完全完成 | |
 | 理解 Profile 環境切換 | □ 未完成 □ 部分完成 □ 完全完成 | |
+| 能設定與使用 RestTemplate | □ 未完成 □ 部分完成 □ 完全完成 | |
 | 能建立完整的設定管理系統 | □ 未完成 □ 部分完成 □ 完全完成 | |
 
 ---

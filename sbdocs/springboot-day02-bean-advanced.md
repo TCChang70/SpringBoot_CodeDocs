@@ -279,9 +279,8 @@ public class ConditionalConfig {
 - **練習 2**：Bean 生命週期實作 ⭐⭐
 - **練習 3**：@Configuration 和 @Bean 實作 ⭐⭐
 - **練習 4**：Profile 環境切換實作 ⭐⭐
-- **練習 5**：@Conditional 條件註冊實作 ⭐⭐⭐
-- **練習 6**：Bean Scope 在 Web 應用中的實作 ⭐⭐
-- **練習 7**：綜合實戰 - 設定管理系統 ⭐⭐⭐
+- **練習 5**：RestTemplate 實作 ⭐⭐
+- **練習 6**：綜合實戰 - 設定管理系統 ⭐⭐⭐
 
 **實作練習文件**：[Spring Boot Day 02 實作練習](springboot-day02-practice.md)
 
