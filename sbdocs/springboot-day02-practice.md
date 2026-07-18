@@ -579,21 +579,16 @@ public class ProfileDemoController {
 }
 ```
 
-#### 配置檔 `application.yml`
-```yaml
-spring:
-  profiles:
-    active: dev
-  
-  # 多環境配置
-  config:
-    activate:
-      on-profile: dev
+#### 配置檔 `application.properties`
+```properties
+spring.profiles.active=dev
+
+# 多環境配置
+spring.config.activate.on-profile=dev
 
 # 自訂配置
-app:
-  name: Spring Boot 實作練習
-  version: 1.0.0
+app.name=Spring Boot 實作練習
+app.version=1.0.0
 ```
 
 ### 測試
