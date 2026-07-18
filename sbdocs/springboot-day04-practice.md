@@ -277,92 +277,66 @@ curl http://localhost:8080/api/config/features
 
 ### 程式碼
 
-#### 共用配置 `application.yml`
-```yaml
-spring:
-  application:
-    name: practice-app
-  profiles:
-    active: dev
+#### 共用配置 `application.properties`
+```properties
+spring.application.name=practice-app
+spring.profiles.active=dev
 
-server:
-  port: 8080
+server.port=8080
 
-app:
-  name: Spring Boot 實作練習
-  version: 1.0.0
+app.name=Spring Boot 實作練習
+app.version=1.0.0
 ```
 
-#### 開發環境 `application-dev.yml`
-```yaml
-spring:
-  datasource:
-    url: jdbc:h2:mem:devdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+#### 開發環境 `application-dev.properties`
+```properties
+spring.datasource.url=jdbc:h2:mem:devdb
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
 
-logging:
-  level:
-    com.example: DEBUG
-    org.springframework.web: DEBUG
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
 
-app:
-  features:
-    enable-logging: true
-    maintenance-mode: false
+logging.level.com.example=DEBUG
+logging.level.org.springframework.web=DEBUG
+
+app.features.enable-logging=true
+app.features.maintenance-mode=false
 ```
 
-#### 測試環境 `application-test.yml`
-```yaml
-spring:
-  datasource:
-    url: jdbc:h2:mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
-  jpa:
-    hibernate:
-      ddl-auto: create-drop
-    show-sql: true
+#### 測試環境 `application-test.properties`
+```properties
+spring.datasource.url=jdbc:h2:mem:testdb
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
 
-logging:
-  level:
-    com.example: INFO
-    org.springframework.web: INFO
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
 
-app:
-  features:
-    enable-logging: true
-    maintenance-mode: false
+logging.level.com.example=INFO
+logging.level.org.springframework.web=INFO
+
+app.features.enable-logging=true
+app.features.maintenance-mode=false
 ```
 
-#### 正式環境 `application-prod.yml`
-```yaml
-spring:
-  datasource:
-    url: jdbc:mysql://localhost:3306/proddb
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${DB_USER:root}
-    password: ${DB_PASS:password}
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
+#### 正式環境 `application-prod.properties`
+```properties
+spring.datasource.url=jdbc:mysql://localhost:3306/proddb
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+spring.datasource.username=${DB_USER:root}
+spring.datasource.password=${DB_PASS:password}
 
-logging:
-  level:
-    com.example: INFO
-    org.springframework.web: WARN
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=false
 
-app:
-  features:
-    enable-logging: false
-    maintenance-mode: false
+logging.level.com.example=INFO
+logging.level.org.springframework.web=WARN
+
+app.features.enable-logging=false
+app.features.maintenance-mode=false
 ```
 
 #### Profile 控制器 `ProfileController.java`
@@ -532,33 +506,23 @@ public class AppProperties {
 }
 ```
 
-#### 配置檔 `application.yml`
-```yaml
-app:
-  name: Spring Boot 實作練習
-  version: 1.0.0
-  features:
-    enable-logging: true
-    maintenance-mode: false
-    max-users: 100
-    disabled-features:
-      - feature1
-      - feature2
-  supported-languages:
-    - zh-TW
-    - en-US
-    - ja-JP
-  custom-settings:
-    key1: value1
-    key2: value2
-  database:
-    url: jdbc:h2:mem:testdb
-    username: sa
-    password: 
-    pool:
-      max-size: 20
-      min-idle: 10
-      connection-timeout: 30000
+#### 配置檔 `application.properties`
+```properties
+app.name=Spring Boot 實作練習
+app.version=1.0.0
+app.features.enable-logging=true
+app.features.maintenance-mode=false
+app.features.max-users=100
+app.features.disabled-features=feature1,feature2
+app.supported-languages=zh-TW,en-US,ja-JP
+app.custom-settings.key1=value1
+app.custom-settings.key2=value2
+app.database.url=jdbc:h2:mem:testdb
+app.database.username=sa
+app.database.password=
+app.database.pool.max-size=20
+app.database.pool.min-idle=10
+app.database.pool.connection-timeout=30000
 ```
 
 #### 配置使用 Controller `PropertiesController.java`
@@ -689,15 +653,13 @@ public class ValidatedProperties {
 }
 ```
 
-#### 配置檔 `application.yml`
-```yaml
-app:
-  validated:
-    name: Spring Boot 實作練習
-    version: 1.0.0
-    port: 8080
-    admin-email: admin@example.com
-    max-users: 100
+#### 配置檔 `application.properties`
+```properties
+app.validated.name=Spring Boot 實作練習
+app.validated.version=1.0.0
+app.validated.port=8080
+app.validated.admin-email=admin@example.com
+app.validated.max-users=100
 ```
 
 #### 驗證 Controller `ValidationConfigController.java`
@@ -741,7 +703,7 @@ public class ValidationConfigController {
 curl http://localhost:8080/api/validated-config
 
 # 測試驗證錯誤
-# 修改 application.yml: app.validated.version=invalid-version
+# 修改 application.properties: app.validated.version=invalid-version
 # 重新啟動應用程式，觀察錯誤訊息
 ```
 
@@ -874,14 +836,11 @@ public class EncryptedConfigController {
 }
 ```
 
-#### 配置檔 `application.yml`
-```yaml
-app:
-  database:
-    # 加密的密碼（實際使用時請替換為加密後的值）
-    encrypted-password: "加密後的密碼"
-  api:
-    encrypted-key: "加密後的API金鑰"
+#### 配置檔 `application.properties`
+```properties
+# 加密的密碼（實際使用時請替換為加密後的值）
+app.database.encrypted-password=加密後的密碼
+app.api.encrypted-key=加密後的API金鑰
 ```
 
 ### 測試
