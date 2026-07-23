@@ -1,7 +1,18 @@
-# Spring Boot JPA 入門 — 實作練習題
+# Spring Boot JPA 入門 — 實作練習題索引
 
-> **對應文件**：`springboot-jpabeginner-day1.md`、`springboot-jpabeginner-day2.md`、`springboot-jpabeginner-day3.md`  
-> **練習方式**：每題先獨立嘗試，再對照解答。解答均可直接複製貼上執行。
+> **對應理論文件**：[Day1](springboot-jpabeginner-day1.md) ｜ [Day2](springboot-jpabeginner-day2.md) ｜ [Day3](springboot-jpabeginner-day3.md)  
+> **練習方式**：每題先獨立嘗試，再對照解答。解答均可直接複製貼上執行。  
+> **各日獨立文件**：[Day 1 練習](springboot-jpabeginner-practice-day1.md) ｜ [Day 2 練習](springboot-jpabeginner-practice-day2.md) ｜ [Day 3 練習](springboot-jpabeginner-practice-day3.md)
+
+---
+
+## 🗂️ 分日練習文件導覽
+
+| 文件 | 主題 | 難度 | 預估時間 | 練習數 |
+|------|------|------|---------|--------|
+| [Day 1 練習](springboot-jpabeginner-practice-day1.md) | Spring Boot 啟動 + JPA 基礎 CRUD | ⭐–⭐⭐ | 55 min | 5 題 |
+| [Day 2 練習](springboot-jpabeginner-practice-day2.md) | 自訂查詢方法 + 關聯映射 + 分頁 | ⭐⭐–⭐⭐⭐ | 75 min | 4 題 |
+| [Day 3 練習](springboot-jpabeginner-practice-day3.md) | 交易管理 + DTO + 驗證 + 例外處理 | ⭐⭐–⭐⭐⭐ | 115 min | 5 題 |
 
 ---
 
@@ -1829,3 +1840,13 @@ public class BookNotFoundException extends RuntimeException {
 ---
 
 > 🎯 **下一步**：完成所有練習後，嘗試把三天學到的功能整合成一個小型的完整專案，加入 Flyway 資料庫版本管理（對應 Day 9 文件），讓系統更接近正式環境的開發規範。
+
+---
+
+## 🔗 快速導覽
+
+各日練習已拆分為獨立文件，包含**學習目標、優化後的提示說明、❌/✅ 對比範例、現在試試看 動作建議、自我評估表**：
+
+- [springboot-jpabeginner-practice-day1.md](springboot-jpabeginner-practice-day1.md) — Entity / Repository / Service / Controller / Properties
+- [springboot-jpabeginner-practice-day2.md](springboot-jpabeginner-practice-day2.md) — Derived Query / @Query JPQL / 關聯映射 / 分頁排序
+- [springboot-jpabeginner-practice-day3.md](springboot-jpabeginner-practice-day3.md) — @Transactional 陷阱 / DTO / Bean Validation / GlobalExceptionHandler / 綜合整合題
