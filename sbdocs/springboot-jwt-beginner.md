@@ -10,6 +10,33 @@
 
 ---
 
+## 學習前建議
+
+> 開始本章節前，請確認你已具備以下基礎：
+
+| 前置知識 | 說明 |
+|----------|------|
+| ✅ Spring Boot 基礎 | 知道 `@RestController`、`@Service`、`@Repository` 的用途 |
+| ✅ Spring Security 表單登入 | 了解 `SecurityFilterChain`、`PasswordEncoder`、`UserDetailsService` |
+| ✅ Spring Data JPA | 看過 Entity、Repository 的基本用法 |
+| ✅ Postman 操作 | 能發送 POST 請求並設定 Header |
+
+**若尚未完成 Spring Security 表單登入**，建議先閱讀 `springboot-security-form-beginner.md`。
+
+---
+
+## 完成里程碑 ✅
+
+完成本章節後，你應該能夠自行做到以下事項（可當作自我檢核）：
+
+- [ ] 說明 JWT 的三個部分是什麼
+- [ ] 在 Postman 成功呼叫 `/api/auth/login` 並取得 Token
+- [ ] 帶著 Token 成功呼叫 `/api/hello`（回傳 200）
+- [ ] 不帶 Token 呼叫 `/api/hello`（回傳 401）
+- [ ] 用一般使用者 Token 呼叫 `/api/admin/dashboard`（回傳 403）
+
+---
+
 ## 1. 什麼是 JWT？
 
 JWT（JSON Web Token）是一種**無狀態的認證機制**，格式為：
@@ -23,14 +50,14 @@ eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.xxxxx
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│ Header                                             │
-│ { "alg": "HS256", "typ": "JWT" }                   │
+│ Header                                              │
+│ { "alg": "HS256", "typ": "JWT" }                    │
 ├─────────────────────────────────────────────────────┤
-│ Payload                                            │
-│ { "sub": "alice", "role": "ADMIN", "exp": 170000 } │
+│ Payload                                             │
+│ { "sub": "alice", "role": "ADMIN", "exp": 170000 }  │
 ├─────────────────────────────────────────────────────┤
 │ Signature (使用 Secret 對 Header + Payload 簽章)     │
-│ HMACSHA256(base64(header) + "." + base64(payload)) │
+│ HMACSHA256(base64(header) + "." + base64(payload))  │
 └─────────────────────────────────────────────────────┘
 ```
 
@@ -59,20 +86,42 @@ eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ1c2VyIn0.xxxxx
      │ ─────────────────────────→ │
      │                            │── 驗證帳號密碼
      │                            │── 產生 JWT Token
-     │ 2. 回傳 JWT Token         │
+     │ 2. 回傳 JWT Token          │
      │ ←───────────────────────── │
      │                            │
      │ 3. GET /api/employees      │
      │    Authorization: Bearer   │
-     │    eyJhbGciOiJIUzI1NiJ... │
+     │    eyJhbGciOiJIUzI1NiJ...  │
      │ ─────────────────────────→ │
      │                            │── JWT Filter 驗證 Token
      │                            │── 取出使用者資訊
-     │ 4. 回傳資料               │
+     │ 4. 回傳資料                 │
      │ ←───────────────────────── │
 ```
 
 > **核心概念**：伺服器不儲存 Session，只靠 JWT 的簽章來驗證身份。
+
+### ⚠️ 常見觀念錯誤
+
+❌ **錯誤**：「JWT 的 Payload 是加密的，所以可以存放密碼」
+```
+// 不要這樣做！Payload 只是 Base64 編碼，任何人都能解碼
+{ "sub": "alice", "password": "1234" }  ← 絕對不能放敏感資料
+```
+
+✅ **正確**：Payload 只存放**非敏感的識別資訊**（使用者名稱、角色、到期時間）
+```
+{ "sub": "alice", "role": "ROLE_USER", "exp": 1700086400 }
+```
+
+---
+
+❌ **錯誤**：認為 JWT 一旦簽發就能「撤銷」
+```
+// 你無法讓一個尚未過期的 JWT 立刻失效（除非維護黑名單）
+```
+
+✅ **正確**：JWT 是**無狀態**的，到期前永遠有效。安全做法是設定**短效期**（如 15 分鐘）搭配 Refresh Token。
 
 ---
 
@@ -366,6 +415,22 @@ public class JwtService {
 | `extractRole(token)` | 從 Token 取出角色 |
 | `isTokenValid(token)` | 檢查 Token 是否有效（簽章正確 + 未過期） |
 
+### ⚠️ 常見陷阱：Secret 長度不足
+
+❌ **錯誤**：Secret 字串太短（少於 32 bytes / 256 bits）
+```properties
+app.jwt.secret=mysecret   # 太短！jjwt 會拋出 WeakKeyException
+```
+
+✅ **正確**：至少 32 bytes，使用以下指令產生安全的 Secret：
+```bash
+openssl rand -base64 32
+# 輸出類似：dGhpcylzLWEtc2VjcmV0LWtleS1mb3ItandTLXRlc3Rpbmc=
+```
+
+> 💡 **現在試試看**：在 Postman 呼叫 `POST /api/auth/login`，取得 Token 後，
+> 貼到 [https://jwt.io](https://jwt.io) 解碼，確認 Payload 中有 `sub`、`role`、`exp` 三個欄位。
+
 ---
 
 ## 7. CustomUserDetailsService
@@ -485,6 +550,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 7. 放入 SecurityContextHolder（Spring Security 就知道你已登入）
 8. 繼續執行後續 Filter 和 Controller
 ```
+
+### ⚠️ 常見陷阱：忘記加 "Bearer " 前綴
+
+❌ **錯誤**：直接貼 Token 到 Authorization Header
+```
+Authorization: eyJhbGciOiJIUzI1NiJ9...   ← 少了 "Bearer "
+```
+
+✅ **正確**：Header 值必須是 `Bearer ` + Token（注意中間有一個空格）
+```
+Authorization: Bearer eyJhbGciOiJIUzI1NiJ9...
+```
+
+> 💡 **現在試試看**：
+> 1. 在 Postman 的 Authorization 選 **Bearer Token**，貼上 Token → 應收到 `200 OK`
+> 2. 改成 **No Auth** → 應收到 `401 Unauthorized`
+> 3. 故意改動 Token 中的一個字元 → 應收到 `401 Unauthorized`（簽章驗證失敗）
 
 ---
 
@@ -777,9 +859,12 @@ Authorization: Bearer eyJhbGciOiJIUzM4NCJ9....
 
 改用 `admin` 登入取得的 Token：
 
+```http
+GET http://localhost:8080/api/admin/dashboard
+Authorization: Bearer your_admin_token
 ```
-回應：200 OK — { "message": "這是管理員專屬頁面" }
-```
+
+預期回應：`200 OK` — `{ "message": "這是管理員專屬頁面" }`
 
 ---
 
@@ -838,11 +923,155 @@ openssl rand -base64 32
 
 ## 16. 動手練習
 
-1. 建立 JWT 專案，完成 User Entity、JwtService、JwtAuthenticationFilter
-2. 測試註冊 → 登入 → 取得 Token → 存取 API 的完整流程
-3. 新增 `GET /api/profile` 端點，回傳目前登入使用者的名稱
-4. 建立 admin 專屬 API，測試一般使用者存取時回傳 403
-5. 修改 `app.jwt.expiration` 為 5000（5 秒），測試 Token 過期後的回應
+> 依序完成以下練習，從驗證概念理解到自己動手擴充功能。每題含難度標示、提示與預期輸出。
+
+---
+
+### 🟢 練習一（Easy）：解碼 JWT，確認三段式結構
+
+**任務**：取得登入後的 Token，手動解碼觀察內容
+
+**步驟**：
+1. 啟動專案，用 Postman 呼叫 `POST /api/auth/login`（帳號 alice / 1234）
+2. 複製回應中的 `token` 字串
+3. 開啟 [https://jwt.io](https://jwt.io)，將 Token 貼到 **Encoded** 欄位
+4. 觀察右側 **Payload** 區塊
+
+**預期 Payload**：
+```json
+{
+  "sub": "alice",
+  "role": "ROLE_USER",
+  "iat": 1700000000,
+  "exp": 1700086400
+}
+```
+
+**學習重點**：Payload 是 Base64 **編碼**，不是加密。任何人都能解碼，因此**絕對不能存放密碼或敏感資訊**。
+
+---
+
+### 🟢 練習二（Easy）：驗證 Token 有效性
+
+**任務**：用三種狀況測試 API，確認 JWT Filter 正確攔截
+
+| 測試狀況 | 請求方式 | 預期回應 |
+|----------|----------|----------|
+| 不帶 Token | `GET /api/hello`，無 Authorization Header | `401 Unauthorized` |
+| 帶有效 Token | `GET /api/hello`，`Authorization: Bearer <token>` | `200 OK` |
+| 篡改 Token | 把 Token 最後幾個字元改掉 | `401 Unauthorized` |
+
+**驗證完成標準**：三種測試結果都符合預期，代表 `JwtAuthenticationFilter` 運作正常。
+
+> 補充：帶 Token 的 Header 標準格式為 `Authorization: Bearer your_jwt_token`。
+
+---
+
+### 🟡 練習三（Medium）：新增 /api/profile 端點
+
+**任務**：建立一個端點，讓登入的使用者可以查詢自己的帳號資訊
+
+**要求**：
+- 路徑：`GET /api/profile`
+- 需要有效 JWT（不需特定角色）
+- 回傳格式：
+```json
+{
+  "username": "alice",
+  "role": "ROLE_USER"
+}
+```
+
+**提示**：在 Controller 中用 `SecurityContextHolder` 取得目前登入者：
+```java
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
+
+@GetMapping("/profile")
+public ResponseEntity<Map<String, String>> profile() {
+    Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    String username = auth.getName();
+    String role = auth.getAuthorities().iterator().next().getAuthority();
+    return ResponseEntity.ok(Map.of("username", username, "role", role));
+}
+```
+
+**驗證步驟**：
+1. 用 alice Token → 回傳 alice 的資料
+2. 用 admin Token → 回傳 admin 的資料
+3. 不帶 Token → `401 Unauthorized`
+
+---
+
+### 🟡 練習四（Medium）：測試 Token 過期行為
+
+**任務**：驗證過期的 Token 無法存取 API
+
+**步驟**：
+1. 修改 `application.properties`，將過期時間改為 5 秒：
+```properties
+app.jwt.expiration=5000
+```
+2. 重啟專案，用 Postman 登入取得 Token
+3. **等待 5 秒以上**
+4. 用該 Token 呼叫 `GET /api/hello`
+
+**預期結果**：`401 Unauthorized`（Token 已過期）
+
+**還原**：測試完記得改回 `86400000`（24 小時），避免影響後續練習。
+
+---
+
+### 🔴 練習五（Hard）：Admin 專屬 API ── 回傳所有使用者清單
+
+**任務**：實作一個只有 ADMIN 角色能呼叫的端點，回傳系統中所有使用者
+
+**要求**：
+- 路徑：`GET /api/admin/users`
+- `ROLE_ADMIN` → `200 OK`，回傳使用者列表
+- `ROLE_USER` → `403 Forbidden`
+- 未登入 → `401 Unauthorized`
+- 回傳格式：
+```json
+[
+  { "id": 1, "username": "alice", "role": "ROLE_USER" },
+  { "id": 2, "username": "admin", "role": "ROLE_ADMIN" }
+]
+```
+
+**提示**：
+- 在 `DemoController` 中新增端點，注入 `UserRepository`
+- `SecurityConfig` 已設定 `/api/admin/**` 需要 `ADMIN` 角色，無須修改
+
+**驗證步驟**：
+1. 用 alice 登入取得 Token → 呼叫 `GET /api/admin/users` → 應得 `403`
+2. 用 admin 登入取得 Token → 呼叫 `GET /api/admin/users` → 應得使用者列表
+
+---
+
+### 🔴 練習六（Hard）：擴充 Token，加入 email Claim
+
+**任務**：修改 `JwtService`，讓 Token 的 Payload 包含 `email` 欄位，並讓 `/api/profile` 回傳 email
+
+**需修改的位置**：
+
+| 檔案 | 修改內容 |
+|------|----------|
+| `JwtService` | `generateToken()` 新增 `email` 參數，加入 `.claim("email", email)` |
+| `JwtService` | 新增 `extractEmail(String token)` 方法 |
+| `AuthController` | `login()` 呼叫 `generateToken()` 時傳入 `user.getEmail()` |
+| `DemoController` | `/api/profile` 新增 `email` 欄位（用 `jwtService.extractEmail(token)` 取得） |
+
+**驗證**：登入後在 jwt.io 確認 Payload 包含 `email`：
+```json
+{
+  "sub": "alice",
+  "role": "ROLE_USER",
+  "email": "alice@test.com",
+  "iat": 1700000000,
+  "exp": 1700086400
+}
+```
 
 ---
 
@@ -858,3 +1087,5 @@ openssl rand -base64 32
 | SecurityContextHolder | 存放已認證的使用者資訊 |
 | Base64 Secret | 至少 256 bits，用 `openssl rand -base64 32` 產生 |
 | 角色權限 | `hasRole("ADMIN")` + Token 中的 `role` Claim |
+
+> Header 格式重點：呼叫受保護 API 時，請在 Header 使用 `Authorization: Bearer your_jwt_token`。
