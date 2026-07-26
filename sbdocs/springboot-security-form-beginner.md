@@ -109,10 +109,18 @@ Spring Security 是 Spring 生態系的**安全防護框架**，主要處理兩�
         <groupId>org.xerial</groupId>
         <artifactId>sqlite-jdbc</artifactId>
     </dependency>
+
+    <!-- Hibernate SQLite 方言（Spring Boot 3.x 必要） -->
+    <dependency>
+        <groupId>org.hibernate.orm</groupId>
+        <artifactId>hibernate-community-dialects</artifactId>
+    </dependency>
 </dependencies>
 ```
 
 > 💡 **SQLite vs MySQL**：SQLite 是輕量級檔案資料庫，不需要額外安裝服務，資料直接存成一個 `.db` 檔案。適合開發、學習和小型專案。正式環境再切換成 MySQL 即可。
+>
+> ⚠️ **必裝**：`hibernate-community-dialects` 提供 `SQLiteDialect` 類別，沒有這個套件 JPA 無法與 SQLite 溝通，`.db` 檔案不會產生。
 
 ### 2.2 第一次啟動 — 看看預設行為
 
@@ -548,17 +556,17 @@ Spring Security 自動在 request 中提供一些屬性：
 
 ### 9.1 準備 SQLite 資料庫
 
-SQLite 是**檔案型資料庫**，不需要啟動服務。只需在專案目錄下建立一個 `.db` 檔案即可：
+SQLite 是**檔案型資料庫**，不需要啟動服務。只需在專案目錄下有一個 `.db` 檔案即可：
 
 ```
 project-root/
 ├── src/
 ├── pom.xml
 └── data/
-    └── security_demo.db       ← SQLite 資料庫檔案（JPA 會自動建立）
+    └── security_demo.db       ← SQLite 資料庫檔案（自動建立）
 ```
 
-> SQLite 沒有 `CREATE DATABASE` 的概念，直接指定檔案路徑就行。JPA 的 `ddl-auto=update` 會自動建立 `users` 和 `user_roles` 表。
+> SQLite 沒有 `CREATE DATABASE` 的概念，直接指定檔案路徑就行。
 
 ### 9.2 application.properties
 
@@ -567,11 +575,11 @@ project-root/
 ```properties
 server.port=8080
 
-# SQLite 資料庫
-spring.datasource.url=jdbc:sqlite:data/security_demo.db
+# SQLite 資料庫（資料存成 .db 檔案）
+spring.datasource.url=jdbc:sqlite:security_demo.db
 spring.datasource.driver-class-name=org.sqlite.JDBC
 
-# SQLite 不支援ddl-auto=update，需搭配spring.jpa.database-platform
+# Hibernate SQLite 方言（需要 hibernate-community-dialects 套件）
 spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
@@ -580,9 +588,10 @@ spring.thymeleaf.cache=false
 ```
 
 > 💡 **SQLite 使用方式**：
-> 1. 在專案根目錄建立 `data` 資料夾
-> 2. 啟動專案後，`security_demo.db` 檔案會自動建立
-> 3. 可以用 [DB Browser for SQLite](https://sqlitebrowser.org/) 開啟 `.db` 檔案查看資料
+> 1. 啟動專案後，`data/security_demo.db` 檔案會自動建立
+> 2. 可以用 [DB Browser for SQLite](https://sqlitebrowser.org/) 開啟 `.db` 檔案查看資料
+>
+> ⚠️ **`[SQLITE_CANTOPEN]` 錯誤**：如果看到這個錯誤，表示 `data/` 資料夾不存在或路徑錯誤。**在專案根目錄手動建立 `data/` 資料夾**即可。
 
 #### 方案 B：MySQL（正式環境）
 
@@ -1603,6 +1612,9 @@ public String register(@RequestParam String username,
 | 資料庫連線失敗 | SQLite 檔案路徑錯誤或 MySQL 未啟動 | SQLite：確認 `data/` 資料夾存在；MySQL：確認服務和 `application.properties` 設定 |
 | CSRF Token mismatch | 自己寫的表單沒有加 CSRF Token | 改用 `th:action` 讓 Thymeleaf 自動嵌入 Token |
 | SQLite `data/security_demo.db` 打不開 | 檔案路徑錯誤或 `data` 資料夾不存在 | 確認 `data/` 資料夾在專案根目錄，`spring.datasource.url` 指向正確路徑 |
+| `[SQLITE_CANTOPEN] Unable to open the database file` | `data/` 資料夾不存在，SQLite 無法建立檔案 | 在專案根目錄手動建立 `data/` 資料夾 |
+| SQLite `.db` 檔案完全沒有產生 | 缺少 `hibernate-community-dialects` 套件 | pom.xml 加入 `org.hibernate.orm:hibernate-community-dialects` |
+| 啟動時報 `SQLiteDialect class not found` | 同上，缺少 Hibernate 方言套件 | 確認 pom.xml 有 `hibernate-community-dialects` 依賴 |
 | SQLite 顯示 `database is locked` | 多個程式同時存取同一個 `.db` 檔案 | 確認沒有其他程式（如 DB Browser）正在鎖定該檔案 |
 | SQLite 中文資料顯示亂碼 | 編碼設定問題 | SQLite 預設支援 UTF-8，確認連線字串沒有指定其他編碼 |
 | `SQLDialect` 相關錯誤 | 缺少 Hibernate SQLite 方言套件 | 確認 `spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect` 設定正確 |
@@ -1628,6 +1640,7 @@ public String register(@RequestParam String username,
 | CSRF | 表單登入預設啟用，Thymeleaf 自動處理 Token |
 | `ROLE_` 前綴 | Spring Security 的角色必須以 `ROLE_` 開頭 |
 | SQLite | 輕量級檔案資料庫，免安裝，資料存成 `.db` 檔案 |
+| `hibernate-community-dialects` | Spring Boot 3.x 使用 SQLite 必要的方言套件 |
 | `ddl-auto=update` | JPA 自動建立/更新資料表結構，搭配 SQLite 方言使用 |
 
 ### 進階用法
