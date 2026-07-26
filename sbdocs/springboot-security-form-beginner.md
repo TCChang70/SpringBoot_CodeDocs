@@ -38,7 +38,7 @@
 - [ ] 用 `InMemoryUserDetailsManager` 設定帳號密碼，成功登入
 - [ ] 設定 `/admin/**` 只有 ADMIN 角色可以存取
 - [ ] 用 `user` 帳號存取 `/admin` 頁面，看到 403 錯誤
-- [ ] 改用 JPA 從 MySQL 資料庫讀取使用者，登入行為不變
+- [ ] 改用 JPA 從 SQLite 資料庫讀取使用者，登入行為不變
 
 **進階**：
 - [ ] 自訂登入表單欄位名稱（非預設的 `username` / `password`）
@@ -104,16 +104,15 @@ Spring Security 是 Spring 生態系的**安全防護框架**，主要處理兩�
         <scope>runtime</scope>
     </dependency>
 
-    <!-- H2 Database（開發/學習用，免安裝） -->
+    <!-- SQLite（輕量級資料庫，免安裝，資料持久化） -->
     <dependency>
-        <groupId>com.h2database</groupId>
-        <artifactId>h2</artifactId>
-        <scope>runtime</scope>
+        <groupId>org.xerial</groupId>
+        <artifactId>sqlite-jdbc</artifactId>
     </dependency>
 </dependencies>
 ```
 
-> 💡 **H2 vs MySQL**：H2 是內嵌式資料庫，不需要額外安裝，適合開發和學習。正式環境再切換成 MySQL 即可。
+> 💡 **SQLite vs MySQL**：SQLite 是輕量級檔案資料庫，不需要額外安裝服務，資料直接存成一個 `.db` 檔案。適合開發、學習和小型專案。正式環境再切換成 MySQL 即可。
 
 ### 2.2 第一次啟動 — 看看預設行為
 
@@ -545,48 +544,45 @@ Spring Security 自動在 request 中提供一些屬性：
 
 ---
 
-## 9. 第二種使用者：從資料庫讀取（JPA + MySQL）
+## 9. 第二種使用者：從資料庫讀取（JPA + SQLite）
 
-### 9.1 建立資料庫
+### 9.1 準備 SQLite 資料庫
 
-#### 使用 H2 時
+SQLite 是**檔案型資料庫**，不需要啟動服務。只需在專案目錄下建立一個 `.db` 檔案即可：
 
-H2 是內嵌式資料庫，**不需要手動建立資料庫**，JPA 會自動建立 `users` 和 `user_roles` 表。
-
-#### 使用 MySQL 時
-
-需要手動建立資料庫：
-
-```sql
-CREATE DATABASE IF NOT EXISTS security_demo
-  DEFAULT CHARACTER SET utf8mb4
-  DEFAULT COLLATE utf8mb4_unicode_ci;
 ```
+project-root/
+├── src/
+├── pom.xml
+└── data/
+    └── security_demo.db       ← SQLite 資料庫檔案（JPA 會自動建立）
+```
+
+> SQLite 沒有 `CREATE DATABASE` 的概念，直接指定檔案路徑就行。JPA 的 `ddl-auto=update` 會自動建立 `users` 和 `user_roles` 表。
 
 ### 9.2 application.properties
 
-#### 方案 A：H2 Database（開發/學習用，免安裝）
+#### 方案 A：SQLite（輕量級，免安裝，資料持久化）
 
 ```properties
 server.port=8080
 
-# H2 內嵌式資料庫
-spring.datasource.url=jdbc:h2:mem:security_demo;DB_CLOSE_DELAY=-1
-spring.datasource.username=sa
-spring.datasource.password=
-spring.datasource.driver-class-name=org.h2.Driver
+# SQLite 資料庫
+spring.datasource.url=jdbc:sqlite:data/security_demo.db
+spring.datasource.driver-class-name=org.sqlite.JDBC
 
+# SQLite 不支援ddl-auto=update，需搭配spring.jpa.database-platform
+spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect
 spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
-
-# H2 Console（方便查看資料，啟動後訪問 /h2-console）
-spring.h2.console.enabled=true
-spring.h2.console.path=/h2-console
 
 spring.thymeleaf.cache=false
 ```
 
-> 💡 **H2 Console 使用方式**：啟動專案後開啟 `http://localhost:8080/h2-console`，JDBC URL 輸入 `jdbc:h2:mem:security_demo`，帳號 `sa`，密碼空白即可登入查看資料表。
+> 💡 **SQLite 使用方式**：
+> 1. 在專案根目錄建立 `data` 資料夾
+> 2. 啟動專案後，`security_demo.db` 檔案會自動建立
+> 3. 可以用 [DB Browser for SQLite](https://sqlitebrowser.org/) 開啟 `.db` 檔案查看資料
 
 #### 方案 B：MySQL（正式環境）
 
@@ -604,21 +600,7 @@ spring.jpa.show-sql=true
 spring.thymeleaf.cache=false
 ```
 
-> 💡 **切換方式**：只需要改 `application.properties` 中的資料庫設定，其他程式碼完全不需要修改。H2 切換成 MySQL 時，也要在 SecurityConfig 中關閉 H2 Console 的 CSRF（見下方說明）。
-
-#### H2 Console 的 CSRF 處理（若使用 H2）
-
-H2 Console 預設需要 CSRF Token，但 H2 Console 自己不會帶，所以需要在 `SecurityConfig` 中額外設定：
-
-```java
-http
-    .csrf(csrf -> csrf
-        .ignoringRequestMatchers("/h2-console/**")   // H2 Console 不需要 CSRF
-    )
-    .headers(headers -> headers
-        .frameOptions(frame -> frame.sameOrigin())   // H2 Console 需要 iframe 支援
-    )
-```
+> 💡 **切換方式**：只需要改 `application.properties` 中的資料庫設定和 `pom.xml` 的驅動依賴，其他程式碼完全不需要修改。
 
 ### 9.3 User Entity
 
@@ -784,15 +766,8 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/home", "/css/**").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()       // H2 Console 不需要登入
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
-            )
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**")           // H2 Console 不需要 CSRF
-            )
-            .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin())           // H2 Console 需要 iframe 支援
             )
             .formLogin(form -> form
                 .loginPage("/login")
@@ -931,13 +906,15 @@ src/main/
 │   │   └── CustomUserDetailsService.java ← 從 DB 載入使用者
 │   └── controller/
 │       └── PageController.java          ← 頁面路由
-└── resources/
-    ├── application.properties
-    └── templates/
-        ├── home.html                    ← 公開首頁
-        ├── login.html                   ← 登入頁
-        ├── dashboard.html               ← 登入後頁面
-        └── admin.html                   ← 管理員頁面
+├── resources/
+│   ├── application.properties
+│   └── templates/
+│       ├── home.html                    ← 公開首頁
+│       ├── login.html                   ← 登入頁
+│       ├── dashboard.html               ← 登入後頁面
+│       └── admin.html                   ← 管理員頁面
+└── data/
+    └── security_demo.db                 ← SQLite 資料庫檔案（自動建立）
 ```
 
 ---
@@ -951,7 +928,7 @@ src/main/
 5. 點「管理頁」→ 顯示 403 禁止存取（user 沒有 ADMIN 角色）
 6. 登出，改用 `admin` / `admin` 登入
 7. 點「管理頁」→ 成功看到管理頁面
-8. **（H2 使用者）** 開啟 `http://localhost:8080/h2-console`，查看 `users` 和 `user_roles` 表的資料
+8. **（SQLite 使用者）** 用 DB Browser for SQLite 開啟 `data/security_demo.db`，查看 `users` 和 `user_roles` 表的資料
 
 ---
 
@@ -1363,16 +1340,8 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/home", "/css/**", "/js/**", "/register").permitAll()
-                .requestMatchers("/h2-console/**").permitAll()
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
-            )
-            // CSRF（H2 Console 排除）
-            .csrf(csrf -> csrf
-                .ignoringRequestMatchers("/h2-console/**")
-            )
-            .headers(headers -> headers
-                .frameOptions(frame -> frame.sameOrigin())
             )
             // 表單登入（進階設定）
             .formLogin(form -> form
@@ -1510,13 +1479,13 @@ public class HelloController {
 
 ---
 
-### 🔴 練習五（Hard）：整合 JPA + MySQL，改用資料庫讀取使用者
+### 🔴 練習五（Hard）：整合 JPA + SQLite，改用資料庫讀取使用者
 
-**任務**：移除 `InMemoryUserDetailsManager`，改用 MySQL 資料庫儲存使用者
+**任務**：移除 `InMemoryUserDetailsManager`，改用 SQLite 資料庫儲存使用者
 
 **步驟清單**：
-1. 建立 MySQL 資料庫 `security_demo`
-2. 設定 `application.properties`（資料庫連線 + JPA）
+1. 在 `pom.xml` 加入 `sqlite-jdbc` 依賴
+2. 設定 `application.properties`（SQLite 連線 + JPA）
 3. 建立 `User` Entity（`id`、`username`、`password`、`email`、`roles`）
 4. 建立 `UserRepository`（`findByUsername`、`existsByUsername`）
 5. 實作 `CustomUserDetailsService`
@@ -1524,9 +1493,10 @@ public class HelloController {
 7. 修改 `SecurityConfig`，移除 `UserDetailsService` Bean
 
 **驗證步驟**：
-1. 啟動專案後，用 MySQL Workbench 確認 `users` 和 `user_roles` 表已建立
-2. 登入行為應與之前相同（user/1234 和 admin/admin）
-3. 確認密碼在資料庫中是 BCrypt 格式（`$2a$10$...`），不是明碼
+1. 啟動專案後，確認 `data/security_demo.db` 檔案已自動建立
+2. 用 DB Browser for SQLite 開啟 `.db` 檔案，確認 `users` 和 `user_roles` 表已建立
+3. 登入行為應與之前相同（user/1234 和 admin/admin）
+4. 確認密碼在資料庫中是 BCrypt 格式（`$2a$10$...`），不是明碼
 
 ---
 
@@ -1630,11 +1600,12 @@ public String register(@RequestParam String username,
 | 用 `user` 帳號可以進 `/admin` | `ROLE_` 前綴設定錯誤 | 確認 `DataInitializer` 中用 `ROLE_ADMIN`，`hasRole()` 用 `ADMIN` |
 | 登出後按返回可以看到舊頁面 | 瀏覽器快取 | 屬於正常行為，實際請求會被攔截 |
 | `UserDetailsService` 找到多個 Bean | InMemory 和 Custom 同時存在 | 移除其中一個的 `@Bean` |
-| 資料庫連線失敗 | MySQL 未啟動或帳密錯誤 | 確認 MySQL 服務、對照 `application.properties` 設定 |
+| 資料庫連線失敗 | SQLite 檔案路徑錯誤或 MySQL 未啟動 | SQLite：確認 `data/` 資料夾存在；MySQL：確認服務和 `application.properties` 設定 |
 | CSRF Token mismatch | 自己寫的表單沒有加 CSRF Token | 改用 `th:action` 讓 Thymeleaf 自動嵌入 Token |
-| H2 Console 打不開或 403 | CSRF 或 iframe 限制 | `SecurityConfig` 中加入 `ignoringRequestMatchers("/h2-console/**")` 和 `frameOptions().sameOrigin()` |
-| H2 Console JDBC URL 連不上 | URL 格式錯誤 | 輸入 `jdbc:h2:mem:security_demo`，不是 `jdbc:h2:tcp://...` |
-| 每次重啟專案資料消失 | H2 預設是記憶體模式 | 這是預期行為，H2 資料只存在於程式運行期間；如需持久化改用 `jdbc:h2:file:./data/db` |
+| SQLite `data/security_demo.db` 打不開 | 檔案路徑錯誤或 `data` 資料夾不存在 | 確認 `data/` 資料夾在專案根目錄，`spring.datasource.url` 指向正確路徑 |
+| SQLite 顯示 `database is locked` | 多個程式同時存取同一個 `.db` 檔案 | 確認沒有其他程式（如 DB Browser）正在鎖定該檔案 |
+| SQLite 中文資料顯示亂碼 | 編碼設定問題 | SQLite 預設支援 UTF-8，確認連線字串沒有指定其他編碼 |
+| `SQLDialect` 相關錯誤 | 缺少 Hibernate SQLite 方言套件 | 確認 `spring.jpa.database-platform=org.hibernate.community.dialect.SQLiteDialect` 設定正確 |
 | 自訂欄位名稱後登入失敗 | `usernameParameter` 與 HTML `name` 不一致 | 確認 `usernameParameter("account")` 的值和 HTML `name="account"` 完全一致 |
 | `successHandler` 設了但沒效 | 同時設了 `defaultSuccessUrl` | 兩者不能同時使用，擇一設定 |
 | Remember-Me 勾了但重開瀏覽器無效 | 沒有設定 `userDetailsService` | `rememberMe()` 中加入 `.userDetailsService(userDetailsService)` |
@@ -1656,6 +1627,8 @@ public String register(@RequestParam String username,
 | hasRole("ADMIN") | 限制特定 URL 只有特定角色可以存取 |
 | CSRF | 表單登入預設啟用，Thymeleaf 自動處理 Token |
 | `ROLE_` 前綴 | Spring Security 的角色必須以 `ROLE_` 開頭 |
+| SQLite | 輕量級檔案資料庫，免安裝，資料存成 `.db` 檔案 |
+| `ddl-auto=update` | JPA 自動建立/更新資料表結構，搭配 SQLite 方言使用 |
 
 ### 進階用法
 
