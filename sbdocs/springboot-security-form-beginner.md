@@ -8,6 +8,9 @@
 - 用 JPA 從資料庫讀取使用者
 - 用 BCrypt 加密密碼
 - 設定不同角色的頁面權限
+- **（進階）** 自訂欄位名稱、successHandler/failureHandler
+- **（進階）** 記住我（Remember-Me）、Session 管理
+- **（進階）** 方法層級安全控制（@PreAuthorize）
 
 ---
 
@@ -30,11 +33,19 @@
 
 完成本章節後，你應該能夠自行做到（可當作自我檢核）：
 
+**基礎**：
 - [ ] 啟動有 Spring Security 的專案，看到預設登入頁
 - [ ] 用 `InMemoryUserDetailsManager` 設定帳號密碼，成功登入
 - [ ] 設定 `/admin/**` 只有 ADMIN 角色可以存取
 - [ ] 用 `user` 帳號存取 `/admin` 頁面，看到 403 錯誤
 - [ ] 改用 JPA 從 MySQL 資料庫讀取使用者，登入行為不變
+
+**進階**：
+- [ ] 自訂登入表單欄位名稱（非預設的 `username` / `password`）
+- [ ] 用 `successHandler` / `failureHandler` 控制登入成功後的導向邏輯
+- [ ] 加入 Remember-Me 功能，重開瀏覽器自動登入
+- [ ] 用 `@PreAuthorize` 控制 Controller 方法的存取權限
+- [ ] 設定 Session 限制，防止帳號被多人同時登入
 
 ---
 
@@ -86,14 +97,23 @@ Spring Security 是 Spring 生態系的**安全防護框架**，主要處理兩�
         <artifactId>spring-boot-starter-data-jpa</artifactId>
     </dependency>
 
-    <!-- MySQL 驅動 -->
+    <!-- MySQL 驅動（正式環境） -->
     <dependency>
         <groupId>com.mysql</groupId>
         <artifactId>mysql-connector-j</artifactId>
         <scope>runtime</scope>
     </dependency>
+
+    <!-- H2 Database（開發/學習用，免安裝） -->
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <scope>runtime</scope>
+    </dependency>
 </dependencies>
 ```
+
+> 💡 **H2 vs MySQL**：H2 是內嵌式資料庫，不需要額外安裝，適合開發和學習。正式環境再切換成 MySQL 即可。
 
 ### 2.2 第一次啟動 — 看看預設行為
 
@@ -529,6 +549,14 @@ Spring Security 自動在 request 中提供一些屬性：
 
 ### 9.1 建立資料庫
 
+#### 使用 H2 時
+
+H2 是內嵌式資料庫，**不需要手動建立資料庫**，JPA 會自動建立 `users` 和 `user_roles` 表。
+
+#### 使用 MySQL 時
+
+需要手動建立資料庫：
+
 ```sql
 CREATE DATABASE IF NOT EXISTS security_demo
   DEFAULT CHARACTER SET utf8mb4
@@ -536,6 +564,31 @@ CREATE DATABASE IF NOT EXISTS security_demo
 ```
 
 ### 9.2 application.properties
+
+#### 方案 A：H2 Database（開發/學習用，免安裝）
+
+```properties
+server.port=8080
+
+# H2 內嵌式資料庫
+spring.datasource.url=jdbc:h2:mem:security_demo;DB_CLOSE_DELAY=-1
+spring.datasource.username=sa
+spring.datasource.password=
+spring.datasource.driver-class-name=org.h2.Driver
+
+spring.jpa.hibernate.ddl-auto=update
+spring.jpa.show-sql=true
+
+# H2 Console（方便查看資料，啟動後訪問 /h2-console）
+spring.h2.console.enabled=true
+spring.h2.console.path=/h2-console
+
+spring.thymeleaf.cache=false
+```
+
+> 💡 **H2 Console 使用方式**：啟動專案後開啟 `http://localhost:8080/h2-console`，JDBC URL 輸入 `jdbc:h2:mem:security_demo`，帳號 `sa`，密碼空白即可登入查看資料表。
+
+#### 方案 B：MySQL（正式環境）
 
 ```properties
 server.port=8080
@@ -549,6 +602,22 @@ spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=true
 
 spring.thymeleaf.cache=false
+```
+
+> 💡 **切換方式**：只需要改 `application.properties` 中的資料庫設定，其他程式碼完全不需要修改。H2 切換成 MySQL 時，也要在 SecurityConfig 中關閉 H2 Console 的 CSRF（見下方說明）。
+
+#### H2 Console 的 CSRF 處理（若使用 H2）
+
+H2 Console 預設需要 CSRF Token，但 H2 Console 自己不會帶，所以需要在 `SecurityConfig` 中額外設定：
+
+```java
+http
+    .csrf(csrf -> csrf
+        .ignoringRequestMatchers("/h2-console/**")   // H2 Console 不需要 CSRF
+    )
+    .headers(headers -> headers
+        .frameOptions(frame -> frame.sameOrigin())   // H2 Console 需要 iframe 支援
+    )
 ```
 
 ### 9.3 User Entity
@@ -715,8 +784,15 @@ public class SecurityConfig {
         http
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers("/", "/home", "/css/**").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()       // H2 Console 不需要登入
                 .requestMatchers("/admin/**").hasRole("ADMIN")
                 .anyRequest().authenticated()
+            )
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/h2-console/**")           // H2 Console 不需要 CSRF
+            )
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin())           // H2 Console 需要 iframe 支援
             )
             .formLogin(form -> form
                 .loginPage("/login")
@@ -875,10 +951,472 @@ src/main/
 5. 點「管理頁」→ 顯示 403 禁止存取（user 沒有 ADMIN 角色）
 6. 登出，改用 `admin` / `admin` 登入
 7. 點「管理頁」→ 成功看到管理頁面
+8. **（H2 使用者）** 開啟 `http://localhost:8080/h2-console`，查看 `users` 和 `user_roles` 表的資料
 
 ---
 
-## 14. 動手練習
+## 14. 表單登入進階用法
+
+> 以下介紹實務上常見的進階設定，讓你的表單登入更靈活、更安全。
+
+### 14.1 自訂表單欄位名稱
+
+Spring Security 預設的表單欄位是 `username` 和 `password`，如果前端表單用了不同的名稱，就需要用 `usernameParameter` / `passwordParameter` 指定：
+
+```java
+.formLogin(form -> form
+    .loginPage("/login")
+    .usernameParameter("account")       // 對應表單中的 name="account"
+    .passwordParameter("passwd")        // 對應表單中的 name="passwd"
+    .defaultSuccessUrl("/dashboard")
+    .permitAll()
+)
+```
+
+對應的 HTML 表單：
+
+```html
+<form method="post" th:action="@{/login}">
+    <input type="text" name="account" required>        <!-- ← 改成 account -->
+    <input type="password" name="passwd" required>     <!-- ← 改成 passwd -->
+    <button type="submit">登入</button>
+</form>
+```
+
+> ⚠️ **注意**：`usernameParameter("account")` 的值必須和 HTML `name` 屬性**完全一致**，否則 Spring Security 無法收到欄位值，會一直報登入失敗。
+
+### 14.2 自訂登入處理網址
+
+除了 `loginPage` 之外，還可以改變表單送出的處理網址和登入頁的顯示網址：
+
+```java
+.formLogin(form -> form
+    .loginPage("/my-login")              // GET /my-login → 顯示登入頁
+    .loginProcessingUrl("/do-login")     // POST /do-login → 處理登入（預設是 /login）
+    .defaultSuccessUrl("/dashboard")
+    .permitAll()
+)
+```
+
+| 設定 | 說明 |
+|------|------|
+| `loginPage("/my-login")` | 自訂登入頁面的 GET 網址 |
+| `loginProcessingUrl("/do-login")` | 表單 POST 送出的處理網址（預設 `/login`） |
+| `usernameParameter("account")` | 自訂帳號欄位名稱（預設 `username`） |
+| `passwordParameter("passwd")` | 自訂密碼欄位名稱（預設 `password`） |
+
+> 💡 **使用情境**：如果前端用 AJAX 或框架（React/Vue）送出表單，常需要改變 `loginProcessingUrl` 來配合路由設計。
+
+### 14.3 登入成功/失敗處理（SuccessHandler / FailureHandler）
+
+當 `defaultSuccessUrl` 不夠用時（例如要記錄登入時間、依角色導向不同頁面），可以用 Handler 做程式化處理：
+
+#### AuthenticationSuccessHandler
+
+```java
+package com.example.demo.config;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.stereotype.Component;
+import java.io.IOException;
+
+@Component
+public class CustomSuccessHandler implements AuthenticationSuccessHandler {
+
+    @Override
+    public void onAuthenticationSuccess(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        Authentication authentication)
+            throws IOException, ServletException {
+
+        // 取得登入者角色
+        boolean isAdmin = authentication.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (isAdmin) {
+            response.sendRedirect("/admin");         // ADMIN → 導到管理頁
+        } else {
+            response.sendRedirect("/dashboard");     // 一般用戶 → 導到儀表板
+        }
+    }
+}
+```
+
+#### AuthenticationFailureHandler
+
+```java
+package com.example.demo.config;
+
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.stereotype.Component;
+import java.io.IOException;
+
+@Component
+public class CustomFailureHandler implements AuthenticationFailureHandler {
+
+    @Override
+    public void onAuthenticationFailure(HttpServletRequest request,
+                                        HttpServletResponse response,
+                                        AuthenticationException exception)
+            throws IOException, ServletException {
+
+        // 可以加入更多邏輯：記錄失敗次數、鎖定帳號等
+        String errorMessage = "帳號或密碼錯誤";
+        if (exception.getMessage().contains("disabled")) {
+            帳號已被停用，請聯繫管理員
+        }
+
+        response.sendRedirect("/login?error=" + encodeURIComponent(errorMessage));
+    }
+}
+```
+
+#### 在 SecurityConfig 中使用
+
+```java
+@Autowired
+private CustomSuccessHandler successHandler;
+
+@Autowired
+private CustomFailureHandler failureHandler;
+
+@Bean
+public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http
+        .authorizeHttpRequests(auth -> auth
+            .requestMatchers("/", "/home", "/css/**").permitAll()
+            .requestMatchers("/admin/**").hasRole("ADMIN")
+            .anyRequest().authenticated()
+        )
+        .formLogin(form -> form
+            .loginPage("/login")
+            .successHandler(successHandler)           // ← 用 Handler 取代 defaultSuccessUrl
+            .failureHandler(failureHandler)           // ← 用 Handler 取代 failureUrl
+            .permitAll()
+        )
+        // ... 其他設定
+    ;
+    return http.build();
+}
+```
+
+> ⚠️ **注意**：`successHandler` 和 `defaultSuccessUrl` **不能同時使用**，設定其中一個，另一個會被忽略。`failureHandler` 和 `failureUrl` 同理。
+
+#### defaultSuccessUrl vs successHandler 比較
+
+| 方式 | 適用情境 | 說明 |
+|------|----------|------|
+| `defaultSuccessUrl("/dashboard")` | 簡單導向，不需要額外邏輯 | 登入後一律導到同一個頁面 |
+| `successHandler(handler)` | 依角色/條件動態導向 | 可以取得 `Authentication` 物件做更多判斷 |
+| `failureUrl("/login?error")` | 簡單的失敗導向 | 一律回到登入頁 |
+| `failureHandler(handler)` | 需要記錄失敗次數、鎖定帳號等 | 可以取得 `AuthenticationException` 訊息 |
+
+### 14.4 記住我（Remember-Me）
+
+讓使用者可以勾選「記住我」，關閉瀏覽器後再開啟仍保持登入狀態：
+
+```java
+http
+    .rememberMe(remember -> remember
+        .key("uniqueAndSecret")                    // 加密用的金鑰
+        .tokenValiditySeconds(7 * 24 * 60 * 60)   // 記住 7 天（預設 2 週）
+        .userDetailsService(userDetailsService)     // 指定 UserDetailsService
+    )
+```
+
+對應的登入表單需要加入 `remember-me` 欄位：
+
+```html
+<form method="post" th:action="@{/login}">
+    <input type="text" name="username" required>
+    <input type="password" name="password" required>
+    <div>
+        <input type="checkbox" name="remember-me"> 記住我
+    </div>
+    <button type="submit">登入</button>
+</form>
+```
+
+#### Remember-Me 運作原理
+
+```
+登入時勾選「記住我」
+    │
+    ↓
+Spring Security 在 Cookie 中寫入 Token
+（Token = username + 過期時間 + MD5 簽章）
+    │
+    ↓
+關閉瀏覽器 → 重新開啟 → 存取網站
+    │
+    ↓
+Spring Security 從 Cookie 讀取 Token
+    │
+    ↓
+驗證 Token 有效 → 自動登入（不需要再輸入帳號密碼）
+```
+
+| 設定 | 說明 |
+|------|------|
+| `key("...")` | Token 加密用的金鑰，**正式環境必須更換** |
+| `tokenValiditySeconds(...)` | Token 有效秒數，預設 2 週 |
+| `useSecureCookie(true)` | 只在 HTTPS 下傳送 Cookie（正式環境建議開啟） |
+| `rememberMeParameter("remember-me")` | 表單欄位名稱（預設就是 `remember-me`） |
+
+> ⚠️ **安全性提醒**：Remember-Me Token 是存在 Cookie 中的，**不是最安全的做法**。如果安全性要求高，建議搭配 Session 管理或改用 JWT。
+
+### 14.5 自訂登出設定
+
+Spring Security 預設的登出已經很好用，但實務上常需要額外設定：
+
+```java
+http
+    .logout(logout -> logout
+        .logoutUrl("/do-logout")                    // 自訂登出處理 URL（預設 /logout）
+        .logoutSuccessUrl("/")                       // 登出後導向
+        .deleteCookies("JSESSIONID", "remember-me") // 刪除指定 Cookie
+        .invalidateHttpSession(true)                 // 清除 Session（預設 true）
+        .clearAuthentication(true)                   // 清除 Authentication 物件（預設 true）
+        .addLogoutHandler((request, response, authentication) -> {
+            // 自訂登出處理邏輯（例如記錄登出時間）
+            System.out.println("使用者 " + authentication.getName() + " 已登出");
+        })
+        .permitAll()
+    )
+```
+
+| 設定 | 說明 |
+|------|------|
+| `logoutUrl("/do-logout")` | 自訂登出的 POST URL（預設 `/logout`） |
+| `deleteCookies("JSESSIONID")` | 登出時刪除指定 Cookie |
+| `invalidateHttpSession(true)` | 清除 Session 資料 |
+| `clearAuthentication(true)` | 清除 SecurityContext 中的 Authentication |
+| `addLogoutHandler(...)` | 加入自訂登出處理邏輯 |
+
+### 14.6 Session 管理與安全性
+
+Session 管理是防範帳號被盜用的重要機制：
+
+```java
+http
+    .sessionManagement(session -> session
+        // 同一帳號最多允許 2 個同時登入的 Session
+        .maximumSessions(2)
+        // true = 舊的 Session 會被踢掉（預設）
+        // false = 新的登入會被拒絕
+        .maxSessionsPreventsLogin(false)
+
+        // Session 固定攻擊保護（預設啟用）
+        .sessionFixation(fixation -> fixation
+            .migrateSession()     // 登入後建立新 Session，複製舊屬性（預設）
+            // .newSession()      // 登入後建立全新 Session（最嚴格）
+            // .none()            // 不做任何處理（最不安全）
+        )
+    )
+```
+
+#### Session 固定攻擊（Session Fixation）說明
+
+```
+攻擊者    受害者    網站
+  │         │        │
+  │── 傳送含有 Session ID 的連結 ──→│
+  │         │        │
+  │         │── 點擊連結並登入 ──→│  ← 受害者用攻擊者的 Session ID 登入
+  │         │        │
+  │         │←── 登入成功 ────────│  ← Session ID 未變，攻擊者可以用同一個 ID
+  │         │        │
+  │── 用同一個 Session ID 存取 ──→│  ← 攻擊者取得受害者權限！
+```
+
+`migrateSession()` 可以有效防範這種攻擊，因為登入後會建立新的 Session ID。
+
+### 14.7 方法層級安全控制（@PreAuthorize）
+
+除了 URL 層級的權限控制外，Spring Security 也支援在**方法上**加入權限檢查：
+
+#### 啟用方法安全
+
+```java
+package com.example.demo.config;
+
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+
+@Configuration
+@EnableMethodSecurity                    // ← 加這行才能使用 @PreAuthorize
+public class MethodSecurityConfig {
+}
+```
+
+#### 在 Controller / Service 中使用
+
+```java
+@Controller
+public class DashboardController {
+
+    @GetMapping("/dashboard")
+    public String dashboard(Model model, Authentication authentication) {
+        // 所有登入者都可以存取
+        model.addAttribute("username", authentication.getName());
+        return "dashboard";
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @GetMapping("/admin/settings")
+    public String adminSettings() {
+        // 只有 ADMIN 角色可以執行
+        return "admin-settings";
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @GetMapping("/profile")
+    public String profile() {
+        // 只有 USER 角色可以執行
+        return "profile";
+    }
+
+    @PreAuthorize("#username == authentication.name")
+    @GetMapping("/user/{username}/details")
+    public String userDetails(@PathVariable String username) {
+        // 只能查看自己的資料（#username 會自動從方法參數取得）
+        return "user-details";
+    }
+}
+```
+
+#### 常用的 SpEL 安全表達式
+
+| 表達式 | 說明 |
+|--------|------|
+| `hasRole('ADMIN')` | 具有 ADMIN 角色 |
+| `hasAnyRole('ADMIN', 'MANAGER')` | 具有 ADMIN 或 MANAGER 角色 |
+| `hasAuthority('WRITE')` | 具有 WRITE 權限 |
+| `isAuthenticated()` | 已經驗證身份 |
+| `isAnonymous()` | 匿名使用者（未登入） |
+| `#username == authentication.name` | 參數 username 必須等於登入者名稱 |
+| `returnObject.owner == authentication.name` | 回傳物件的 owner 必須是登入者 |
+
+> 💡 **使用時機**：URL 層級控制適合「整個頁面」的權限，方法層級控制適合「同一個頁面上不同功能」的權限。
+
+### 14.8 自訂錯誤頁面
+
+Spring Security 預設的 403 錯誤頁很陽春，可以自訂：
+
+```html
+<!-- src/main/resources/templates/error/403.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head><title>禁止存取</title></head>
+<body>
+    <h1>403 — 你沒有存取權限</h1>
+    <p>很抱歉，你沒有權限存取這個頁面。</p>
+    <a th:href="@{/dashboard}">回到儀表板</a>
+</body>
+</html>
+```
+
+在 SecurityConfig 中指定錯誤頁：
+
+```java
+http
+    .exceptionHandling(exception -> exception
+        .accessDeniedPage("/error/403")       // 403 錯誤頁路徑
+    )
+```
+
+> Spring Boot 會自動根據 HTTP 狀態碼對應 `src/main/resources/templates/error/{status}.html`，所以也可以直接建立 `404.html`、`500.html` 等。
+
+### 14.9 完整的進階 SecurityConfig 範例
+
+```java
+package com.example.demo.config;
+
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
+import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.SecurityFilterChain;
+
+@Configuration
+@EnableMethodSecurity
+public class SecurityConfig {
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
+    }
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+        http
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/", "/home", "/css/**", "/js/**", "/register").permitAll()
+                .requestMatchers("/h2-console/**").permitAll()
+                .requestMatchers("/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+            )
+            // CSRF（H2 Console 排除）
+            .csrf(csrf -> csrf
+                .ignoringRequestMatchers("/h2-console/**")
+            )
+            .headers(headers -> headers
+                .frameOptions(frame -> frame.sameOrigin())
+            )
+            // 表單登入（進階設定）
+            .formLogin(form -> form
+                .loginPage("/login")
+                .loginProcessingUrl("/do-login")               // 自訂處理 URL
+                .usernameParameter("account")                   // 自訂欄位名稱
+                .passwordParameter("passwd")
+                .successHandler(new CustomSuccessHandler())     // 程式化成功處理
+                .failureHandler(new CustomFailureHandler())     // 程式化失敗處理
+                .permitAll()
+            )
+            // 記住我
+            .rememberMe(remember -> remember
+                .key("mySecretKey")
+                .tokenValiditySeconds(7 * 24 * 60 * 60)
+            )
+            // 登出
+            .logout(logout -> logout
+                .logoutUrl("/do-logout")
+                .logoutSuccessUrl("/")
+                .deleteCookies("JSESSIONID", "remember-me")
+                .invalidateHttpSession(true)
+                .clearAuthentication(true)
+                .permitAll()
+            )
+            // Session 管理
+            .sessionManagement(session -> session
+                .maximumSessions(2)
+                .maxSessionsPreventsLogin(false)
+                .sessionFixation(fixation -> fixation.migrateSession())
+            )
+            // 錯誤頁面
+            .exceptionHandling(exception -> exception
+                .accessDeniedPage("/error/403")
+            );
+
+        return http.build();
+    }
+}
+```
+
+---
+
+## 15. 動手練習
 
 > 依序完成以下練習，從觀察預設行為開始，逐步建立完整的表單登入系統。
 
@@ -1024,6 +1562,66 @@ public String register(@RequestParam String username,
 
 ---
 
+### 🔴 練習七（Hard）：自訂 SuccessHandler — 依角色導向不同頁面
+
+**任務**：實作 `AuthenticationSuccessHandler`，ADMIN 登入後導到 `/admin`，USER 導到 `/dashboard`
+
+**要求**：
+- 建立 `CustomSuccessHandler` 類別，實作 `AuthenticationSuccessHandler`
+- 判斷登入者的角色，動態決定導向頁面
+- 在 `SecurityConfig` 中使用 `successHandler()` 取代 `defaultSuccessUrl()`
+
+**驗證步驟**：
+1. 用 `admin / admin` 登入 → 應自動跳轉到 `/admin`
+2. 用 `user / 1234` 登入 → 應自動跳轉到 `/dashboard`
+
+**完成標準**：
+- [ ] ADMIN 帳號登入後導向 `/admin`
+- [ ] USER 帳號登入後導向 `/dashboard`
+- [ ] `SecurityConfig` 中不再使用 `defaultSuccessUrl()`
+
+---
+
+### 🔴 練習八（Hard）：加入 Remember-Me 記住我功能
+
+**任務**：在登入頁加入「記住我」勾選框，讓使用者關閉瀏覽器後仍保持登入
+
+**要求**：
+- `SecurityConfig` 中加入 `.rememberMe()` 設定
+- `login.html` 表單中加入 `<input type="checkbox" name="remember-me">`
+- 驗證 Cookie 是否正確寫入（瀏覽器 DevTools → Application → Cookies）
+
+**驗證步驟**：
+1. 勾選「記住我」後登入
+2. 關閉瀏覽器，重新開啟 → 直接存取 `/dashboard`，不需要重新登入
+3. 不勾選「記住我」 → 關閉瀏覽器後需要重新登入
+
+**完成標準**：
+- [ ] 勾選「記住我」後關閉瀏覽器，重新開啟仍保持登入
+- [ ] Cookie 中可以看到 `remember-me` 的 Token
+
+---
+
+### 🔴 練習九（Hard）：用 @PreAuthorize 控制方法層級權限
+
+**任務**：建立 `/profile` 和 `/admin/settings` 兩個頁面，用方法註解控制權限
+
+**要求**：
+- 建立 `@EnableMethodSecurity` 配置類別
+- `/profile` → 只有 `ROLE_USER` 可以存取（用 `@PreAuthorize("hasRole('USER')")`）
+- `/admin/settings` → 只有 `ROLE_ADMIN` 可以存取（用 `@PreAuthorize("hasRole('ADMIN')")`）
+
+**驗證步驟**：
+1. `user / 1234` 登入 → `/profile` 正常顯示，`/admin/settings` 顯示 403
+2. `admin / admin` 登入 → 兩個頁面都可以存取
+
+**完成標準**：
+- [ ] `@EnableMethodSecurity` 已啟用
+- [ ] `@PreAuthorize` 正確控制方法存取權限
+- [ ] 不同角色看到不同的頁面結果
+
+---
+
 ## 常見錯誤排除（Troubleshooting）
 
 | 問題 | 可能原因 | 解決方式 |
@@ -1034,10 +1632,19 @@ public String register(@RequestParam String username,
 | `UserDetailsService` 找到多個 Bean | InMemory 和 Custom 同時存在 | 移除其中一個的 `@Bean` |
 | 資料庫連線失敗 | MySQL 未啟動或帳密錯誤 | 確認 MySQL 服務、對照 `application.properties` 設定 |
 | CSRF Token mismatch | 自己寫的表單沒有加 CSRF Token | 改用 `th:action` 讓 Thymeleaf 自動嵌入 Token |
+| H2 Console 打不開或 403 | CSRF 或 iframe 限制 | `SecurityConfig` 中加入 `ignoringRequestMatchers("/h2-console/**")` 和 `frameOptions().sameOrigin()` |
+| H2 Console JDBC URL 連不上 | URL 格式錯誤 | 輸入 `jdbc:h2:mem:security_demo`，不是 `jdbc:h2:tcp://...` |
+| 每次重啟專案資料消失 | H2 預設是記憶體模式 | 這是預期行為，H2 資料只存在於程式運行期間；如需持久化改用 `jdbc:h2:file:./data/db` |
+| 自訂欄位名稱後登入失敗 | `usernameParameter` 與 HTML `name` 不一致 | 確認 `usernameParameter("account")` 的值和 HTML `name="account"` 完全一致 |
+| `successHandler` 設了但沒效 | 同時設了 `defaultSuccessUrl` | 兩者不能同時使用，擇一設定 |
+| Remember-Me 勾了但重開瀏覽器無效 | 沒有設定 `userDetailsService` | `rememberMe()` 中加入 `.userDetailsService(userDetailsService)` |
+| `@PreAuthorize` 沒作用 | 沒有啟用 `@EnableMethodSecurity` | 在 Configuration 類別上加 `@EnableMethodSecurity` |
 
 ---
 
-## 本日重點回顧
+## 本章重點回顧
+
+### 基礎概念
 
 | 概念 | 重點 |
 |------|------|
@@ -1049,3 +1656,18 @@ public String register(@RequestParam String username,
 | hasRole("ADMIN") | 限制特定 URL 只有特定角色可以存取 |
 | CSRF | 表單登入預設啟用，Thymeleaf 自動處理 Token |
 | `ROLE_` 前綴 | Spring Security 的角色必須以 `ROLE_` 開頭 |
+
+### 進階用法
+
+| 概念 | 重點 |
+|------|------|
+| `usernameParameter` / `passwordParameter` | 自訂表單欄位名稱，必須與 HTML `name` 一致 |
+| `loginProcessingUrl` | 自訂表單 POST 處理網址（預設 `/login`） |
+| `successHandler` / `failureHandler` | 程式化控制登入成功/失敗後的導向邏輯 |
+| `defaultSuccessUrl` vs `successHandler` | 兩者不能同時使用，擇一設定 |
+| Remember-Me | 勾選後 Cookie 記住使用者，預設有效期 2 週 |
+| Session 管理 | `maximumSessions` 控制同時登入人數，防止帳號共用 |
+| Session Fixation | 預設 `migrateSession()`，登入後自動更換 Session ID |
+| `@PreAuthorize` | 方法層級的權限控制，需先啟用 `@EnableMethodSecurity` |
+| `deleteCookies` | 登出時主動刪除指定 Cookie |
+| 自訂錯誤頁面 | `templates/error/403.html` 自動對應 403 錯誤 |
