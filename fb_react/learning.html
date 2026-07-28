@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>React 商城學習文件</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <style>
+    :root {
+      --accent: #0d6efd;
+      --sidebar-w: 260px;
+    }
+    body { font-family: "Segoe UI", sans-serif; background: #f8f9fa; }
+
+    /* ── Sidebar ── */
+    #sidebar {
+      position: fixed; top: 0; left: 0; height: 100vh;
+      width: var(--sidebar-w); background: #1e2a3a; color: #cdd6f4;
+      overflow-y: auto; padding: 1.5rem 0; z-index: 100;
+    }
+    #sidebar .brand { font-size: 1.1rem; font-weight: 700; color: #89b4fa;
+      padding: 0 1.2rem 1rem; border-bottom: 1px solid #2d3f55; margin-bottom: .8rem; }
+    #sidebar a {
+      display: block; padding: .45rem 1.4rem; color: #cdd6f4;
+      text-decoration: none; font-size: .88rem; border-left: 3px solid transparent;
+      transition: all .15s;
+    }
+    #sidebar a:hover, #sidebar a.active {
+      background: #243447; color: #89b4fa; border-left-color: #89b4fa;
+    }
+    #sidebar .stage-label {
+      font-size: .7rem; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .08em; color: #6c7f99; padding: .9rem 1.4rem .2rem;
+    }
+
+    /* ── Main ── */
+    #main { margin-left: var(--sidebar-w); padding: 2.5rem 3rem; max-width: 1000px; }
+    h1.page-title { font-size: 2rem; font-weight: 700; color: #1e2a3a; margin-bottom: .3rem; }
+    .subtitle { color: #6c757d; margin-bottom: 2.5rem; }
+
+    /* ── Stage card ── */
+    .stage { margin-bottom: 3.5rem; scroll-margin-top: 80px; }
+    .stage-header {
+      display: flex; align-items: center; gap: .8rem;
+      margin-bottom: 1.2rem; padding-bottom: .6rem;
+      border-bottom: 2px solid #dee2e6;
+    }
+    .stage-badge {
+      background: var(--accent); color: #fff;
+      font-size: .75rem; font-weight: 700; padding: .3rem .65rem;
+      border-radius: 20px; white-space: nowrap;
+    }
+    .stage-header h2 { font-size: 1.4rem; font-weight: 700; margin: 0; color: #1e2a3a; }
+
+    /* ── Code blocks ── */
+    pre { border-radius: 8px; font-size: .84rem; margin: 1rem 0; }
+    pre code { font-family: "Cascadia Code", "Fira Code", monospace; }
+    .code-label {
+      background: #1e2a3a; color: #89b4fa; font-size: .72rem;
+      padding: .2rem .7rem; border-radius: 6px 6px 0 0;
+      display: inline-block; margin-bottom: 0; font-weight: 600;
+    }
+    .code-wrap { margin: 1rem 0; }
+    .code-wrap pre { border-radius: 0 8px 8px 8px; margin: 0; }
+
+    /* ── Compare table ── */
+    .compare th { background: #1e2a3a; color: #cdd6f4; }
+    .compare td:first-child { background: #fff3cd; font-weight: 600; }
+    .compare td:nth-child(2) { background: #fff8f8; font-family: monospace; font-size: .85rem; }
+    .compare td:nth-child(3) { background: #f0fff4; font-family: monospace; font-size: .85rem; }
+
+    /* ── Note / tip ── */
+    .note { background: #e8f4fd; border-left: 4px solid #0d6efd;
+      padding: .8rem 1rem; border-radius: 0 6px 6px 0; margin: 1rem 0; font-size: .9rem; }
+    .tip  { background: #f0fff4; border-left: 4px solid #198754;
+      padding: .8rem 1rem; border-radius: 0 6px 6px 0; margin: 1rem 0; font-size: .9rem; }
+    .warn { background: #fff8e1; border-left: 4px solid #ffc107;
+      padding: .8rem 1rem; border-radius: 0 6px 6px 0; margin: 1rem 0; font-size: .9rem; }
+
+    /* ── Tree ── */
+    .tree { font-family: "Cascadia Code", "Fira Code", monospace;
+      background: #1e2a3a; color: #cdd6f4; padding: 1.2rem 1.5rem;
+      border-radius: 8px; font-size: .88rem; line-height: 1.8; }
+    .tree .comp { color: #89b4fa; font-weight: 600; }
+    .tree .prop { color: #a6e3a1; }
+    .tree .comment { color: #6c7f99; }
+
+    /* ── Checklist ── */
+    .checklist { list-style: none; padding: 0; }
+    .checklist li::before { content: "□ "; color: var(--accent); font-weight: 700; }
+
+    /* ── Flow diagram ── */
+    .flow { display: flex; align-items: center; flex-wrap: wrap; gap: .5rem;
+      margin: 1.2rem 0; }
+    .flow-box { background: #1e2a3a; color: #89b4fa; padding: .45rem 1rem;
+      border-radius: 6px; font-size: .85rem; font-weight: 600; }
+    .flow-arrow { color: #6c7f99; font-size: 1.2rem; }
+
+    @media (max-width: 768px) {
+      #sidebar { display: none; }
+      #main { margin-left: 0; padding: 1.5rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ══ Sidebar ══════════════════════════════════════════════ -->
+<nav id="sidebar">
+  <div class="brand">⚛ React 商城學習指南</div>
+
+  <div class="stage-label">基礎</div>
+  <a href="#stage1">階段 1 ｜從 jQuery 到 React</a>
+  <a href="#stage2">階段 2 ｜JSX 語法</a>
+  <a href="#stage3">階段 3 ｜Function Component</a>
+
+  <div class="stage-label">核心 Hooks</div>
+  <a href="#stage4">階段 4 ｜useState</a>
+  <a href="#stage5">階段 5 ｜useEffect</a>
+
+  <div class="stage-label">架構設計</div>
+  <a href="#stage6">階段 6 ｜Props 與資料流</a>
+  <a href="#stage7">階段 7 ｜狀態提升</a>
+  <a href="#stage8">階段 8 ｜SPA 路由模式</a>
+
+  <div class="stage-label">進階實作</div>
+  <a href="#stage9">階段 9 ｜Fetch API 非同步請求</a>
+  <a href="#stage10">階段 10 ｜完整元件拆解</a>
+  <a href="#stage11">階段 11 ｜實作練習</a>
+</nav>
+
+<!-- ══ Main ════════════════════════════════════════════════ -->
+<main id="main">
+
+  <h1 class="page-title">React 商城前端學習文件</h1>
+  <p class="subtitle">
+    本文件以「簡易商城」專案為主軸，說明如何從 jQuery 改寫為 React，
+    並逐階段介紹 React 核心觀念與實作技巧。
+  </p>
+
+  <!-- ═══════════════════════════════════════════ STAGE 1 -->
+  <section class="stage" id="stage1">
+    <div class="stage-header">
+      <span class="stage-badge">階段 1</span>
+      <h2>從 jQuery 到 React</h2>
+    </div>
+
+    <p>jQuery 和 React 代表兩種截然不同的 UI 開發思維：</p>
+
+    <table class="table table-bordered compare">
+      <thead><tr><th>面向</th><th>jQuery（舊版）</th><th>React（新版）</th></tr></thead>
+      <tbody>
+        <tr><td>思維模式</td><td>命令式：直接操作 DOM</td><td>宣告式：描述「應該長什麼樣」</td></tr>
+        <tr><td>狀態管理</td><td>全域變數（isLoggedIn、cart）</td><td>useState Hook，每個元件自管狀態</td></tr>
+        <tr><td>UI 更新</td><td>手動 .empty() 再 .append()</td><td>state 改變 → React 自動重新渲染</td></tr>
+        <tr><td>程式碼拆分</td><td>全部函式在同一個 .js</td><td>拆成獨立 Component</td></tr>
+        <tr><td>AJAX</td><td>$.ajax()</td><td>fetch() + async/await</td></tr>
+        <tr><td>事件綁定</td><td>$('#btn').click(function(){})</td><td>onClick={handler}</td></tr>
+      </tbody>
+    </table>
+
+    <div class="note">
+      <strong>重點：</strong> React 不是把 jQuery 語法換掉，而是換一種思考方式——
+      <em>UI = f(state)</em>，UI 是狀態的函數，狀態變了 UI 就自動更新。
+    </div>
+
+    <h5 class="mt-3">專案設定方式</h5>
+    <p>本專案使用 <strong>CDN + Babel Standalone</strong>，不需要 Node.js 或 npm 建置流程，
+       Spring Boot 直接提供靜態檔即可運行：</p>
+
+    <div class="code-wrap">
+      <div class="code-label">usercart.html — 載入 CDN</div>
+      <pre><code class="language-html">&lt;!-- React 核心 --&gt;
+&lt;script src="https://unpkg.com/react@18/umd/react.development.js"&gt;&lt;/script&gt;
+&lt;!-- ReactDOM：負責把 React 畫到瀏覽器 --&gt;
+&lt;script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"&gt;&lt;/script&gt;
+&lt;!-- Babel：在瀏覽器即時將 JSX 轉為普通 JS --&gt;
+&lt;script src="https://unpkg.com/@babel/standalone/babel.min.js"&gt;&lt;/script&gt;
+
+&lt;!-- 掛載點 --&gt;
+&lt;div id="root"&gt;&lt;/div&gt;
+
+&lt;!-- type="text/babel" 讓 Babel 處理這個檔案裡的 JSX --&gt;
+&lt;script type="text/babel" src="./js/jqusercart.js"&gt;&lt;/script&gt;</code></pre>
+    </div>
+
+    <div class="warn">
+      <strong>注意：</strong><code>type="text/babel"</code> 需要透過 HTTP 伺服器提供檔案（Spring Boot），
+      直接用瀏覽器開啟本地 html 檔案（file://）會因為 CORS 限制無法載入外部 .js。
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ STAGE 2 -->
+  <section class="stage" id="stage2">
+    <div class="stage-header">
+      <span class="stage-badge">階段 2</span>
+      <h2>JSX 語法</h2>
+    </div>
+
+    <p>JSX 是 JavaScript 的語法擴展，讓你可以在 JS 裡寫類似 HTML 的標記。</p>
+
+    <table class="table table-bordered compare">
+      <thead><tr><th>場景</th><th>HTML 寫法</th><th>JSX 寫法</th></tr></thead>
+      <tbody>
+        <tr><td>class 屬性</td><td>class="btn btn-primary"</td><td>className="btn btn-primary"</td></tr>
+        <tr><td>內嵌變數</td><td>—</td><td>{product.title}</td></tr>
+        <tr><td>條件渲染</td><td>—</td><td>{isLoggedIn && &lt;span&gt;歡迎&lt;/span&gt;}</td></tr>
+        <tr><td>列表渲染</td><td>—</td><td>{items.map(i =&gt; &lt;li key={i.id}&gt;{i.name}&lt;/li&gt;)}</td></tr>
+        <tr><td>事件</td><td>onclick="fn()"</td><td>onClick={fn}</td></tr>
+        <tr><td>自閉合標籤</td><td>&lt;input&gt;</td><td>&lt;input /&gt;</td></tr>
+        <tr><td>多個根元素</td><td>—</td><td>&lt;&gt;…&lt;/&gt;（Fragment）</td></tr>
+      </tbody>
+    </table>
+
+    <div class="code-wrap">
+      <div class="code-label">JSX 範例：商品卡片</div>
+      <pre><code class="language-jsx">// JSX 看起來像 HTML，但其實是 JS
+function ProductCard({ product, onAddToCart }) {
+  return (
+    &lt;div className="col-md-3"&gt;
+      &lt;div className="card mb-3"&gt;
+        {/* {} 內可以放任何 JS 表達式 */}
+        &lt;h5 className="card-title"&gt;{product.title}&lt;/h5&gt;
+        &lt;p className="card-text"&gt;價格：{product.price} 元&lt;/p&gt;
+
+        {/* 事件處理器：傳入函式參考，不是呼叫結果 */}
+        &lt;button onClick={() =&gt; onAddToCart(product)}&gt;
+          加入購物車
+        &lt;/button&gt;
+      &lt;/div&gt;
+    &lt;/div&gt;
+  );
+}</code></pre>
+    </div>
+
+    <div class="tip">
+      <strong>技巧：</strong> JSX 中的 <code>{/* 註解 */}</code> 是 JS 區塊，不能用 HTML 的
+      <code>&lt;!-- --&gt;</code>。
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ STAGE 3 -->
+  <section class="stage" id="stage3">
+    <div class="stage-header">
+      <span class="stage-badge">階段 3</span>
+      <h2>Function Component</h2>
+    </div>
+
+    <p>React 元件就是一個 <strong>接收 props、回傳 JSX</strong> 的 JavaScript 函式。</p>
+
+    <div class="code-wrap">
+      <div class="code-label">最簡單的元件</div>
+      <pre><code class="language-jsx">// 元件名稱首字母必須大寫
+function Hello({ name }) {
+  return &lt;p&gt;你好，{name}！&lt;/p&gt;;
+}
+
+// 使用方式
+&lt;Hello name="小明" /&gt;</code></pre>
+    </div>
+
+    <h5 class="mt-3">本專案的元件樹</h5>
+    <div class="tree">
+      <span class="comp">&lt;App&gt;</span>  <span class="comment">← 管理全域狀態：currentPage / isLoggedIn / username / cart</span><br>
+      &nbsp;&nbsp;├─ <span class="comp">&lt;Navbar</span> <span class="prop">currentPage setCurrentPage isLoggedIn username</span> <span class="comp">/&gt;</span><br>
+      &nbsp;&nbsp;├─ <span class="comp">&lt;LoginPage</span> <span class="prop">setIsLoggedIn setUsername</span> <span class="comp">/&gt;</span><br>
+      &nbsp;&nbsp;├─ <span class="comp">&lt;ProductsPage</span> <span class="prop">setCart</span> <span class="comp">&gt;</span><br>
+      &nbsp;&nbsp;│&nbsp;&nbsp;&nbsp;└─ <span class="comp">&lt;ProductCard</span> <span class="prop">product onAddToCart</span> <span class="comp">/&gt;</span>  <span class="comment">× N 個</span><br>
+      &nbsp;&nbsp;├─ <span class="comp">&lt;OrdersPage /&gt;</span>  <span class="comment">← 內部自管 orders / selectedOrder / items</span><br>
+      &nbsp;&nbsp;└─ <span class="comp">&lt;CartPage</span> <span class="prop">cart setCart isLoggedIn username</span> <span class="comp">/&gt;</span>
+    </div>
+
+    <div class="note">
+      <strong>原則：</strong> 哪個元件需要用到資料，資料就放在它們的 <em>最近共同祖先</em>（Lowest Common Ancestor）。
+      <code>cart</code> 需要在 ProductsPage（加入）和 CartPage（顯示/送出）都用到，所以放在 <code>App</code>。
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ STAGE 4 -->
+  <section class="stage" id="stage4">
+    <div class="stage-header">
+      <span class="stage-badge">階段 4</span>
+      <h2>useState Hook</h2>
+    </div>
+
+    <p><code>useState</code> 讓函式元件擁有自己的狀態，狀態改變時 React 自動重新渲染。</p>
+
+    <div class="code-wrap">
+      <div class="code-label">基本用法</div>
+      <pre><code class="language-jsx">const [value, setValue] = React.useState(初始值);
+//      ↑ 讀取     ↑ 更新函式</code></pre>
+    </div>
+
+    <h5 class="mt-3">本專案中的 useState 應用</h5>
+
+    <div class="code-wrap">
+      <div class="code-label">App — 全域狀態</div>
+      <pre><code class="language-jsx">function App() {
+  // 目前顯示哪個頁面
+  const [currentPage, setCurrentPage] = React.useState("login");
+  // 是否已登入
+  const [isLoggedIn, setIsLoggedIn]   = React.useState(false);
+  // 登入的使用者名稱
+  const [username, setUsername]       = React.useState("");
+  // 購物車陣列
+  const [cart, setCart]               = React.useState([]);
+  // ...
+}</code></pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">LoginPage — 表單狀態（受控元件）</div>
+      <pre><code class="language-jsx">function LoginPage({ setIsLoggedIn, setUsername }) {
+  const [user, setUser]       = React.useState("");
+  const [pass, setPass]       = React.useState("");
+  const [message, setMessage] = React.useState("");
+
+  return (
+    &lt;&gt;
+      {/* value 綁定 state，onChange 同步更新 state → 受控元件 */}
+      &lt;input value={user} onChange={e =&gt; setUser(e.target.value)} /&gt;
+      &lt;input type="password" value={pass} onChange={e =&gt; setPass(e.target.value)} /&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">ProductCard — 數量狀態（每個卡片獨立）</div>
+      <pre><code class="language-jsx">function ProductCard({ product, onAddToCart }) {
+  // 每個 ProductCard 實例都有自己的 qty state
+  const [qty, setQty] = React.useState(1);
+
+  return (
+    &lt;&gt;
+      &lt;input type="number" min="1" value={qty}
+        onChange={e =&gt; setQty(Math.max(1, parseInt(e.target.value) || 1))} /&gt;
+      &lt;button onClick={() =&gt; onAddToCart(product, qty)}&gt;加入購物車&lt;/button&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+    </div>
+
+    <div class="note">
+      <strong>重要：</strong> 不要直接修改 state 變數（如 <code>cart.push(item)</code>），
+      永遠用 setter 函式，否則 React 不會知道要重新渲染。
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">更新陣列 state 的正確方式</div>
+      <pre><code class="language-jsx">// ❌ 錯誤：直接 mutation
+cart.push(newItem);
+
+// ✅ 正確：產生新陣列
+setCart(prev => [...prev, newItem]);
+
+// ✅ 正確：刪除某項（回傳過濾後的新陣列）
+setCart(prev => prev.filter((_, i) => i !== index));</code></pre>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ STAGE 5 -->
+  <section class="stage" id="stage5">
+    <div class="stage-header">
+      <span class="stage-badge">階段 5</span>
+      <h2>useEffect Hook</h2>
+    </div>
+
+    <p><code>useEffect</code> 處理「副作用」——不屬於渲染本身的事情，例如 API 請求、訂閱事件。</p>
+
+    <div class="code-wrap">
+      <div class="code-label">基本語法</div>
+      <pre><code class="language-jsx">React.useEffect(() => {
+  // 副作用邏輯
+}, [依賴陣列]);
+// 依賴陣列為空 []  → 只在元件第一次渲染後執行（相當於 componentDidMount）
+// 省略依賴陣列     → 每次渲染後都執行
+// [someValue]      → someValue 改變時才執行</code></pre>
+    </div>
+
+    <h5 class="mt-3">本專案應用</h5>
+
+    <div class="code-wrap">
+      <div class="code-label">ProductsPage — 頁面一出現就載入產品</div>
+      <pre><code class="language-jsx">function ProductsPage({ setCart }) {
+  const [products, setProducts] = React.useState([]);
+
+  React.useEffect(() => {
+    // [] 表示只執行一次（元件掛載時）
+    fetch(`https://${SERVER}/api/products`)
+      .then(r => r.json())
+      .then(data => setProducts(data))
+      .catch(() => {});
+  }, []);   // ← 空陣列：只在第一次渲染後呼叫
+
+  // products state 更新後 React 重新渲染，自動顯示清單
+  return (
+    &lt;div className="row"&gt;
+      {products.map(p => &lt;ProductCard key={p.id} product={p} ... /&gt;)}
+    &lt;/div&gt;
+  );
+}</code></pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">OrdersPage — 類似，載入訂單清單</div>
+      <pre><code class="language-jsx">React.useEffect(() => {
+  const uname = sessionStorage.getItem("username");
+  if (!uname) { alert("user not login"); return; }
+
+  fetch(`https://${SERVER}/api/orders/${uname}`, {
+    headers: { "Authorization": "Bearer " + localStorage.getItem("token") },
+  })
+    .then(r => r.json())
+    .then(data => setOrders(data))
+    .catch(() => {});
+}, []);  // 元件出現時載入一次</code></pre>
+    </div>
+
+    <div class="tip">
+      <strong>對照舊寫法：</strong> 原本的 jQuery 版本在 <code>.nav-link</code> 的 click 事件中
+      呼叫 <code>loadProducts()</code>、<code>showOrders()</code>。React 版改為
+      <code>useEffect</code>，頁面元件一被掛載就自動觸發，職責更清晰。
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ STAGE 6 -->
+  <section class="stage" id="stage6">
+    <div class="stage-header">
+      <span class="stage-badge">階段 6</span>
+      <h2>Props 與資料流</h2>
+    </div>
+
+    <p>React 的資料流是 <strong>單向的（top-down）</strong>——父元件透過 props 把資料傳給子元件。</p>
+
+    <div class="code-wrap">
+      <div class="code-label">父傳子：傳資料</div>
+      <pre><code class="language-jsx">// 父元件 App 傳 cart 陣列給 CartPage
+&lt;CartPage
+  cart={cart}          // 資料
+  setCart={setCart}    // 更新函式（反向通訊）
+  isLoggedIn={isLoggedIn}
+  username={username}
+/&gt;</code></pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">子元件接收 props</div>
+      <pre><code class="language-jsx">// 解構賦值取出需要的 props
+function CartPage({ cart, setCart, isLoggedIn, username }) {
+  // 直接使用 cart 陣列渲染
+  const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  // ...
+}</code></pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">子呼叫父的 setter（反向通訊）</div>
+      <pre><code class="language-jsx">// ProductsPage 呼叫 App 的 setCart 更新購物車
+function ProductsPage({ setCart }) {
+  const handleAddToCart = (product, qty) => {
+    // setCart 是從 App 傳下來的，呼叫後 App 的 cart state 更新
+    setCart(prev => [...prev, { ...product, quantity: qty }]);
+  };
+  // ...
+}</code></pre>
+    </div>
+
+    <div class="flow">
+      <div class="flow-box">App (cart state)</div>
+      <div class="flow-arrow">──setCart──▶</div>
+      <div class="flow-box">ProductsPage</div>
+      <div class="flow-arrow">──呼叫 setCart──▶</div>
+      <div class="flow-box">App re-render</div>
+      <div class="flow-arrow">──cart prop──▶</div>
+      <div class="flow-box">CartPage 更新</div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ STAGE 7 -->
+  <section class="stage" id="stage7">
+    <div class="stage-header">
+      <span class="stage-badge">階段 7</span>
+      <h2>狀態提升（Lifting State Up）</h2>
+    </div>
+
+    <p>當多個元件需要共用同一份狀態時，將狀態「提升」到它們的最近共同父元件。</p>
+
+    <h5>購物車案例</h5>
+    <p><code>cart</code> 陣列需要在兩個地方使用：</p>
+    <ul>
+      <li><strong>ProductsPage</strong>：加入商品（<code>setCart</code>）</li>
+      <li><strong>CartPage</strong>：顯示、刪除、送出（<code>cart</code> + <code>setCart</code>）</li>
+    </ul>
+    <p>它們的共同父元件是 <code>App</code>，所以 <code>cart</code> state 放在 <code>App</code>。</p>
+
+    <div class="code-wrap">
+      <div class="code-label">App.js — 狀態提升實作</div>
+      <pre><code class="language-jsx">function App() {
+  // cart 放在 App，因為兩個子頁面都要用
+  const [cart, setCart] = React.useState([]);
+
+  return (
+    &lt;&gt;
+      {/* ProductsPage 只需要 setCart（只寫） */}
+      {currentPage === "products" &amp;&amp; &lt;ProductsPage setCart={setCart} /&gt;}
+
+      {/* CartPage 需要 cart（讀）和 setCart（寫） */}
+      {currentPage === "cart" &amp;&amp;
+        &lt;CartPage cart={cart} setCart={setCart}
+                  isLoggedIn={isLoggedIn} username={username} /&gt;}
+    &lt;/&gt;
+  );
+}</code></pre>
+    </div>
+
+    <div class="note">
+      <strong>對照舊寫法：</strong> jQuery 版用全域變數 <code>let cart = []</code> 達到同樣效果。
+      React 的狀態提升是有組織的「全域變數」，明確知道誰擁有、誰可以修改。
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ STAGE 8 -->
+  <section class="stage" id="stage8">
+    <div class="stage-header">
+      <span class="stage-badge">階段 8</span>
+      <h2>SPA 路由模式</h2>
+    </div>
+
+    <p>本專案用 <code>currentPage</code> state 模擬頁面切換，這是最簡單的 SPA（單頁應用）路由。</p>
+
+    <div class="code-wrap">
+      <div class="code-label">條件式渲染實作路由</div>
+      <pre><code class="language-jsx">function App() {
+  const [currentPage, setCurrentPage] = React.useState("login");
+
+  return (
+    &lt;&gt;
+      &lt;Navbar currentPage={currentPage} setCurrentPage={setCurrentPage} /&gt;
+      &lt;div className="container mt-4"&gt;
+        {/* 只渲染對應的頁面元件 */}
+        {currentPage === "login"    &amp;&amp; &lt;LoginPage    ... /&gt;}
+        {currentPage === "products" &amp;&amp; &lt;ProductsPage ... /&gt;}
+        {currentPage === "orders"   &amp;&amp; &lt;OrdersPage      /&gt;}
+        {currentPage === "cart"     &amp;&amp; &lt;CartPage     ... /&gt;}
+      &lt;/div&gt;
+    &lt;/&gt;
+  );
+}</code></pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">Navbar — 切換頁面</div>
+      <pre><code class="language-jsx">// 點擊導覽連結時，更新 currentPage state → App 重新渲染 → 顯示對應頁面
+&lt;a href="#" onClick={e =&gt; { e.preventDefault(); setCurrentPage(item.key); }}&gt;
+  {item.label}
+&lt;/a&gt;</code></pre>
+    </div>
+
+    <div class="tip">
+      <strong>延伸：</strong> 正式專案通常使用 <code>react-router-dom</code> 管理路由，
+      支援瀏覽器網址列變化、巢狀路由、history API 等功能。
+      本專案的手動 state 路由適合學習和小型應用。
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ STAGE 9 -->
+  <section class="stage" id="stage9">
+    <div class="stage-header">
+      <span class="stage-badge">階段 9</span>
+      <h2>Fetch API 非同步請求</h2>
+    </div>
+
+    <p>React 版改用原生 <code>fetch()</code> 搭配 <code>async/await</code> 取代 <code>$.ajax()</code>。</p>
+
+    <table class="table table-bordered compare">
+      <thead><tr><th>操作</th><th>jQuery $.ajax</th><th>fetch + async/await</th></tr></thead>
+      <tbody>
+        <tr><td>GET 請求</td>
+          <td>$.ajax({ url, type:"GET", success: fn })</td>
+          <td>const r = await fetch(url); const d = await r.json();</td></tr>
+        <tr><td>POST JSON</td>
+          <td>$.ajax({ type:"POST", contentType:"application/json", data: JSON.stringify(obj) })</td>
+          <td>fetch(url, { method:"POST", headers:{...}, body: JSON.stringify(obj) })</td></tr>
+        <tr><td>錯誤處理</td>
+          <td>error: function(xhr){}</td>
+          <td>try { … } catch(e) { … }</td></tr>
+        <tr><td>帶 Token</td>
+          <td>headers: { "Authorization": "Bearer " + token }</td>
+          <td>headers: { "Authorization": "Bearer " + token } （相同）</td></tr>
+      </tbody>
+    </table>
+
+    <div class="code-wrap">
+      <div class="code-label">登入請求</div>
+      <pre><code class="language-jsx">const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await fetch(`https://${SERVER}/api/user/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username: user, password: pass }),
+    });
+    // res.ok 為 false 時（如 401）主動拋出例外
+    if (!res.ok) throw new Error("Login failed");
+    const data = await res.json();
+    localStorage.setItem("token", data.token);
+    setIsLoggedIn(true);
+    setUsername(user);
+  } catch {
+    setMessage("帳號或密碼錯誤");
+  }
+};</code></pre>
+    </div>
+
+    <div class="code-wrap">
+      <div class="code-label">送出訂單（帶 JWT Token）</div>
+      <pre><code class="language-jsx">const submitOrder = async () => {
+  const res = await fetch(`https://${SERVER}/api/orders`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + localStorage.getItem("token"),
+    },
+    body: JSON.stringify(order),
+  });
+  if (!res.ok) throw new Error();
+  alert("訂單已送出！");
+  setCart([]);  // 清空購物車
+};</code></pre>
+    </div>
+
+    <div class="note">
+      <strong>安全注意：</strong> JWT Token 存放於 <code>localStorage</code>。
+      生產環境建議改用 <code>HttpOnly Cookie</code> 防止 XSS 竊取 Token。
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ STAGE 10 -->
+  <section class="stage" id="stage10">
+    <div class="stage-header">
+      <span class="stage-badge">階段 10</span>
+      <h2>完整元件拆解</h2>
+    </div>
+
+    <p>以下逐一說明每個元件的職責、狀態與 props。</p>
+
+    <!-- Navbar -->
+    <h5>① Navbar</h5>
+    <table class="table table-sm table-bordered">
+      <tr><th width="120">職責</th><td>頂部導覽列，顯示登入狀態，切換頁面</td></tr>
+      <tr><th>自有 state</th><td>無（完全由 props 驅動）</td></tr>
+      <tr><th>接收 props</th><td><code>currentPage</code>、<code>setCurrentPage</code>、<code>isLoggedIn</code>、<code>username</code></td></tr>
+      <tr><th>關鍵邏輯</th><td>用 template literal 動態加 active 樣式：<code>`nav-link${currentPage === item.key ? " active fw-bold" : ""}`</code></td></tr>
+    </table>
+
+    <!-- LoginPage -->
+    <h5 class="mt-3">② LoginPage</h5>
+    <table class="table table-sm table-bordered">
+      <tr><th width="120">職責</th><td>登入表單，呼叫後端驗證，儲存 token</td></tr>
+      <tr><th>自有 state</th><td><code>user</code>、<code>pass</code>、<code>message</code>（表單欄位 + 錯誤訊息）</td></tr>
+      <tr><th>接收 props</th><td><code>setIsLoggedIn</code>、<code>setUsername</code>（登入成功後更新 App state）</td></tr>
+      <tr><th>副作用</th><td>無 useEffect；事件驅動（onClick）</td></tr>
+    </table>
+
+    <!-- ProductsPage -->
+    <h5 class="mt-3">③ ProductsPage + ProductCard</h5>
+    <table class="table table-sm table-bordered">
+      <tr><th width="120">職責</th><td>載入產品清單，每張卡片可設數量並加入購物車</td></tr>
+      <tr><th>自有 state</th><td>ProductsPage：<code>products[]</code>。ProductCard：<code>qty</code>（每張卡片獨立）</td></tr>
+      <tr><th>接收 props</th><td>ProductsPage：<code>setCart</code>。ProductCard：<code>product</code>、<code>onAddToCart</code></td></tr>
+      <tr><th>副作用</th><td>useEffect([], fetch /api/products)</td></tr>
+    </table>
+
+    <!-- OrdersPage -->
+    <h5 class="mt-3">④ OrdersPage</h5>
+    <table class="table table-sm table-bordered">
+      <tr><th width="120">職責</th><td>顯示訂單清單，點擊後展開商品明細</td></tr>
+      <tr><th>自有 state</th><td><code>orders[]</code>、<code>selectedOrder</code>、<code>items[]</code></td></tr>
+      <tr><th>接收 props</th><td>無（讀 sessionStorage 取 username）</td></tr>
+      <tr><th>副作用</th><td>useEffect([], fetch /api/orders/:username)<br>showDetails() async 函式 fetch /api/items/:orderId</td></tr>
+    </table>
+
+    <!-- CartPage -->
+    <h5 class="mt-3">⑤ CartPage</h5>
+    <table class="table table-sm table-bordered">
+      <tr><th width="120">職責</th><td>顯示購物車，刪除商品，送出訂單</td></tr>
+      <tr><th>自有 state</th><td>無（cart 來自 App props）</td></tr>
+      <tr><th>接收 props</th><td><code>cart</code>、<code>setCart</code>、<code>isLoggedIn</code>、<code>username</code></td></tr>
+      <tr><th>關鍵邏輯</th><td>
+        刪除：<code>setCart(prev =&gt; prev.filter((_, i) =&gt; i !== index))</code><br>
+        總金額：<code>cart.reduce((sum, item) =&gt; sum + item.price * item.quantity, 0)</code>
+      </td></tr>
+    </table>
+  </section>
+
+  <!-- ═══════════════════════════════════════════ STAGE 11 -->
+  <section class="stage" id="stage11">
+    <div class="stage-header">
+      <span class="stage-badge">階段 11</span>
+      <h2>實作練習</h2>
+    </div>
+
+    <p>完成以下練習以驗證各階段的學習成果。</p>
+
+    <h5>🟢 入門練習</h5>
+    <ul class="checklist">
+      <li>在 Navbar 加入一個「關於」頁面連結，點擊後顯示一段自我介紹文字</li>
+      <li>LoginPage 加入「記住我」checkbox，勾選後把 username 存入 localStorage</li>
+      <li>CartPage 顯示商品總數（不是總金額，是所有 quantity 的加總）</li>
+    </ul>
+
+    <h5 class="mt-3">🟡 進階練習</h5>
+    <ul class="checklist">
+      <li>ProductCard 加入「-」「+」數量按鈕替代 input</li>
+      <li>CartPage 新增「清空購物車」按鈕（<code>setCart([])</code>）</li>
+      <li>OrdersPage 加入載入中的 loading spinner（新增 <code>loading</code> state，fetch 前設 true，完成後設 false）</li>
+      <li>登入後自動跳轉到產品頁（在 LoginPage 的 handleLogin 成功後呼叫 <code>setCurrentPage</code>）</li>
+    </ul>
+
+    <h5 class="mt-3">🔴 挑戰練習</h5>
+    <ul class="checklist">
+      <li>用 <code>React.useContext</code> 重構，把 <code>isLoggedIn</code>、<code>username</code>、<code>cart</code> 放進 Context，避免 props drilling</li>
+      <li>加入 <code>localStorage</code> 持久化購物車：頁面重新整理後購物車不消失
+        <br><small class="text-muted">提示：useEffect 監聽 cart 變化時儲存；useState 初始值從 localStorage 讀取</small></li>
+      <li>把 Babel CDN 替換為 Vite 建置，正式輸出優化後的 JS</li>
+    </ul>
+
+    <div class="tip mt-3">
+      <strong>延伸閱讀：</strong>
+      <ul class="mb-0">
+        <li><a href="https://react.dev/learn" target="_blank">React 官方文件 (react.dev)</a></li>
+        <li><a href="https://react.dev/reference/react/hooks" target="_blank">React Hooks API 參考</a></li>
+        <li><a href="https://developer.mozilla.org/zh-TW/docs/Web/API/Fetch_API" target="_blank">MDN Fetch API 文件</a></li>
+      </ul>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // Syntax highlighting
+  document.addEventListener("DOMContentLoaded", () => {
+    document.querySelectorAll("pre code").forEach(el => hljs.highlightElement(el));
+
+    // Active sidebar link on scroll
+    const stages = document.querySelectorAll(".stage");
+    const links   = document.querySelectorAll("#sidebar a");
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(e => {
+        if (e.isIntersecting) {
+          links.forEach(l => l.classList.remove("active"));
+          const link = document.querySelector(`#sidebar a[href="#${e.target.id}"]`);
+          if (link) link.classList.add("active");
+        }
+      });
+    }, { threshold: 0.4 });
+    stages.forEach(s => observer.observe(s));
+  });
+</script>
+</body>
+</html>
