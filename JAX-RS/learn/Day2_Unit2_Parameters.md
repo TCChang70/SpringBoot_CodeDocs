@@ -425,69 +425,8 @@ public Response search(
 | 預期 | `200` + `q=jaxrs` `page=2` `size=10` `filters=["price","brand"]` |
 | 只傳 query | `q=java` → 預設 `page=1` `size=20` `filters=null` |
 
-### @BeanParam 參數聚合
 
-```java
-public class EmployeeFilter {
-    @QueryParam("dept")      private String department;
-    @QueryParam("page")      @DefaultValue("1")  private int page;
-    @QueryParam("size")      @DefaultValue("10") private int size;
-    @QueryParam("sort")      @DefaultValue("id") private String sort;
-    @QueryParam("order")     @DefaultValue("asc") private String order;
-    @QueryParam("minSalary") private Double minSalary;
-    @QueryParam("maxSalary") private Double maxSalary;
-}
 
-@GET
-public Response search(@BeanParam EmployeeFilter filter) {
-    // 直接使用 filter.getDepartment() 等
-}
-```
-
-- **優點**：方法簽名簡潔、參數邏輯集中管理、容易測試
-- **適用時機**：參數 >= 3 個，或參數在多個方法間共用
-- 可在同一個 `@BeanParam` 類別中混合使用不同類型的參數標注
-
-#### @BeanParam 聚合 @HeaderParam + @FormParam
-
-```java
-public class RequestContext {
-    @HeaderParam("Authorization")            private String authToken;
-    @HeaderParam("X-Request-ID")             private String requestId;
-    @FormParam("page")     @DefaultValue("1")  private int page;
-    @FormParam("size")     @DefaultValue("20") private int size;
-    @QueryParam("sort")    @DefaultValue("id") private String sort;
-}
-
-@POST @Path("/data")
-@Consumes(APPLICATION_FORM_URLENCODED)
-public Response data(@BeanParam RequestContext ctx) {
-    // ctx.getAuthToken(), ctx.getPage(), ctx.getSort() 等
-}
-```
-
-## @DefaultValue 行為對照
-
-| 請求情況 | `@DefaultValue("1")` 是否生效 | `page` 的值 |
-|----------|------|-------|
-| 無 `page` 參數 | 是 | 1 |
-| `?page=3` | 否（使用了提供的值） | 3 |
-| `?page=` | ⚠️ 否，會拋出 `Bad Request` | 解析空字串失敗 |
-
-## 完整 EmployeeFilter 欄位
-
-參考實際範例：[EmployeeFilter.java](../examples/day2/src/main/java/com/example/model/EmployeeFilter.java)
-
-| 欄位 | 類型 | QueryParam | 預設值 |
-|------|------|-----------|--------|
-| department | String | `dept` | null |
-| page | int | `page` | 1 |
-| size | int | `size` | 10 |
-| name | String | `name` | null |
-| minSalary | Double | `minSalary` | null |
-| maxSalary | Double | `maxSalary` | null |
-| sort | String | `sort` | id |
-| order | String | `order` | asc |
 
 ## 練習題
 
@@ -497,10 +436,3 @@ public Response data(@BeanParam RequestContext ctx) {
 4. 使用 `@FormParam` 實作註冊 API，方法內驗證 email 格式與密碼長度（最少 8 碼）
 5. 說明 `@PathParam` 與 `@QueryParam` 在 URI 設計上的語意差異
 
-## 參考資源
-- [Day2 主文件第二節](../Day2_HTTP方法與資源設計.md#第二節參數取得詳解)
-- [EmployeeFilter.java](../examples/day2/src/main/java/com/example/model/EmployeeFilter.java)
-- [HeaderParam 實例資源](../examples/day2/src/main/java/com/example/resource/HeaderParamResource.java)
-- [FormParam 實例資源](../examples/day2/src/main/java/com/example/resource/FormParamResource.java)
-- [TokenService（JWT 驗證實作）](../examples/day2/src/main/java/com/example/config/TokenService.java)
-- [User 模型](../examples/day2/src/main/java/com/example/model/User.java)

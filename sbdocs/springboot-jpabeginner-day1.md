@@ -324,8 +324,6 @@ public interface EmployeeRepository extends JpaRepository<Employee, Long> {
     // ✅ deleteById(id)      → DELETE WHERE id = ?
     // ✅ existsById(id)      → 確認某個 id 是否存在，回傳 boolean
     // ✅ count()             → SELECT COUNT(*)，回傳總筆數
-    //
-    // Day 2 會介紹如何在這裡新增「自訂查詢方法」（例如：findByName、findByDepartment）
 }
 ```
 
@@ -831,13 +829,3 @@ private BigDecimal exactSalary;
 | **Service** | 封裝商業邏輯，呼叫 Repository，是 Controller 與 Repository 的橋樑 |
 | **Controller** | 處理 HTTP 請求/回應，搭配正確的狀態碼（201/200/204/404） |
 | **ddl-auto=update** | 開發期間讓 Hibernate 自動建立/更新資料表，正式環境勿使用 |
-
----
-
-## 下一步 — Day 2 預告
-
-Day 2 將深入 Repository 的**自訂查詢方法**（Query Methods）：
-- `findByName(String name)` — 依名字查詢
-- `findByDepartmentAndSalaryGreaterThan(String dept, Double salary)` — 複合條件查詢
-- `@Query` 自訂 JPQL 查詢
-- 分頁（Pageable）與排序（Sort）
