@@ -37,6 +37,58 @@
 
 ---
 
+## 🌱 測試資料 Seed Data
+
+> 在 `src/main/resources/data.sql` 放入以下內容，Spring Boot 啟動時會自動執行，**5 筆 Product + 3 筆 Category** 直接可用。
+
+### Category 資料（先建類別，因為 Product 有外鍵關聯）
+
+```sql
+-- src/main/resources/data.sql
+-- 類別資料
+INSERT INTO category (id, name) VALUES (1, '電腦');
+INSERT INTO category (id, name) VALUES (2, '手機');
+INSERT INTO category (id, name) VALUES (3, '配件');
+```
+
+### Product 資料
+
+```sql
+-- 商品資料（category_id 對應上面的類別 id）
+INSERT INTO product (name, price, stock, category_id, created_at) VALUES
+('MacBook Pro 14', 69999.0, 5,  1, datetime('now')),
+('iPhone 15 Pro',  39999.0, 20, 2, datetime('now')),
+('iPad Air',       24999.0, 15, 1, datetime('now')),
+('AirPods Pro',    7999.0,  50, 3, datetime('now')),
+('Magic Keyboard', 3999.0,  30, 3, datetime('now'));
+```
+
+### application.properties 設定
+
+```properties
+# 啟動時執行 data.sql
+spring.sql.init.mode=always
+spring.jpa.hibernate.ddl-auto=create-drop
+```
+
+### 啟動後驗證
+
+```bash
+# 啟動專案後，呼叫 API 確認資料
+curl http://localhost:8080/api/products
+curl http://localhost:8080/api/categories
+curl http://localhost:8080/api/products/category/電腦
+```
+
+### 注意事項
+
+| 情況 | 處理方式 |
+|------|---------|
+| `category_id` 欄位不存在 | 改用 `category` 欄位（String），不需 foreign key |
+| `created_at` 欄位不存在 | 移除 `created_at` 欄位，或改用 `@CreationTimestamp` |
+| 資料重複插入 | 加 `IF NOT EXISTS`：`INSERT INTO product ... WHERE NOT EXISTS (SELECT 1 FROM product WHERE name = 'MacBook Pro 14')` |
+| 只執行一次 | 將 `data.sql` 改名為 `data-once.sql`，或啟動後刪除 |
+
 ---
 
 ## 練習 2-1 ─ Derived Query 方法命名
