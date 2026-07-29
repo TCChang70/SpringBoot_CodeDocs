@@ -77,7 +77,36 @@ public class Employee {
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
 ```
+加入5筆員工資料
+```java
+import com.example.demo.model.Employee;
+import com.example.demo.repository.EmployeeRepository;
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
 
+@Component
+public class DataInitConfig implements CommandLineRunner {
+
+    private final EmployeeRepository employeeRepository;
+
+    public DataInitConfig(EmployeeRepository employeeRepository) {
+        this.employeeRepository = employeeRepository;
+    }
+
+    @Override
+    public void run(String... args) throws Exception {
+        if (employeeRepository.count() == 0) {
+            employeeRepository.save(new Employee("王小明", "wang@example.com", "Engineering", 80000.0));
+            employeeRepository.save(new Employee("李小華", "lee@example.com", "Marketing", 65000.0));
+            employeeRepository.save(new Employee("張大偉", "chang@example.com", "Engineering", 92000.0));
+            employeeRepository.save(new Employee("陳美玲", "chen@example.com", "HR", 58000.0));
+            employeeRepository.save(new Employee("林志豪", "lin@example.com", "Finance", 75000.0));
+            System.out.println("=== 已自動建立 5 筆 Employee 資料 ===");
+        }
+    }
+}
+
+```
 > 💡 **說明**：`@CreationTimestamp` 是 Hibernate 提供的功能，在第一次儲存時自動填入目前系統時間；`updatable = false` 確保後續更新不會修改這個欄位。
 
 重啟應用程式後，在 Console 會看到 Hibernate 自動幫 `employees` 表格新增了 `created_at` 欄位（`ddl-auto=update` 的效果）。
@@ -236,6 +265,24 @@ public class EmployeeService {
             PageRequest.of(page, size, Sort.by(sortBy).ascending())
         );
     }
+   // 因為原程式為提供 Service update create 方法故新增
+   public Optional<Employee> update(Long id, Employee updated) {
+    	    Optional<Employee> existingOpt = employeeRepository.findById(id);
+		if (existingOpt.isPresent()) {
+			Employee existing = existingOpt.get();
+			existing.setName(updated.getName());
+			existing.setEmail(updated.getEmail());
+			existing.setDepartment(updated.getDepartment());
+			existing.setSalary(updated.getSalary());
+			return Optional.of(employeeRepository.save(existing));
+		} else {
+			return Optional.empty(); // 或者拋出例外
+		}
+    }
+    public Employee create(Employee emp) {
+    	    Employee e1=new Employee(emp.getName(), emp.getEmail(), emp.getDepartment(), emp.getSalary());
+		return employeeRepository.save(e1);
+	}
 }
 ```
 
