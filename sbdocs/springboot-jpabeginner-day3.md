@@ -457,6 +457,330 @@ private void doInternal() { ... }
 
 > 💡 **根本原因**：`@Transactional` 透過 **AOP 動態代理**實現，Spring 會為標記了 `@Transactional` 的類別建立代理物件。只有透過代理物件呼叫的**公開（public）方法**才受交易管理。
 
+### 3.6 @Transactional 測試方法（BookServiceTest）
+
+測試是驗證交易行為最可靠的方式。以下測試完整驗證 `BookService` 每個 `@Transactional` 方法的正確性。
+
+#### 3.6.1 加入測試依賴（pom.xml）
+
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-test</artifactId>
+    <scope>test</scope>
+</dependency>
+<!-- 測試時使用 H2 記憶體資料庫（不需要安裝 MySQL） -->
+<dependency>
+    <groupId>com.h2database</groupId>
+    <artifactId>h2</artifactId>
+    <scope>test</scope>
+</dependency>
+```
+
+#### 3.6.2 測試配置檔（src/test/resources/application-test.properties）
+
+```properties
+# H2 記憶體資料庫：測試結束即自動清空
+spring.datasource.url=jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1
+spring.datasource.driver-class-name=org.h2.Driver
+spring.datasource.username=sa
+spring.datasource.password=
+
+# H2 相容模式：使用 MySQL 語法
+spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
+
+# 由 Hibernate 自動建表（測試環境不需要 Flyway）
+spring.jpa.hibernate.ddl-auto=create-drop
+spring.jpa.show-sql=true
+
+# 測試完畢每個 @Transactional 測試方法自動 rollback
+spring.jpa.open-in-view=false
+```
+
+> 💡 **關鍵**：Spring Boot 測試加上 `@Transactional` 後，每個測試方法執行完畢會**自動 rollback**，不會污染其他測試。這就是測試與 `@Transactional` 結合的威力。
+
+#### 3.6.3 完整測試類別（BookServiceTest.java）
+
+```java
+package com.example.bookcrud.service;
+
+import com.example.bookcrud.model.Book;
+import com.example.bookcrud.repository.BookRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+// @SpringBootTest：啟動完整 Spring 容器（整合測試）
+// @ActiveProfiles("test")：使用 application-test.properties
+// @Transactional：每個測試方法結束後自動 rollback，測試間互不影響
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional
+class BookServiceTest {
+
+    @Autowired
+    private BookService bookService;
+
+    @Autowired
+    private BookRepository bookRepository;
+
+    // 建立測試用 Book 的輔助方法
+    private Book createBook(String title, String isbn) {
+        return new Book(title, "Alice Chen", isbn,
+                new BigDecimal("550.00"), 30, "Programming");
+    }
+
+    // ═══════════ 測試 1：create() 正常新增 ═══════════
+    @Test
+    void create_shouldSaveBook() {
+        Book book = createBook("Spring Boot 實戰", "978-986-434-000-1");
+
+        Book saved = bookService.create(book);
+
+        // 儲存成功後 id 應由資料庫自動產生（非 null）
+        assertNotNull(saved.getId());
+        // 從資料庫再次讀取，確認真的寫入成功
+        Optional<Book> found = bookRepository.findById(saved.getId());
+        assertTrue(found.isPresent());
+        assertEquals("Spring Boot 實戰", found.get().getTitle());
+    }
+
+    // ═══════════ 測試 2：create() 重複 ISBN 拋例外 ═══════════
+    @Test
+    void create_duplicateIsbn_shouldThrowException() {
+        Book book1 = createBook("Spring Boot 實戰", "978-986-434-000-1");
+        bookService.create(book1);
+
+        // 相同 ISBN 再新增一次 → 應拋出 IllegalArgumentException
+        Book duplicate = createBook("Spring Boot 實戰 第二版", "978-986-434-000-1");
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> bookService.create(duplicate));
+        assertTrue(ex.getMessage().contains("ISBN 已存在"));
+    }
+
+    // ═══════════ 測試 3：update() 正常修改 ═══════════
+    @Test
+    void update_shouldModifyBook() {
+        Book saved = bookService.create(createBook("Java 入門", "978-986-434-000-2"));
+
+        Book updatedData = new Book("Java 入門（第二版）", "Bob Wang",
+                "978-986-434-000-2", new BigDecimal("680.00"), 20, "Programming");
+
+        Optional<Book> result = bookService.update(saved.getId(), updatedData);
+
+        assertTrue(result.isPresent());
+        Book updated = result.get();
+        assertEquals("Java 入門（第二版）", updated.getTitle());
+        assertEquals("Bob Wang", updated.getAuthor());
+        assertEquals(new BigDecimal("680.00"), updated.getPrice());
+    }
+
+    // ═══════════ 測試 4：update() 不存在的書籍 ═══════════
+    @Test
+    void update_nonExistentId_shouldReturnEmpty() {
+        Book updatedData = createBook("不存在的書", "978-986-434-000-3");
+
+        Optional<Book> result = bookService.update(999L, updatedData);
+
+        assertTrue(result.isEmpty());   // 回傳 empty，不拋例外
+    }
+
+    // ═══════════ 測試 5：delete() 正常刪除 ═══════════
+    @Test
+    void delete_shouldRemoveBook() {
+        Book saved = bookService.create(createBook("演算法導論", "978-986-434-000-4"));
+
+        boolean deleted = bookService.delete(saved.getId());
+
+        assertTrue(deleted);
+        assertFalse(bookRepository.existsById(saved.getId()));
+    }
+
+    // ═══════════ 測試 6：delete() 不存在的書籍回傳 false ═══════════
+    @Test
+    void delete_nonExistentId_shouldReturnFalse() {
+        boolean deleted = bookService.delete(999L);
+
+        assertFalse(deleted);
+    }
+
+    // ═══════════ 測試 7：findAll() 與 findById() 唯讀查詢 ═══════════
+    @Test
+    void findAll_shouldReturnAllBooks() {
+        bookService.create(createBook("書A", "978-986-434-000-5"));
+        bookService.create(createBook("書B", "978-986-434-000-6"));
+
+        List<Book> books = bookService.findAll();
+
+        assertEquals(2, books.size());
+    }
+
+    @Test
+    void findById_shouldReturnBook() {
+        Book saved = bookService.create(createBook("書C", "978-986-434-000-7"));
+
+        Optional<Book> found = bookService.findById(saved.getId());
+
+        assertTrue(found.isPresent());
+        assertEquals("書C", found.get().getTitle());
+    }
+
+    // ═══════════ 測試 8：findByCategory / searchByTitle 查詢 ═══════════
+    @Test
+    void findByCategory_shouldFilterBooks() {
+        bookService.create(createBook("書D", "978-986-434-000-8"));
+        Book dbBook = new Book("資料庫系統概論", "Charlie", "978-986-434-000-9",
+                new BigDecimal("420.00"), 20, "Database");
+        bookService.create(dbBook);
+
+        List<Book> programming = bookService.findByCategory("Programming");
+        List<Book> database = bookService.findByCategory("Database");
+
+        assertEquals(1, programming.size());
+        assertEquals(1, database.size());
+    }
+
+    @Test
+    void searchByTitle_shouldFindMatchingBooks() {
+        bookService.create(createBook("Spring Boot 實戰", "978-986-434-001-0"));
+        bookService.create(createBook("Spring Cloud 微服務", "978-986-434-001-1"));
+
+        List<Book> results = bookService.searchByTitle("Spring");
+
+        assertEquals(2, results.size());
+    }
+}
+```
+
+#### 3.6.4 交易 Rollback 行為測試（進階）
+
+驗證「中途失敗 → 全部回滾」的交易核心行為。這些測試需要**不標記** `@Transactional`，才能真正觀察資料庫狀態：
+
+```java
+package com.example.bookcrud.service;
+
+import com.example.bookcrud.model.Book;
+import com.example.bookcrud.repository.BookRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.math.BigDecimal;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+// 注意：這裡【沒有】@Transactional
+// 才能真實驗證 rollback 後資料庫是否維持原狀
+@SpringBootTest
+@ActiveProfiles("test")
+class BookTransactionRollbackTest {
+
+    @Autowired
+    private BookService bookService;
+
+    @Autowired
+    private BookRepository bookRepository;
+
+    @Test
+    void create_withRuntimeException_shouldRollback() {
+        // 建立一本正常書籍（先確保資料庫有資料）
+        Book saved = bookService.create(
+                new Book("存在的書", "Alice", "978-986-434-100-0",
+                        new BigDecimal("100.00"), 5, "Programming"));
+
+        // 建立一本「特殊書名」觸發 Service 內部的 rollback 邏輯
+        // （參照「課後練習 - Rollback 實驗」：title = "ROLLBACK_TEST" 時拋例外）
+        Book rollbackBook = new Book("ROLLBACK_TEST", "Bob", "978-986-434-100-1",
+                new BigDecimal("200.00"), 10, "Programming");
+
+        // create() 內部：先執行 INSERT → 再拋 RuntimeException
+        // 因 @Transactional 存在，INSERT 應該被回滾
+        assertThrows(RuntimeException.class, () -> {
+            Book b = bookService.create(rollbackBook);
+            if (b.getTitle().equals("ROLLBACK_TEST")) {
+                throw new RuntimeException("模擬交易失敗，應該 rollback！");
+            }
+        });
+
+        // 驗證：資料庫中【不應該】存在 ROLLBACK_TEST 這本書
+        Optional<Book> rollbackFound = bookRepository.findByIsbn("978-986-434-100-1");
+        assertFalse(rollbackFound.isPresent(), "rollback 後不應存在 ROLLBACK_TEST");
+
+        // 驗證：原本的書還在（rollback 只回滾當前交易，不影響其他資料）
+        assertTrue(bookRepository.findByIsbn("978-986-434-100-0").isPresent());
+    }
+
+    @Test
+    void create_withCheckedException_shouldNotRollbackByDefault() {
+        // 建立一本「特殊書名」觸發 Service 內部拋出受檢例外（IOException）
+        // 注意：@Transactional 預設【只回滾 RuntimeException 與 Error】
+        //       受檢例外（Checked Exception）預設【不】回滾！
+        Book checkedBook = new Book("CHECKED_TEST", "Carol", "978-986-434-100-2",
+                new BigDecimal("300.00"), 8, "Programming");
+
+        // 若 Service 內 create() 拋出的是受檢例外且沒有 rollbackFor 設定，
+        // 資料會【保留】在資料庫中（不回滾）
+        try {
+            bookService.create(checkedBook);  // 假設內部拋 IOException
+        } catch (Exception ignored) {
+            // 忽略例外，重點在觀察下方資料庫狀態
+        }
+
+        // 驗證資料庫狀態（不同 Service 實作結果不同，作為討論重點）
+        Optional<Book> found = bookRepository.findByIsbn("978-986-434-100-2");
+        // 實作此測試前，先思考：資料應該存在還是不存在？
+        System.out.println("CHECKED_TEST 是否存在於資料庫: " + found.isPresent());
+    }
+}
+```
+
+#### 3.6.5 測試執行方式
+
+```bash
+# 執行所有測試
+mvn test
+
+# 執行特定測試類別
+mvn test -Dtest=BookServiceTest
+
+# 執行單一測試方法
+mvn test -Dtest=BookServiceTest#create_shouldSaveBook
+
+# 執行時顯示詳細輸出
+mvn test -Dtest=BookServiceTest -Dspring.profiles.active=test
+```
+
+#### 3.6.6 測試結果預期
+
+| 測試方法 | 預期結果 | 驗證重點 |
+|---------|---------|---------|
+| `create_shouldSaveBook` | 通過 | create() 成功寫入資料庫 |
+| `create_duplicateIsbn_shouldThrowException` | 通過 | ISBN 重複業務規則正確 |
+| `update_shouldModifyBook` | 通過 | update() 正確更新欄位 |
+| `update_nonExistentId_shouldReturnEmpty` | 通過 | 不存在的 id 回傳 empty |
+| `delete_shouldRemoveBook` | 通過 | delete() 成功刪除 |
+| `delete_nonExistentId_shouldReturnFalse` | 通過 | 不存在的 id 回傳 false |
+| `findAll_shouldReturnAllBooks` | 通過 | 查詢回傳全部資料 |
+| `findById_shouldReturnBook` | 通過 | 依 id 查詢成功 |
+| `findByCategory_shouldFilterBooks` | 通過 | 依分類過濾正確 |
+| `searchByTitle_shouldFindMatchingBooks` | 通過 | 關鍵字搜尋正確 |
+| `create_withRuntimeException_shouldRollback` | 通過 | RuntimeException 觸發 rollback |
+| `create_withCheckedException_shouldNotRollbackByDefault` | 討論 | 受檢例外預設不回滾 |
+
+> 💡 **測試與 @Transactional 的關係**：一般測試類別加上 `@Transactional` 是為了讓每個測試自動 rollback（隔離測試）。而**驗證 rollback 行為本身**的測試則不能加，因為需要觀察真實的資料庫狀態。
+
 ---
 
 ## 4. Controller 與 DTO 模式
@@ -1026,6 +1350,9 @@ GET http://localhost:8080/api/books/1
 | `HttpMessageNotReadableException` | 請求 JSON 格式錯誤 | 確認 JSON 格式正確且 `Content-Type: application/json` |
 | DTO 欄位都是 null | DTO 沒有無參數建構子或缺少 Setter | 確認 DTO 有 `public Xxx() {}` 無參數建構子 |
 | `NoSuchBeanDefinitionException` | `GlobalExceptionHandler` 類別沒有 `@RestControllerAdvice` | 確認注解存在並在 Spring 掃描路徑內 |
+| 測試失敗：找不到 Bean | 測試沒有標記 `@SpringBootTest`，或缺少測試配置 | 確認測試類別有 `@SpringBootTest` 與 `@ActiveProfiles("test")` |
+| 測試間資料互相干擾 | 測試類別沒有標記 `@Transactional` | 在測試類別加上 `@Transactional`，每個測試自動 rollback |
+| 測試連到 MySQL 而非 H2 | 沒有指定測試 Profile 或 H2 依賴 | 確認 `application-test.properties` 存在且 H2 依賴已加入 |
 
 ---
 
@@ -1055,6 +1382,12 @@ GET http://localhost:8080/api/books/1
 - [ ] 新增 `BookCreateRequest.java`（含 `@NotBlank`、`@Pattern`、`@Positive` 驗證）
 - [ ] 新增 `BookResponse.java`（含靜態工廠方法 `from(Book)`）
 - [ ] 修改 Controller 的 POST 方法：接收 `BookCreateRequest`，回傳 `BookResponse`，加上 `@Valid`
+
+**任務 5：為 @Transactional 寫測試**
+- [ ] 在 `pom.xml` 加入 `spring-boot-starter-test` 與 H2 依賴
+- [ ] 建立 `src/test/resources/application-test.properties`
+- [ ] 新增 `BookServiceTest.java`（參考 Section 3.6.3），驗證 10 個基本測試全部通過
+- [ ] 執行 `mvn test`，觀察每個測試方法是否自動 rollback
 
 ### ✅ 預期結果驗證
 
@@ -1285,6 +1618,7 @@ public List<BookResponse> findLowStock(@RequestParam(defaultValue = "5") int thr
 | **Controller 為中心** | Controller 是請求唯一入口：解析 → 驗證 → 轉換 → 委派 → 組裝 → 回應 |
 | **@Transactional** | 保證多個資料庫操作的原子性；`readOnly = true` 提升查詢效能 |
 | **@Transactional 失效陷阱** | 同類別內直接呼叫、例外被吞掉、private 方法 |
+| **交易測試** | 測試類別加 `@Transactional` 自動 rollback；驗證 rollback 的測試不能加 |
 | **DTO 模式** | 隔離 Entity 與 API；分別建立 CreateRequest、UpdateRequest、Response |
 | **靜態工廠方法** | `BookResponse.from(entity)` 集中管理轉換邏輯 |
 | **@Valid** | 加在 `@RequestBody` 前，觸發 DTO 內的驗證規則 |
