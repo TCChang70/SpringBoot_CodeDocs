@@ -117,7 +117,12 @@ mvjpars0626/
             <artifactId>jakarta.ws.rs-api</artifactId>
             <version>3.1.0</version>
         </dependency>
-
+        <!-- Jakarta Activation API（JAX-RS 3.1 規範要求） -->
+		<dependency>
+			<groupId>jakarta.activation</groupId>
+			<artifactId>jakarta.activation-api</artifactId>
+			<version>2.1.2</version>
+		</dependency>
         <!-- Jersey Core Server -->
         <dependency>
             <groupId>org.glassfish.jersey.core</groupId>
@@ -158,7 +163,7 @@ mvjpars0626/
         <dependency>
            <groupId>com.fasterxml.jackson.module</groupId>
            <artifactId>jackson-module-jakarta-xmlbind-annotations</artifactId>
-           <version>2.17.0</version>
+           <version>2.18.4</version>
         </dependency>
         <!-- Java 8+ 日期模組 -->
         <dependency>
