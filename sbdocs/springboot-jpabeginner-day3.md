@@ -1,11 +1,12 @@
-# Day 3 — 交易管理 + DTO + 驗證 + 例外處理
+# Day 3 — Book CRUD：交易管理 + DTO + 驗證 + 例外處理（Controller 為中心）
 
 ## 學習目標
+- 以 **Controller 為中心**理解 MVC 分層架構的協作方式
 - 理解 `@Transactional` 交易管理的用途與常見陷阱
 - 學會用 DTO 隔離 Entity 與 API，保護資料安全
 - 學會 Bean Validation（`@NotBlank`、`@Email`、`@Positive`）
 - 學會用 `@RestControllerAdvice` 統一處理所有例外
-- 完成一個具備驗證與統一錯誤回應的 Employee CRUD 系統
+- 完成一個具備驗證與統一錯誤回應的 **Book CRUD 系統**
 
 ---
 
@@ -15,8 +16,8 @@ Day 2 新增了查詢能力與關聯映射：
 
 | 功能 | 實作方式 |
 |------|---------|
-| 方法名稱自動查詢 | Derived Query：`findByDepartment()`、`findByNameContaining()` |
-| 自訂 JPQL | `@Query("SELECT e FROM Employee e WHERE ...")` |
+| 方法名稱自動查詢 | Derived Query：`findByAuthor()`、`findByTitleContaining()` |
+| 自訂 JPQL | `@Query("SELECT b FROM Book b WHERE ...")` |
 | 關聯映射 | `@ManyToOne` / `@OneToMany` + `@JoinColumn` |
 | N+1 問題 | `LEFT JOIN FETCH` 一次查詢解決 |
 | 分頁排序 | `PageRequest.of(page, size, Sort.by(field))` |
@@ -25,32 +26,273 @@ Day 2 新增了查詢能力與關聯映射：
 
 ---
 
+## 0. Controller 為中心的分層架構
+
+本文件從 **Controller 出發**，由上而下認識每一層。一個 HTTP 請求的完整旅程：
+
+```
+瀏覽器 / Postman
+     │
+     ▼ HTTP Request（JSON）
+┌─────────────────────────────────────┐
+│ ① Controller 層（@RestController）   │ ← 本文件的中心
+│  • 接收 HTTP 請求 / 路徑 / 參數       │
+│  • @Valid 觸發 DTO 驗證              │
+│  • 決定 HTTP 狀態碼                  │
+│  • 組裝回應 DTO 並回傳 JSON          │
+└──────────────┬──────────────────────┘
+               │ 若驗證失敗 ↗ GlobalExceptionHandler
+               ▼           （@RestControllerAdvice）
+┌─────────────────────────────────────┐
+│ ② Service 層（@Service）             │
+│  • @Transactional 交易管理           │
+│  • 業務規則（ISBN 不重複等）          │
+│  • 呼叫 Repository 操作資料庫        │
+│  • 拋出業務例外（BookNotFoundException 等）│
+└──────────────┬──────────────────────┘
+               │ 若拋例外 ↗ GlobalExceptionHandler
+               ▼
+┌─────────────────────────────────────┐
+│ ③ Repository 層（JpaRepository）     │
+│  • Derived Query 自動產生 SQL        │
+│  • @Query 自訂 JPQL                  │
+│  • 不含業務邏輯                      │
+└──────────────┬──────────────────────┘
+               │
+               ▼
+           MySQL 資料庫
+```
+
+**各層職責與邊界**：
+
+| 層 | 職責 | 不該做的事 |
+|----|------|-----------|
+| **Controller** | 解析 HTTP 請求、DTO 轉換、回傳狀態碼 | 不含業務邏輯；不直接操作資料庫 |
+| **Service** | 業務規則、交易管理、呼叫多個 Repository | 不處理 HTTP 細節（狀態碼、Headers）|
+| **Repository** | 資料庫 CRUD、查詢方法 | 不含業務邏輯 |
+| **Entity** | 資料結構定義、關聯映射 | 不含 API 邏輯 |
+| **DTO** | 請求/回應資料格式、驗證規則 | 不含資料庫操作 |
+| **Exception** | 統一例外類別與錯誤回應格式 | — |
+
+> 💡 **為什麼以 Controller 為中心？** Controller 是客戶端與系統的唯一入口。理解每個請求如何被解析、驗證、分派、回應，就能掌握整個架構的運作。
+
+---
+
 ## 今日新增的專案結構
 
 ```
-src/main/java/com/example/employeecrud/
+src/main/java/com/example/bookcrud/
 ├── model/
-│   └── Employee.java                  ← 不變
-├── dto/                               ← 新增整個 dto 套件
-│   ├── EmployeeCreateRequest.java     ← 新增員工的請求 DTO
-│   ├── EmployeeUpdateRequest.java     ← 修改員工的請求 DTO
-│   └── EmployeeResponse.java          ← 回傳給客戶端的回應 DTO
+│   └── Book.java                       ← 改為 Book Entity
+├── dto/                                ← 新增整個 dto 套件
+│   ├── BookCreateRequest.java          ← 新增書籍的請求 DTO
+│   ├── BookUpdateRequest.java          ← 修改書籍的請求 DTO
+│   └── BookResponse.java               ← 回傳給客戶端的回應 DTO
 ├── repository/
-│   └── EmployeeRepository.java        ← 不變
+│   └── BookRepository.java             ← 改為 Book Repository
 ├── service/
-│   └── EmployeeService.java           ← 修改：加入 @Transactional
+│   └── BookService.java                ← 改為 Book Service，加入 @Transactional
 ├── controller/
-│   └── EmployeeController.java        ← 修改：改用 DTO
-└── exception/                         ← 新增整個 exception 套件
-    ├── EmployeeNotFoundException.java
+│   └── BookController.java             ← 改為 Book Controller，使用 DTO
+└── exception/                          ← 新增整個 exception 套件
+    ├── BookNotFoundException.java
     └── GlobalExceptionHandler.java
 ```
 
 ---
 
-## 1. 為什麼需要交易（Transaction）？
+## 1. Controller 總覽（先看全貌）
 
-### 1.1 問題情境
+以 Controller 為中心的第一步：先看完整的 Controller 程式碼，再逐一拆解每個 endpoint 對應的層層協作。
+
+```java
+package com.example.bookcrud.controller;
+
+import com.example.bookcrud.dto.BookCreateRequest;
+import com.example.bookcrud.dto.BookResponse;
+import com.example.bookcrud.dto.BookUpdateRequest;
+import com.example.bookcrud.model.Book;
+import com.example.bookcrud.service.BookService;
+import jakarta.validation.Valid;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.net.URI;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/books")
+public class BookController {
+
+    private final BookService bookService;
+
+    public BookController(BookService bookService) {
+        this.bookService = bookService;
+    }
+
+    // GET /api/books  或  GET /api/books?category=Programming
+    @GetMapping
+    public List<BookResponse> getAll(@RequestParam(required = false) String category) {
+        if (category != null) {
+            return bookService.findByCategory(category)
+                    .stream().map(BookResponse::from).toList();
+        }
+        return bookService.findAll()
+                .stream().map(BookResponse::from).toList();
+    }
+
+    // GET /api/books/{id}
+    @GetMapping("/{id}")
+    public ResponseEntity<BookResponse> getById(@PathVariable Long id) {
+        return bookService.findById(id)
+                .map(BookResponse::from)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // POST /api/books
+    @PostMapping
+    public ResponseEntity<BookResponse> create(@Valid @RequestBody BookCreateRequest req) {
+        Book book = new Book(
+                req.getTitle(), req.getAuthor(), req.getIsbn(),
+                req.getPrice(), req.getStock(), req.getCategory());
+        Book saved = bookService.create(book);
+        URI location = URI.create("/api/books/" + saved.getId());
+        return ResponseEntity.created(location).body(BookResponse.from(saved));
+    }
+
+    // PUT /api/books/{id}
+    @PutMapping("/{id}")
+    public ResponseEntity<BookResponse> update(
+            @PathVariable Long id,
+            @Valid @RequestBody BookUpdateRequest req) {
+        Book updatedData = new Book(
+                req.getTitle(), req.getAuthor(), req.getIsbn(),
+                req.getPrice(), req.getStock(), req.getCategory());
+        return bookService.update(id, updatedData)
+                .map(BookResponse::from)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // DELETE /api/books/{id}
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        if (bookService.delete(id)) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.notFound().build();
+    }
+}
+```
+
+**CRUD API 對照表**：
+
+| HTTP 方法 | URL | 成功狀態碼 | 失敗狀態碼 |
+|-----------|-----|-----------|-----------|
+| GET | `/api/books` | 200 OK | — |
+| GET | `/api/books/{id}` | 200 OK | 404 Not Found |
+| POST | `/api/books` | 201 Created | 400 Bad Request |
+| PUT | `/api/books/{id}` | 200 OK | 404 Not Found |
+| DELETE | `/api/books/{id}` | 204 No Content | 404 Not Found |
+
+### 1.1 Controller 的 6 個任務
+
+以 `create()` 方法為例，Controller 依序完成 6 件事：
+
+| 步驟 | 說明 | 對應程式碼 |
+|------|------|-----------|
+| ① 接收請求 | 取得 URL 路徑、查詢參數、JSON body | `@GetMapping`、`@PathVariable`、`@RequestBody` |
+| ② 驗證輸入 | 觸發 DTO 內的驗證規則 | `@Valid @RequestBody BookCreateRequest` |
+| ③ 轉換格式 | 把請求 DTO 轉成 Entity（交給 Service）| `new Book(...)` |
+| ④ 呼叫 Service | 委派業務邏輯與交易管理 | `bookService.create(book)` |
+| ⑤ 組裝回應 | 把 Entity 轉成回應 DTO | `BookResponse.from(saved)` |
+| ⑥ 回傳狀態碼 | 用正確的 HTTP 狀態碼表達結果 | `ResponseEntity.created(location)` |
+
+---
+
+## 2. Controller 背後的 Book Entity
+
+Controller 使用的 `Book` 是持久化 Entity，對應資料庫 `books` 表：
+
+```java
+package com.example.bookcrud.model;
+
+import jakarta.persistence.*;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = "books")
+public class Book {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, length = 200)
+    private String title;
+
+    @Column(nullable = false, length = 100)
+    private String author;
+
+    @Column(nullable = false, length = 20, unique = true)
+    private String isbn;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal price;
+
+    @Column(nullable = false)
+    private Integer stock;
+
+    @Column(length = 50)
+    private String category;
+
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @PrePersist
+    protected void onCreate() {
+        createdAt = LocalDateTime.now();
+    }
+
+    public Book() {}
+
+    public Book(String title, String author, String isbn,
+                BigDecimal price, Integer stock, String category) {
+        this.title = title;
+        this.author = author;
+        this.isbn = isbn;
+        this.price = price;
+        this.stock = stock;
+        this.category = category;
+    }
+
+    // Getter and Setter
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getAuthor() { return author; }
+    public void setAuthor(String author) { this.author = author; }
+    public String getIsbn() { return isbn; }
+    public void setIsbn(String isbn) { this.isbn = isbn; }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
+    public LocalDateTime getCreatedAt() { return createdAt; }
+}
+```
+
+> 💡 **Entity 的職責**：只定義資料結構與資料庫映射（`@Entity`、`@Column`）。不應該有 HTTP 邏輯。Controller 透過 DTO 與 Entity 隔離，避免 Entity 直接暴露給客戶端。
+
+---
+
+## 3. Controller 與交易管理（@Transactional）
+
+### 3.1 為什麼需要交易？
 
 銀行轉帳範例：A 帳戶扣款，B 帳戶入款，中途若失敗，錢就消失了：
 
@@ -77,7 +319,7 @@ public void transfer(Long fromId, Long toId, BigDecimal amount) {
 }
 ```
 
-### 1.2 交易的 ACID 特性
+### 3.2 交易的 ACID 特性
 
 | 特性 | 說明 | 範例 |
 |------|------|------|
@@ -86,90 +328,90 @@ public void transfer(Long fromId, Long toId, BigDecimal amount) {
 | **Isolation（隔離性）** | 交易之間不互相干擾 | A 轉帳進行中時，其他交易看不到中間狀態 |
 | **Durability（持久性）** | 成功後資料永久保存 | 系統重啟後資料仍在 |
 
----
+### 3.3 加入 @Transactional 的 BookService
 
-## 2. @Transactional 使用指南
-
-### 2.1 加入 @Transactional 的 EmployeeService
+Controller 呼叫的 `BookService`，透過 `@Transactional` 保證每個方法的資料庫操作具備原子性：
 
 ```java
-package com.example.employeecrud.service;
+package com.example.bookcrud.service;
 
-import com.example.employeecrud.exception.EmployeeNotFoundException;
-import com.example.employeecrud.model.Employee;
-import com.example.employeecrud.repository.EmployeeRepository;
+import com.example.bookcrud.exception.BookNotFoundException;
+import com.example.bookcrud.model.Book;
+import com.example.bookcrud.repository.BookRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
 @Service
-public class EmployeeService {
+public class BookService {
 
-    private final EmployeeRepository employeeRepository;
+    private final BookRepository bookRepository;
 
-    public EmployeeService(EmployeeRepository employeeRepository) {
-        this.employeeRepository = employeeRepository;
+    public BookService(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
     }
 
     // readOnly = true：告訴資料庫這是查詢操作，不修改資料
     // 好處：資料庫可最佳化讀取，提升查詢效能
     @Transactional(readOnly = true)
-    public List<Employee> findAll() {
-        return employeeRepository.findAll();
+    public List<Book> findAll() {
+        return bookRepository.findAll();
     }
 
     @Transactional(readOnly = true)
-    public Optional<Employee> findById(Long id) {
-        return employeeRepository.findById(id);
+    public Optional<Book> findById(Long id) {
+        return bookRepository.findById(id);
     }
 
-    // 新增員工（預設交易，若拋例外自動 rollback）
+    // 新增書籍（預設交易，若拋例外自動 rollback）
     @Transactional
-    public Employee create(Employee employee) {
-        // 業務規則：email 不可重複（早期驗證，給出清楚錯誤訊息）
-        if (employeeRepository.existsByEmail(employee.getEmail())) {
-            throw new IllegalArgumentException("Email 已存在：" + employee.getEmail());
+    public Book create(Book book) {
+        // 業務規則：ISBN 不可重複（早期驗證，給出清楚錯誤訊息）
+        if (bookRepository.existsByIsbn(book.getIsbn())) {
+            throw new IllegalArgumentException("ISBN 已存在：" + book.getIsbn());
         }
-        return employeeRepository.save(employee);
+        return bookRepository.save(book);
     }
 
-    // 修改員工（先確認存在，再更新）
+    // 修改書籍（先確認存在，再更新）
     @Transactional
-    public Optional<Employee> update(Long id, Employee updatedEmployee) {
-        return employeeRepository.findById(id).map(existing -> {
-            existing.setName(updatedEmployee.getName());
-            existing.setEmail(updatedEmployee.getEmail());
-            existing.setDepartment(updatedEmployee.getDepartment());
-            existing.setSalary(updatedEmployee.getSalary());
-            return employeeRepository.save(existing);
+    public Optional<Book> update(Long id, Book updatedBook) {
+        return bookRepository.findById(id).map(existing -> {
+            existing.setTitle(updatedBook.getTitle());
+            existing.setAuthor(updatedBook.getAuthor());
+            existing.setIsbn(updatedBook.getIsbn());
+            existing.setPrice(updatedBook.getPrice());
+            existing.setStock(updatedBook.getStock());
+            existing.setCategory(updatedBook.getCategory());
+            return bookRepository.save(existing);
         });
     }
 
-    // 刪除員工（回傳 boolean 告知呼叫者是否成功）
+    // 刪除書籍（回傳 boolean 告知呼叫者是否成功）
     @Transactional
     public boolean delete(Long id) {
-        if (!employeeRepository.existsById(id)) {
+        if (!bookRepository.existsById(id)) {
             return false;
         }
-        employeeRepository.deleteById(id);
+        bookRepository.deleteById(id);
         return true;
     }
 
     // Day 2 的查詢方法（一律加上 readOnly）
     @Transactional(readOnly = true)
-    public List<Employee> findByDepartment(String department) {
-        return employeeRepository.findByDepartment(department);
+    public List<Book> findByCategory(String category) {
+        return bookRepository.findByCategory(category);
     }
 
     @Transactional(readOnly = true)
-    public List<Employee> searchByName(String keyword) {
-        return employeeRepository.findByNameContaining(keyword);
+    public List<Book> searchByTitle(String keyword) {
+        return bookRepository.findByTitleContaining(keyword);
     }
 }
 ```
 
-### 2.2 @Transactional 常用設定速查
+### 3.4 @Transactional 常用設定速查
 
 | 設定 | 用途 | 範例 |
 |------|------|------|
@@ -178,12 +420,12 @@ public class EmployeeService {
 | `rollbackFor` | 指定哪些例外觸發 rollback（預設 RuntimeException）| `@Transactional(rollbackFor = Exception.class)` |
 | `noRollbackFor` | 指定哪些例外**不**觸發 rollback | `@Transactional(noRollbackFor = IllegalArgumentException.class)` |
 
-### 2.3 @Transactional 失效的常見陷阱
+### 3.5 @Transactional 失效的常見陷阱
 
 ```java
 // ❌ 陷阱 1：同類別內直接呼叫，不經過 Spring 代理
 @Service
-public class EmployeeService {
+public class BookService {
     public void doSomething() {
         this.createInternal();   // ← 直接 this.xxx() 呼叫
                                   //   @Transactional 在這裡不會生效！
@@ -197,9 +439,9 @@ public class EmployeeService {
 ```java
 // ❌ 陷阱 2：例外被 try-catch 吃掉，Spring 不知道要 rollback
 @Transactional
-public void save(Employee employee) {
+public void save(Book book) {
     try {
-        employeeRepository.save(employee);
+        bookRepository.save(book);
         throw new RuntimeException("模擬失敗");
     } catch (Exception e) {
         log.error("Save failed", e);  // 吃掉例外 → 資料仍被儲存，交易沒有回滾！
@@ -217,328 +459,286 @@ private void doInternal() { ... }
 
 ---
 
-## 3. 完整 CRUD Controller（搭配 Service）
-
-Controller 透過 Service 操作，不直接碰 Repository，也不直接回傳 Entity（後面 Section 4 會改用 DTO）：
-
-```java
-package com.example.employeecrud.controller;
-
-import com.example.employeecrud.model.Employee;
-import com.example.employeecrud.service.EmployeeService;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.net.URI;
-import java.util.List;
-
-@RestController
-@RequestMapping("/api/employees")
-public class EmployeeController {
-
-    private final EmployeeService employeeService;
-
-    public EmployeeController(EmployeeService employeeService) {
-        this.employeeService = employeeService;
-    }
-
-    // GET /api/employees  或  GET /api/employees?department=Engineering
-    @GetMapping
-    public List<Employee> getAll(@RequestParam(required = false) String department) {
-        if (department != null) {
-            return employeeService.findByDepartment(department);
-        }
-        return employeeService.findAll();
-    }
-
-    // GET /api/employees/{id}
-    @GetMapping("/{id}")
-    public ResponseEntity<Employee> getById(@PathVariable Long id) {
-        return employeeService.findById(id)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // POST /api/employees
-    @PostMapping
-    public ResponseEntity<Employee> create(@RequestBody Employee employee) {
-        Employee saved = employeeService.create(employee);
-        URI location = URI.create("/api/employees/" + saved.getId());
-        return ResponseEntity.created(location).body(saved);
-    }
-
-    // PUT /api/employees/{id}
-    @PutMapping("/{id}")
-    public ResponseEntity<Employee> update(@PathVariable Long id,
-                                           @RequestBody Employee updated) {
-        return employeeService.update(id, updated)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // DELETE /api/employees/{id}
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (employeeService.delete(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
-}
-```
-
-**CRUD API 對照**：
-
-| HTTP 方法 | URL | 成功狀態碼 | 失敗狀態碼 |
-|-----------|-----|-----------|-----------|
-| GET | `/api/employees` | 200 OK | — |
-| GET | `/api/employees/{id}` | 200 OK | 404 Not Found |
-| POST | `/api/employees` | 201 Created | 400 Bad Request |
-| PUT | `/api/employees/{id}` | 200 OK | 404 Not Found |
-| DELETE | `/api/employees/{id}` | 204 No Content | 404 Not Found |
-
----
-
-## 4. DTO 模式
+## 4. Controller 與 DTO 模式
 
 ### 4.1 為什麼需要 DTO？
 
-**DTO（Data Transfer Object）** 是專門用於傳輸資料的物件，用來隔離 Entity 與外部 API。
+**DTO（Data Transfer Object）** 是專門用於傳輸資料的物件，用來隔離 Entity 與外部 API。Controller 位於 DTO 與 Service 的交界，負責雙向轉換。
 
 | 問題 | 不用 DTO 的結果 | 用 DTO 解決 |
 |------|--------------|------------|
 | 暴露內部結構 | 客戶端看到 Entity 的所有欄位 | DTO 只包含需要的欄位 |
 | 請求帶有不必要欄位 | 新增時客戶端可以傳入 `id`（應由資料庫生成）| 請求 DTO 不含 `id` |
-| 回應含敏感資料 | `salary` 欄位不應該對所有人開放 | 回應 DTO 選擇性排除欄位 |
-| 新增/修改規則不同 | 新增時 email 必填，修改時可選填 | 分開建立 Request DTO |
+| 回應含敏感資料 | `price`、`stock` 欄位不應該對所有人開放 | 回應 DTO 選擇性排除欄位 |
+| 新增/修改規則不同 | 新增時 ISBN 必填，修改時可選填 | 分開建立 Request DTO |
 
 ```
-客戶端 JSON → [EmployeeCreateRequest DTO] → Service 轉換 → [Employee Entity] → 資料庫
-資料庫   → [Employee Entity] → Service 轉換 → [EmployeeResponse DTO] → 客戶端 JSON
+客戶端 JSON → [BookCreateRequest DTO] → Service 轉換 → [Book Entity] → 資料庫
+資料庫   → [Book Entity] → Service 轉換 → [BookResponse DTO] → 客戶端 JSON
 ```
 
 ### 4.2 建立 DTO 類別
 
-**建立 EmployeeCreateRequest（新增請求）**：
+**建立 BookCreateRequest（新增請求）**：
 
 ```java
-package com.example.employeecrud.dto;
+package com.example.bookcrud.dto;
 
 import jakarta.validation.constraints.*;
 
-// 新增員工時，客戶端傳入的資料格式（不含 id，因為 id 由資料庫自動產生）
-public class EmployeeCreateRequest {
+// 新增書籍時，客戶端傳入的資料格式（不含 id，因為 id 由資料庫自動產生）
+public class BookCreateRequest {
 
-    @NotBlank(message = "姓名不得為空")
-    private String name;
+    @NotBlank(message = "書名不得為空")
+    @Size(max = 200, message = "書名長度不可超過 200")
+    private String title;
 
-    @NotBlank(message = "Email 不得為空")
-    @Email(message = "Email 格式不正確")
-    private String email;
+    @NotBlank(message = "作者不得為空")
+    private String author;
 
-    private String department;  // 部門可為空（選填）
+    @NotBlank(message = "ISBN 不得為空")
+    @Pattern(regexp = "^[0-9-]{10,17}$", message = "ISBN 格式不正確")
+    private String isbn;
 
-    @Positive(message = "薪資必須大於 0")
-    private Double salary;
+    @NotNull(message = "價格不得為空")
+    @Positive(message = "價格必須大於 0")
+    private BigDecimal price;
+
+    @NotNull(message = "庫存不得為空")
+    @Min(value = 0, message = "庫存不可為負數")
+    private Integer stock;
+
+    private String category;  // 分類可為空（選填）
 
     // Getters and Setters
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public String getDepartment() { return department; }
-    public void setDepartment(String department) { this.department = department; }
-    public Double getSalary() { return salary; }
-    public void setSalary(Double salary) { this.salary = salary; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getAuthor() { return author; }
+    public void setAuthor(String author) { this.author = author; }
+    public String getIsbn() { return isbn; }
+    public void setIsbn(String isbn) { this.isbn = isbn; }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 }
 ```
 
-**建立 EmployeeUpdateRequest（修改請求）**：
+**建立 BookUpdateRequest（修改請求）**：
 
 ```java
-package com.example.employeecrud.dto;
+package com.example.bookcrud.dto;
 
 import jakarta.validation.constraints.*;
 
-// 修改員工時的資料格式（所有欄位可選填，只更新有傳入的欄位）
-public class EmployeeUpdateRequest {
+// 修改書籍時的資料格式（所有欄位可選填，只更新有傳入的欄位）
+public class BookUpdateRequest {
 
-    @NotBlank(message = "姓名不得為空")
-    private String name;
+    @NotBlank(message = "書名不得為空")
+    private String title;
 
-    @Email(message = "Email 格式不正確")
-    private String email;
+    @NotBlank(message = "作者不得為空")
+    private String author;
 
-    private String department;
+    @Pattern(regexp = "^[0-9-]{10,17}$", message = "ISBN 格式不正確")
+    private String isbn;
 
-    @Positive(message = "薪資必須大於 0")
-    private Double salary;
+    @Positive(message = "價格必須大於 0")
+    private BigDecimal price;
+
+    @Min(value = 0, message = "庫存不可為負數")
+    private Integer stock;
+
+    private String category;
 
     // Getters and Setters（同上）
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
-    public String getEmail() { return email; }
-    public void setEmail(String email) { this.email = email; }
-    public String getDepartment() { return department; }
-    public void setDepartment(String department) { this.department = department; }
-    public Double getSalary() { return salary; }
-    public void setSalary(Double salary) { this.salary = salary; }
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getAuthor() { return author; }
+    public void setAuthor(String author) { this.author = author; }
+    public String getIsbn() { return isbn; }
+    public void setIsbn(String isbn) { this.isbn = isbn; }
+    public BigDecimal getPrice() { return price; }
+    public void setPrice(BigDecimal price) { this.price = price; }
+    public Integer getStock() { return stock; }
+    public void setStock(Integer stock) { this.stock = stock; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
 }
 ```
 
-**建立 EmployeeResponse（回應格式）**：
+**建立 BookResponse（回應格式）**：
 
 ```java
-package com.example.employeecrud.dto;
+package com.example.bookcrud.dto;
 
-import com.example.employeecrud.model.Employee;
+import com.example.bookcrud.model.Book;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-// 回傳給客戶端的資料格式（不含 salary 等敏感資料）
-public class EmployeeResponse {
+// 回傳給客戶端的資料格式（控制哪些欄位回傳）
+public class BookResponse {
 
     private Long id;
-    private String name;
-    private String email;
-    private String department;
+    private String title;
+    private String author;
+    private String isbn;
+    private BigDecimal price;
+    private Integer stock;
+    private String category;
     private LocalDateTime createdAt;
-    // 注意：salary 故意不放在這裡，敏感資料不回傳給一般客戶端
+    // 注意：可依需求選擇性排除欄位，例如管理後台可加 stock，前台可不加
 
     // 靜態工廠方法：從 Entity 轉換成 DTO（方便在 Service/Controller 中呼叫）
-    public static EmployeeResponse from(Employee employee) {
-        EmployeeResponse response = new EmployeeResponse();
-        response.id = employee.getId();
-        response.name = employee.getName();
-        response.email = employee.getEmail();
-        response.department = employee.getDepartment();
-        response.createdAt = employee.getCreatedAt();
+    public static BookResponse from(Book book) {
+        BookResponse response = new BookResponse();
+        response.id = book.getId();
+        response.title = book.getTitle();
+        response.author = book.getAuthor();
+        response.isbn = book.getIsbn();
+        response.price = book.getPrice();
+        response.stock = book.getStock();
+        response.category = book.getCategory();
+        response.createdAt = book.getCreatedAt();
         return response;
+    }
+
+    // 批次轉換（Controller 的 getAll() 使用）
+    public static List<BookResponse> fromList(List<Book> books) {
+        return books.stream()
+                .map(BookResponse::from)
+                .toList();
     }
 
     // Getters（不需要 Setters，因為 Response 物件只讀）
     public Long getId() { return id; }
-    public String getName() { return name; }
-    public String getEmail() { return email; }
-    public String getDepartment() { return department; }
+    public String getTitle() { return title; }
+    public String getAuthor() { return author; }
+    public String getIsbn() { return isbn; }
+    public BigDecimal getPrice() { return price; }
+    public Integer getStock() { return stock; }
+    public String getCategory() { return category; }
     public LocalDateTime getCreatedAt() { return createdAt; }
 }
 ```
 
-### 4.3 修改 Controller 使用 DTO
+### 4.3 Controller 如何使用 DTO
+
+以 `create()` 為例，Controller 完整展現「接收 → 驗證 → 轉換 → 委派 → 組裝 → 回應」：
 
 ```java
-package com.example.employeecrud.controller;
+// POST /api/books
+@PostMapping
+public ResponseEntity<BookResponse> create(@Valid @RequestBody BookCreateRequest req) {
+    // ① @Valid 觸發驗證（@NotBlank、@Pattern、@Positive...）
+    //    驗證失敗 → 拋 MethodArgumentNotValidException → GlobalExceptionHandler 處理
 
-import com.example.employeecrud.dto.EmployeeCreateRequest;
-import com.example.employeecrud.dto.EmployeeResponse;
-import com.example.employeecrud.dto.EmployeeUpdateRequest;
-import com.example.employeecrud.model.Employee;
-import com.example.employeecrud.service.EmployeeService;
-import jakarta.validation.Valid;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import java.net.URI;
-import java.util.List;
+    // ② 請求 DTO → Entity 轉換
+    Book book = new Book(
+            req.getTitle(), req.getAuthor(), req.getIsbn(),
+            req.getPrice(), req.getStock(), req.getCategory());
 
-@RestController
-@RequestMapping("/api/employees")
-public class EmployeeController {
+    // ③ 委派 Service（交易管理 + 業務規則）
+    Book saved = bookService.create(book);
 
-    private final EmployeeService employeeService;
+    // ④ 建立 Location header 指向新資源
+    URI location = URI.create("/api/books/" + saved.getId());
 
-    public EmployeeController(EmployeeService employeeService) {
-        this.employeeService = employeeService;
-    }
-
-    @GetMapping
-    public List<EmployeeResponse> getAll(@RequestParam(required = false) String department) {
-        if (department != null) {
-            return employeeService.findByDepartment(department)
-                    .stream().map(EmployeeResponse::from).toList();
-        }
-        return employeeService.findAll()
-                .stream().map(EmployeeResponse::from).toList();
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<EmployeeResponse> getById(@PathVariable Long id) {
-        return employeeService.findById(id)
-                .map(EmployeeResponse::from)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    // @Valid 觸發 EmployeeCreateRequest 中的驗證規則（@NotBlank、@Email 等）
-    @PostMapping
-    public ResponseEntity<EmployeeResponse> create(@Valid @RequestBody EmployeeCreateRequest req) {
-        Employee employee = new Employee(
-                req.getName(), req.getEmail(), req.getDepartment(), req.getSalary());
-        Employee saved = employeeService.create(employee);
-        URI location = URI.create("/api/employees/" + saved.getId());
-        return ResponseEntity.created(location).body(EmployeeResponse.from(saved));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<EmployeeResponse> update(
-            @PathVariable Long id,
-            @Valid @RequestBody EmployeeUpdateRequest req) {
-        Employee updatedData = new Employee(
-                req.getName(), req.getEmail(), req.getDepartment(), req.getSalary());
-        return employeeService.update(id, updatedData)
-                .map(EmployeeResponse::from)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (employeeService.delete(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
-    }
+    // ⑤ Entity → 回應 DTO，回傳 201 Created
+    return ResponseEntity.created(location).body(BookResponse.from(saved));
 }
 ```
 
-> 💡 **`@Valid` 的作用**：加在 `@RequestBody` 前，Spring 會在解析 JSON 後自動執行 DTO 中的驗證規則。若驗證失敗，Spring 自動拋出 `MethodArgumentNotValidException`，由全域例外處理器捕獲（Section 5 會實作）。
+> 💡 **`@Valid` 的作用**：加在 `@RequestBody` 前，Spring 會在解析 JSON 後自動執行 DTO 中的驗證規則。若驗證失敗，Spring 自動拋出 `MethodArgumentNotValidException`，由全域例外處理器捕獲（Section 6 會實作）。
+
+---
+
+## 5. Controller 背後的 Repository
+
+Controller → Service → Repository，最底層是資料存取：
+
+```java
+package com.example.bookcrud.repository;
+
+import com.example.bookcrud.model.Book;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface BookRepository extends JpaRepository<Book, Long> {
+
+    // Derived Query：方法名稱自動產生 SQL
+    Optional<Book> findByIsbn(String isbn);
+
+    boolean existsByIsbn(String isbn);
+
+    List<Book> findByCategory(String category);
+
+    List<Book> findByTitleContaining(String keyword);
+
+    List<Book> findByAuthor(String author);
+
+    List<Book> findByPriceBetween(BigDecimal min, BigDecimal max);
+
+    List<Book> findByStockLessThan(int stock);
+
+    // 自訂 JPQL 查詢
+    @Query("SELECT b FROM Book b WHERE b.title LIKE %:keyword% OR b.author LIKE %:keyword%")
+    List<Book> search(@Param("keyword") String keyword);
+
+    @Query("SELECT b FROM Book b WHERE b.stock > 0 ORDER BY b.price DESC")
+    List<Book> findAvailableBooksOrderByPriceDesc();
+
+    @Query("SELECT b.category, COUNT(b) FROM Book b GROUP BY b.category")
+    List<Object[]> countBooksByCategory();
+}
 ```
 
 ---
 
-## 5. 全域例外處理（GlobalExceptionHandler）
+## 6. 全域例外處理（GlobalExceptionHandler）
 
-### 5.1 建立自訂例外類別
+Controller 是例外產生的第一個停靠站，但處理邏輯集中在 `GlobalExceptionHandler`：
+
+### 6.1 建立自訂例外類別
 
 ```java
-package com.example.employeecrud.exception;
+package com.example.bookcrud.exception;
 
 // 繼承 RuntimeException：不需要在方法簽名宣告 throws，程式碼更簡潔
-public class EmployeeNotFoundException extends RuntimeException {
+public class BookNotFoundException extends RuntimeException {
 
-    public EmployeeNotFoundException(Long id) {
-        super("員工不存在，id: " + id);
+    public BookNotFoundException(Long id) {
+        super("書籍不存在，id: " + id);
     }
 
-    public EmployeeNotFoundException(String message) {
+    public BookNotFoundException(String message) {
         super(message);
     }
 }
 ```
 
-在 `EmployeeService` 中使用：
+在 `BookService` 中使用：
 
 ```java
-// EmployeeService.java 中
+// BookService.java 中
 @Transactional(readOnly = true)
-public Employee findByIdOrThrow(Long id) {
-    return employeeRepository.findById(id)
-            .orElseThrow(() -> new EmployeeNotFoundException(id));
+public Book findByIdOrThrow(Long id) {
+    return bookRepository.findById(id)
+            .orElseThrow(() -> new BookNotFoundException(id));
 }
 ```
 
-### 5.2 建立 GlobalExceptionHandler（統一處理所有例外）
+### 6.2 建立 GlobalExceptionHandler（統一處理所有例外）
 
 ```java
-package com.example.employeecrud.exception;
+package com.example.bookcrud.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -556,19 +756,19 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // 捕獲：員工不存在（EmployeeService.findByIdOrThrow() 拋出）
-    @ExceptionHandler(EmployeeNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> handleNotFound(EmployeeNotFoundException e) {
+    // 捕獲：書籍不存在（BookService.findByIdOrThrow() 拋出）
+    @ExceptionHandler(BookNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(BookNotFoundException e) {
         return buildError(HttpStatus.NOT_FOUND, e.getMessage());
     }
 
-    // 捕獲：業務規則驗證失敗（如 email 重複）
+    // 捕獲：業務規則驗證失敗（如 ISBN 重複）
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException e) {
         return buildError(HttpStatus.BAD_REQUEST, e.getMessage());
     }
 
-    // 捕獲：@Valid 驗證失敗（如 @NotBlank、@Email 規則不符）
+    // 捕獲：@Valid 驗證失敗（如 @NotBlank、@Pattern 規則不符）
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> handleValidation(
             MethodArgumentNotValidException e) {
@@ -602,36 +802,54 @@ public class GlobalExceptionHandler {
 }
 ```
 
-### 5.3 測試例外處理結果
+### 6.3 例外 → Controller 的旅程
 
-**測試 1：查詢不存在的員工**
 ```
-GET http://localhost:8080/api/employees/999
+Controller 方法執行
+    │
+    ├── 例外在此拋出（如 bookService.findById(999) → BookNotFoundException）
+    ▼
+Spring 檢查是否有對應的 @ExceptionHandler
+    │
+    ├── BookNotFoundException → handleNotFound() → 404
+    ├── MethodArgumentNotValidException → handleValidation() → 400
+    ├── IllegalArgumentException → handleBadRequest() → 400
+    └── 其他 → handleGeneral() → 500
+    ▼
+回傳統一的 JSON 錯誤回應
+```
+
+### 6.4 測試例外處理結果
+
+**測試 1：查詢不存在的書籍**
+```
+GET http://localhost:8080/api/books/999
 ```
 回應（404 Not Found）：
 ```json
 {
     "status": 404,
-    "error": "員工不存在，id: 999",
+    "error": "書籍不存在，id: 999",
     "timestamp": "2026-07-22T10:30:00"
 }
 ```
 
 **測試 2：驗證失敗**
 ```
-POST http://localhost:8080/api/employees
+POST http://localhost:8080/api/books
 Content-Type: application/json
 
-{ "name": "", "email": "invalid-email", "salary": -1000 }
+{ "title": "", "isbn": "123", "price": -100, "stock": -5 }
 ```
 回應（400 Bad Request）：
 ```json
 {
     "status": 400,
     "errors": [
-        "姓名不得為空",
-        "Email 格式不正確",
-        "薪資必須大於 0"
+        "書名不得為空",
+        "ISBN 格式不正確",
+        "價格必須大於 0",
+        "庫存不可為負數"
     ],
     "timestamp": "2026-07-22T10:30:00"
 }
@@ -639,9 +857,9 @@ Content-Type: application/json
 
 ---
 
-## 6. Bean Validation 驗證規則
+## 7. Bean Validation 驗證規則
 
-### 6.1 加入依賴
+### 7.1 加入依賴
 
 在 `pom.xml` 加入：
 
@@ -652,7 +870,7 @@ Content-Type: application/json
 </dependency>
 ```
 
-### 6.2 常用驗證注解速查
+### 7.2 常用驗證注解速查
 
 | 注解 | 適用類型 | 說明 |
 |------|---------|------|
@@ -672,26 +890,14 @@ Content-Type: application/json
 > - `@NotEmpty` — `null` 不通過，`""` 不通過，`" "` 通過
 > - `@NotBlank` — `null` 不通過，`""` 不通過，`" "` 不通過（最嚴格）
 
-### 6.3 在 DTO 中使用驗證
+### 7.3 驗證流程（從 Controller 的角度看）
 
-Section 4.2 的 `EmployeeCreateRequest` 已加入驗證，只要在 Controller 方法參數加上 `@Valid` 即可觸發：
-
-```java
-// Controller 中（已在 Section 4.3 加入）：
-@PostMapping
-public ResponseEntity<EmployeeResponse> create(@Valid @RequestBody EmployeeCreateRequest req) {
-    // 驗證通過才進入這裡
-    // ...
-}
-```
-
-**驗證流程**：
 ```
 客戶端 JSON 請求
     ↓
-Spring 解析 JSON → EmployeeCreateRequest 物件
+Spring 解析 JSON → BookCreateRequest 物件
     ↓
-@Valid 觸發驗證規則（@NotBlank、@Email 等）
+Controller 的 @Valid 觸發驗證規則（@NotBlank、@Pattern 等）
     ↓
 ✅ 驗證通過 → 進入 create() 方法
 ❌ 驗證失敗 → 拋出 MethodArgumentNotValidException
@@ -700,140 +906,110 @@ Spring 解析 JSON → EmployeeCreateRequest 物件
 
 ---
 
-## 7. 完整系統架構圖
+## 8. application.properties 設定（MySQL + Flyway）
 
-### 7.1 三天建立的系統架構
+```properties
+# Server
+server.port=8080
 
-```
-外部請求（Postman）
-    │
-    ▼ HTTP Request（JSON）
-┌─────────────────────────────────────┐
-│  Controller 層（@RestController）    │
-│  • 接收 HTTP 請求                    │
-│  • @Valid 觸發 DTO 驗證              │
-│  • 呼叫 Service 層                   │
-│  • 組裝回應 DTO 並回傳               │
-└──────────────┬──────────────────────┘
-               │ 若驗證失敗 ↗ GlobalExceptionHandler
-               ▼           （@RestControllerAdvice）
-┌─────────────────────────────────────┐
-│  Service 層（@Service）              │
-│  • @Transactional 交易管理           │
-│  • 業務規則（email 不重複等）         │
-│  • 呼叫 Repository 操作資料庫        │
-│  • 拋出業務例外（NotFoundException 等）│
-└──────────────┬──────────────────────┘
-               │ 若拋例外 ↗ GlobalExceptionHandler
-               ▼
-┌─────────────────────────────────────┐
-│  Repository 層（JpaRepository）      │
-│  • Derived Query 自動產生 SQL        │
-│  • @Query 自訂 JPQL                  │
-│  • 不含業務邏輯                      │
-└──────────────┬──────────────────────┘
-               │
-               ▼
-          MySQL 資料庫
+# MySQL 資料來源
+spring.datasource.url=jdbc:mysql://localhost:3306/book_db?useSSL=false&serverTimezone=Asia/Taipei&characterEncoding=utf8mb4
+spring.datasource.username=root
+spring.datasource.password=1234
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+# JPA — 由 Flyway 管理 Schema
+spring.jpa.hibernate.ddl-auto=validate
+spring.jpa.show-sql=true
+spring.jpa.open-in-view=false
+
+# Flyway
+spring.flyway.enabled=true
+spring.flyway.locations=classpath:db/migration
+spring.flyway.baseline-on-migrate=true
 ```
 
-### 7.2 各層職責與邊界
+### Flyway 遷移腳本（V1__create_books_table.sql）
 
-| 層 | 職責 | 不該做的事 |
-|----|------|-----------|
-| **Controller** | 解析 HTTP 請求、DTO 轉換、回傳狀態碼 | 不含業務邏輯；不直接操作資料庫 |
-| **Service** | 業務規則、交易管理、呼叫多個 Repository | 不處理 HTTP 細節（狀態碼、Headers）|
-| **Repository** | 資料庫 CRUD、查詢方法 | 不含業務邏輯 |
-| **Entity** | 資料結構定義、關聯映射 | 不含 API 邏輯 |
-| **DTO** | 請求/回應資料格式、驗證規則 | 不含資料庫操作 |
-| **Exception** | 統一例外類別與錯誤回應格式 | — |
+```sql
+CREATE TABLE books (
+    id         BIGINT AUTO_INCREMENT PRIMARY KEY,
+    title      VARCHAR(200) NOT NULL,
+    author     VARCHAR(100) NOT NULL,
+    isbn       VARCHAR(20) NOT NULL,
+    price      DECIMAL(10,2) NOT NULL,
+    stock      INT NOT NULL DEFAULT 0,
+    category   VARCHAR(50),
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY uk_books_isbn (isbn)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
----
-
-## 8. 完整專案最終結構
-
-```
-employee-crud/
-├── pom.xml
-└── src/main/java/com/example/employeecrud/
-    ├── EmployeeCrudApplication.java
-    ├── model/
-    │   ├── Employee.java
-    │   └── Department.java
-    ├── dto/
-    │   ├── EmployeeCreateRequest.java
-    │   ├── EmployeeUpdateRequest.java
-    │   └── EmployeeResponse.java
-    ├── repository/
-    │   ├── EmployeeRepository.java
-    │   └── DepartmentRepository.java
-    ├── service/
-    │   ├── EmployeeService.java
-    │   └── DepartmentService.java
-    ├── controller/
-    │   ├── EmployeeController.java
-    │   └── DepartmentController.java
-    └── exception/
-        ├── EmployeeNotFoundException.java
-        └── GlobalExceptionHandler.java
+CREATE INDEX idx_books_category ON books (category);
+CREATE INDEX idx_books_title ON books (title);
 ```
 
 ---
 
 ## 9. 完整 Postman 測試指南
 
-依序測試，驗證整個系統：
+依序測試，驗證整個系統（以 Controller 的 6 個 endpoint 為中心）：
 
-**測試 1：新增員工（驗證通過）**
+**測試 1：新增書籍（驗證通過）**
 ```
-POST http://localhost:8080/api/employees
+POST http://localhost:8080/api/books
 Content-Type: application/json
 
-{ "name": "Alice Chen", "email": "alice@test.com", "department": "Engineering", "salary": 85000 }
+{ "title": "Spring Boot 實戰", "author": "Alice Chen", "isbn": "978-986-434-000-1", "price": 550.00, "stock": 30, "category": "Programming" }
 ```
-✅ 預期：`201 Created`，回應包含 `id` 與 `createdAt`，**不包含 salary**
+✅ 預期：`201 Created`，回應包含 `id` 與 `createdAt`
 
-**測試 2：新增員工（驗證失敗）**
+**測試 2：新增書籍（驗證失敗）**
 ```
-POST http://localhost:8080/api/employees
+POST http://localhost:8080/api/books
 Content-Type: application/json
 
-{ "name": "", "email": "not-an-email", "salary": -500 }
+{ "title": "", "author": "", "isbn": "bad", "price": -500, "stock": -1 }
 ```
 ✅ 預期：`400 Bad Request`，回應包含 `errors` 陣列列出所有驗證錯誤
 
-**測試 3：新增重複 Email**
+**測試 3：新增重複 ISBN**
 ```
-POST http://localhost:8080/api/employees
+POST http://localhost:8080/api/books
 Content-Type: application/json
 
-{ "name": "Bob", "email": "alice@test.com", "salary": 70000 }
+{ "title": "Java 入門", "author": "Bob", "isbn": "978-986-434-000-1", "price": 680.00, "stock": 10 }
 ```
-✅ 預期：`400 Bad Request`，錯誤訊息「Email 已存在」
+✅ 預期：`400 Bad Request`，錯誤訊息「ISBN 已存在」
 
-**測試 4：查詢不存在的員工**
+**測試 4：查詢不存在的書籍**
 ```
-GET http://localhost:8080/api/employees/9999
+GET http://localhost:8080/api/books/9999
 ```
 ✅ 預期：`404 Not Found`，回應包含 `status: 404` 與 `error` 訊息
 
-**測試 5：修改員工**
+**測試 5：依分類查詢**
 ```
-PUT http://localhost:8080/api/employees/1
+GET http://localhost:8080/api/books?category=Programming
+```
+✅ 預期：`200 OK`，只回傳 Programming 分類的書籍
+
+**測試 6：修改書籍**
+```
+PUT http://localhost:8080/api/books/1
 Content-Type: application/json
 
-{ "name": "Alice Chen Updated", "email": "alice.new@test.com", "department": "Product", "salary": 95000 }
+{ "title": "Spring Boot 實戰（第二版）", "author": "Alice Chen", "isbn": "978-986-434-000-1", "price": 650.00, "stock": 20, "category": "Programming" }
 ```
 ✅ 預期：`200 OK`，回應為更新後的資料
 
-**測試 6：刪除員工後再查詢**
+**測試 7：刪除書籍後再查詢**
 ```
-DELETE http://localhost:8080/api/employees/1
+DELETE http://localhost:8080/api/books/1
 ```
 ✅ 預期：`204 No Content`
 
 ```
-GET http://localhost:8080/api/employees/1
+GET http://localhost:8080/api/books/1
 ```
 ✅ 預期：`404 Not Found`
 
@@ -857,98 +1033,90 @@ GET http://localhost:8080/api/employees/1
 
 > 💡 **練習建議**：Day 3 的核心是讓系統「可靠且易用」。完成後，任何非法輸入都應回傳有意義的錯誤訊息，而不是 500 Server Error。
 
----
-
 ### 📋 基礎任務（必完成）
 
 **任務 1：@Transactional 加入 Service**
-- [ ] 在所有查詢方法（`findAll`、`findById`、`findByDepartment`）加上 `@Transactional(readOnly = true)`
+- [ ] 在所有查詢方法（`findAll`、`findById`、`findByCategory`）加上 `@Transactional(readOnly = true)`
 - [ ] 在所有寫入方法（`create`、`update`、`delete`）加上 `@Transactional`
 - [ ] 重啟應用程式，確認功能不受影響
 
 **任務 2：建立例外類別**
 - [ ] 建立 `exception/` 套件
-- [ ] 新增 `EmployeeNotFoundException.java`，繼承 `RuntimeException`
-- [ ] 在 `EmployeeService` 的 `create()` 中加入 email 重複檢查，拋出 `IllegalArgumentException`
+- [ ] 新增 `BookNotFoundException.java`，繼承 `RuntimeException`
+- [ ] 在 `BookService` 的 `create()` 中加入 ISBN 重複檢查，拋出 `IllegalArgumentException`
 
 **任務 3：建立 GlobalExceptionHandler**
 - [ ] 新增 `GlobalExceptionHandler.java`，標記 `@RestControllerAdvice`
-- [ ] 加入三個 Handler：`EmployeeNotFoundException`（404）、`IllegalArgumentException`（400）、`MethodArgumentNotValidException`（400）
+- [ ] 加入三個 Handler：`BookNotFoundException`（404）、`IllegalArgumentException`（400）、`MethodArgumentNotValidException`（400）
 - [ ] 所有 Handler 回傳統一格式：`{ "status": xxx, "error": "...", "timestamp": "..." }`
 
 **任務 4：建立 DTO**
 - [ ] 建立 `dto/` 套件
-- [ ] 新增 `EmployeeCreateRequest.java`（含 `@NotBlank`、`@Email`、`@Positive` 驗證）
-- [ ] 新增 `EmployeeResponse.java`（不含 salary，含靜態工廠方法 `from(Employee)`）
-- [ ] 修改 Controller 的 POST 方法：接收 `EmployeeCreateRequest`，回傳 `EmployeeResponse`，加上 `@Valid`
-
----
+- [ ] 新增 `BookCreateRequest.java`（含 `@NotBlank`、`@Pattern`、`@Positive` 驗證）
+- [ ] 新增 `BookResponse.java`（含靜態工廠方法 `from(Book)`）
+- [ ] 修改 Controller 的 POST 方法：接收 `BookCreateRequest`，回傳 `BookResponse`，加上 `@Valid`
 
 ### ✅ 預期結果驗證
 
-逐一執行以下測試，驗證系統行為符合預期：
-
-**驗證 1：正常新增員工**
+**驗證 1：正常新增書籍**
 ```
-POST /api/employees
-{ "name": "Alice", "email": "alice@test.com", "salary": 85000 }
+POST /api/books
+{ "title": "Effective Java", "author": "Joshua Bloch", "isbn": "978-0134685991", "price": 1200, "stock": 15 }
 ```
-預期：`201 Created`，回應**不包含 salary** 欄位（因為 `EmployeeResponse` 沒有它）
+預期：`201 Created`，回應含 `id` 與 `createdAt`
 
 **驗證 2：驗證失敗 — 多個欄位錯誤**
 ```
-POST /api/employees
-{ "name": "", "email": "not-valid", "salary": -100 }
+POST /api/books
+{ "title": "", "isbn": "bad", "price": -100, "stock": -1 }
 ```
 預期：`400 Bad Request`
 ```json
 {
     "status": 400,
-    "errors": ["姓名不得為空", "Email 格式不正確", "薪資必須大於 0"],
+    "errors": ["書名不得為空", "ISBN 格式不正確", "價格必須大於 0", "庫存不可為負數"],
     "timestamp": "..."
 }
 ```
 
-**驗證 3：Email 重複**
+**驗證 3：ISBN 重複**
 ```
-POST /api/employees（用已存在的 email）
+POST /api/books（用已存在的 ISBN）
 ```
-預期：`400 Bad Request`，錯誤訊息包含「Email 已存在」
+預期：`400 Bad Request`，錯誤訊息包含「ISBN 已存在」
 
-**驗證 4：查詢不存在的員工**
+**驗證 4：查詢不存在的書籍**
 ```
-GET /api/employees/99999
+GET /api/books/99999
 ```
 預期：`404 Not Found`
 ```json
 {
     "status": 404,
-    "error": "員工不存在，id: 99999",
+    "error": "書籍不存在，id: 99999",
     "timestamp": "..."
 }
 ```
 
-**驗證 5：刪除不存在的員工**
+**驗證 5：刪除不存在的書籍**
 ```
-DELETE /api/employees/99999
+DELETE /api/books/99999
 ```
 預期：`404 Not Found`（不再是 204）
-
----
 
 ### 🔍 觀察與理解：Rollback 實驗
 
 **實驗：觀察 @Transactional rollback 行為**
 
-在 `EmployeeService.create()` 中暫時加入測試用程式碼：
+在 `BookService.create()` 中暫時加入測試用程式碼：
 
 ```java
 @Transactional
-public Employee create(Employee employee) {
-    Employee saved = employeeRepository.save(employee);  // 執行 INSERT
+public Book create(Book book) {
+    Book saved = bookRepository.save(book);  // 執行 INSERT
     
     // 模擬中途失敗（加入這行測試）
-    if (saved.getName().equals("ROLLBACK_TEST")) {
+    if (saved.getTitle().equals("ROLLBACK_TEST")) {
         throw new RuntimeException("模擬交易失敗，應該 rollback！");
     }
     
@@ -957,33 +1125,28 @@ public Employee create(Employee employee) {
 ```
 
 測試步驟：
-1. 呼叫 `POST /api/employees`，name 設為 `"ROLLBACK_TEST"`
-2. 觀察 Console：是否印出 `INSERT INTO employees`？
-3. 呼叫 `GET /api/employees`，查看資料庫是否有這筆資料
+1. 呼叫 `POST /api/books`，title 設為 `"ROLLBACK_TEST"`
+2. 觀察 Console：是否印出 `INSERT INTO books`？
+3. 呼叫 `GET /api/books`，查看資料庫是否有這筆資料
 4. 若 `@Transactional` 正常運作，資料**不應該**存在（已被 rollback）
 
 > 💡 **重要**：若你不加 `@Transactional`，`INSERT` 會成功但不會 rollback，資料會留在資料庫中。這就是有無交易的差別。
 
----
-
 ### 📚 延伸練習
 
-**延伸 1：建立 EmployeeUpdateRequest DTO**
+**延伸 1：批次轉換 List**
+
+`BookResponse.fromList()` 讓 Controller 的 `getAll()` 更簡潔：
 
 ```java
-// 修改時 email 可選填，不同於新增時必填
-public class EmployeeUpdateRequest {
-    @NotBlank(message = "姓名不得為空")
-    private String name;
-
-    @Email(message = "Email 格式不正確")
-    private String email;  // 注意：沒有 @NotBlank，修改時可不傳 email
-
-    // ... department, salary
+@GetMapping
+public List<BookResponse> getAll(@RequestParam(required = false) String category) {
+    if (category != null) {
+        return BookResponse.fromList(bookService.findByCategory(category));
+    }
+    return BookResponse.fromList(bookService.findAll());
 }
 ```
-
-修改 PUT endpoint 使用 `@Valid @RequestBody EmployeeUpdateRequest`。
 
 **延伸 2：加入 Slf4j 日誌記錄**
 
@@ -1002,20 +1165,35 @@ public ResponseEntity<Map<String, Object>> handleGeneral(Exception e) {
 }
 ```
 
-**延伸 3：EmployeeResponse 批次轉換**
+**延伸 3：自訂驗證注解**
+
+建立一個自訂驗證：確認 `category` 只能是預設清單中的分類：
 
 ```java
-// 在 EmployeeResponse 加入靜態方法：
-public static List<EmployeeResponse> fromList(List<Employee> employees) {
-    return employees.stream()
-            .map(EmployeeResponse::from)
-            .toList();
+// 自訂注解
+@Target({ElementType.FIELD})
+@Retention(RetentionPolicy.RUNTIME)
+@Constraint(validatedBy = ValidCategoryValidator.class)
+public @interface ValidCategory {
+    String message() default "書籍分類不合法";
+    Class<?>[] groups() default {};
+    Class<? extends Payload>[] payload() default {};
 }
-// 修改 Controller getAll() 使用：
-return EmployeeResponse.fromList(employeeService.findAll());
+
+// 驗證邏輯
+public class ValidCategoryValidator
+        implements ConstraintValidator<ValidCategory, String> {
+    private static final Set<String> VALID_CATEGORIES =
+            Set.of("Programming", "Database", "Algorithm", "Design", "Other");
+
+    @Override
+    public boolean isValid(String value, ConstraintValidatorContext context) {
+        return value == null || VALID_CATEGORIES.contains(value);
+    }
+}
 ```
 
----
+在 `BookCreateRequest.category` 欄位加上 `@ValidCategory`，測試輸入不合法分類時是否回傳驗證錯誤。
 
 ### 🧠 學習自測
 
@@ -1028,12 +1206,12 @@ return EmployeeResponse.fromList(employeeService.findAll());
 ```java
 // A
 @Transactional
-public void saveA() { repo.save(emp); throw new RuntimeException(); }
+public void saveA() { repo.save(book); throw new RuntimeException(); }
 
 // B
 @Transactional
 public void saveB() {
-    try { repo.save(emp); throw new RuntimeException(); }
+    try { repo.save(book); throw new RuntimeException(); }
     catch (Exception e) { log.error("error"); }
 }
 ```
@@ -1051,17 +1229,15 @@ B 不會 rollback。因為例外被 try-catch 吞掉了，Spring 的 AOP 代理�
 拋出 `MethodArgumentNotValidException`。由 `GlobalExceptionHandler` 中標記了 `@ExceptionHandler(MethodArgumentNotValidException.class)` 的方法捕獲，轉換為 `400 Bad Request` + 錯誤清單。
 </details>
 
-**Q5**：為什麼 `EmployeeResponse` 不含 `salary` 欄位是一個好的設計？
+**Q5**：為什麼要以 Controller 為中心理解分層架構？
 <details><summary>查看答案</summary>
-薪資是敏感資料，不應該讓所有客戶端（如前端瀏覽器）直接取得。通過 DTO 可以精確控制哪些欄位回傳給客戶端。後續若需要在特定情境（如管理後台）顯示薪資，可以另建一個 `EmployeeDetailResponse` DTO 包含 salary。
+Controller 是客戶端與系統的唯一入口，每個 HTTP 請求都必須經過 Controller 的解析、驗證、轉換、委派、回應流程。從 Controller 出發向下探索 Service、Repository、Entity 各層，能建立完整的請求處理心智模型，更容易理解整個系統如何協作。
 </details>
 
 **Q6**：如果 `GlobalExceptionHandler` 同時有 `Exception.class` 和 `RuntimeException.class` 兩個 handler，當拋出 `RuntimeException` 時，哪個會被呼叫？
 <details><summary>查看答案</summary>
 `RuntimeException.class` 的 handler 會被呼叫，因為 Spring 會選擇**最精確**（最接近例外類型）的 handler。`Exception.class` 只作為「最後防線」，在沒有更精確的 handler 時才會被呼叫。
 </details>
-
----
 
 ### 🚀 挑戰任務
 
@@ -1070,47 +1246,35 @@ B 不會 rollback。因為例外被 try-catch 吞掉了，Spring 的 AOP 代理�
 設計一個完整的測試流程，確認三天的功能全部整合正確：
 
 ```
-1. POST /api/employees（有效資料）→ 確認 201，回應無 salary
-2. POST /api/employees（同 email）→ 確認 400，錯誤訊息含「Email 已存在」
-3. POST /api/employees（空 name）→ 確認 400，errors 陣列含驗證訊息
-4. GET /api/employees → 確認 200，回傳陣列，每筆都無 salary
-5. GET /api/employees?department=Engineering → 確認只回傳該部門
-6. GET /api/employees/search?keyword=ali → 確認找到 Alice
-7. GET /api/employees/page?page=0&size=2 → 確認分頁格式正確
-8. PUT /api/employees/1（valid）→ 確認 200，資料更新
-9. DELETE /api/employees/1 → 確認 204
-10. GET /api/employees/1（已刪除）→ 確認 404，含 error 訊息
+1. POST /api/books（有效資料）→ 確認 201，回應含 id 與 createdAt
+2. POST /api/books（同 ISBN）→ 確認 400，錯誤訊息含「ISBN 已存在」
+3. POST /api/books（空 title）→ 確認 400，errors 陣列含驗證訊息
+4. GET /api/books → 確認 200，回傳陣列
+5. GET /api/books?category=Programming → 確認只回傳該分類
+6. GET /api/books/search?keyword=spring → 確認找到相關書籍
+7. PUT /api/books/1（valid）→ 確認 200，資料更新
+8. DELETE /api/books/1 → 確認 204
+9. GET /api/books/1（已刪除）→ 確認 404，含 error 訊息
 ```
 
-**挑戰 2（進階）：自訂驗證注解**
+**挑戰 2（進階）：低庫存警示**
 
-建立一個自訂驗證：確認 `department` 只能是預設清單中的部門名稱：
+實作一個功能：查詢庫存低於某門檻的書籍，並在回應中加入警示：
 
 ```java
-// 自訂注解
-@Target({ElementType.FIELD})
-@Retention(RetentionPolicy.RUNTIME)
-@Constraint(validatedBy = ValidDepartmentValidator.class)
-public @interface ValidDepartment {
-    String message() default "部門名稱不合法";
-    Class<?>[] groups() default {};
-    Class<? extends Payload>[] payload() default {};
+// BookService.java
+@Transactional(readOnly = true)
+public List<Book> findLowStock(int threshold) {
+    return bookRepository.findByStockLessThan(threshold);
 }
 
-// 驗證邏輯
-public class ValidDepartmentValidator
-        implements ConstraintValidator<ValidDepartment, String> {
-    private static final Set<String> VALID_DEPTS =
-            Set.of("Engineering", "Product", "HR", "Finance");
-
-    @Override
-    public boolean isValid(String value, ConstraintValidatorContext context) {
-        return value == null || VALID_DEPTS.contains(value);
-    }
+// BookController.java
+// GET /api/books/low-stock?threshold=5
+@GetMapping("/low-stock")
+public List<BookResponse> findLowStock(@RequestParam(defaultValue = "5") int threshold) {
+    return BookResponse.fromList(bookService.findLowStock(threshold));
 }
 ```
-
-在 `EmployeeCreateRequest.department` 欄位加上 `@ValidDepartment`，測試輸入不合法部門時是否回傳驗證錯誤。
 
 ---
 
@@ -1118,10 +1282,11 @@ public class ValidDepartmentValidator
 
 | 概念 | 重點 |
 |------|------|
+| **Controller 為中心** | Controller 是請求唯一入口：解析 → 驗證 → 轉換 → 委派 → 組裝 → 回應 |
 | **@Transactional** | 保證多個資料庫操作的原子性；`readOnly = true` 提升查詢效能 |
 | **@Transactional 失效陷阱** | 同類別內直接呼叫、例外被吞掉、private 方法 |
 | **DTO 模式** | 隔離 Entity 與 API；分別建立 CreateRequest、UpdateRequest、Response |
-| **靜態工廠方法** | `EmployeeResponse.from(entity)` 集中管理轉換邏輯 |
+| **靜態工廠方法** | `BookResponse.from(entity)` 集中管理轉換邏輯 |
 | **@Valid** | 加在 `@RequestBody` 前，觸發 DTO 內的驗證規則 |
 | **@RestControllerAdvice** | 集中管理所有例外，統一回應格式 |
 | **驗證注解** | `@NotBlank` > `@NotEmpty` > `@NotNull` 嚴格程度遞減 |
@@ -1133,4 +1298,4 @@ public class ValidDepartmentValidator
 Day 4 將介紹：
 - **Spring Security 基礎**：保護 API，讓未登入者無法存取
 - **JWT 身份驗證**：實作 Login API，回傳 Token，後續請求帶 Token 驗證身份
-- **角色權限控制**（RBAC）：`ADMIN` 才能刪除員工，`USER` 只能查詢
+- **角色權限控制**（RBAC）：`ADMIN` 才能刪除書籍，`USER` 只能查詢
