@@ -39,7 +39,7 @@ Swagger（OpenAPI 3）的作法是改用**程式碼註解**標記，由框架在
 |------|------|-----------|
 | **swagger-core**（`swagger-jaxrs2-jakarta`） | 讀取註解，產生 OpenAPI 3 規格 | 2.2.37 |
 | **OpenApiResource** | JAX-RS 現成資源類別，提供 `/api/openapi.json\|yaml` 兩個端點 | 隨 swagger-core |
-| **swagger-ui-dist** | 純前端靜態網頁，載入規格後渲染成互動介面 | 5.32.11（webjar 抽出） |
+| **swagger-ui（WebJar）** | 純前端靜態網頁，載入規格後渲染成互動介面 | 5.32.0（`org.webjars:swagger-ui`，jar 內附靜態檔） |
 
 > **版本注意**：Tomcat 10 是 `jakarta.*` 命名空間，必須用 **jakarta 版**
 > `swagger-jaxrs2-jakarta`。舊的 `swagger-jaxrs2-servlet-initializer-v2` 是 `javax` 版，
@@ -108,6 +108,14 @@ swagger-ui 前端載入規格 → 渲染成互動網頁
     <groupId>io.swagger.core.v3</groupId>
     <artifactId>swagger-jaxrs2-jakarta</artifactId>
     <version>${swagger.version}</version>
+</dependency>
+
+<!-- Swagger UI（WebJar）：jar 內附 META-INF/resources/webjars/swagger-ui/<版本>/ 靜態資源，
+     Tomcat 自動在 /webjars/** 提供，不需要手動抽出或額外 servlet -->
+<dependency>
+    <groupId>org.webjars</groupId>
+    <artifactId>swagger-ui</artifactId>
+    <version>5.32.0</version>
 </dependency>
 ```
 
@@ -187,7 +195,17 @@ public class JaxRsActivator extends Application {
 
 ### 5.4 `webapp/swagger-ui/index.html` — UI 入口
 
-從 `swagger-ui-dist` webjar 抽出靜態檔後，自行撰寫入口頁指定要載入的規格網址：
+Swagger UI 的前端資源（css / js / favicon）**不再手動放進專案**，而是透過 **WebJar** 依賴
+（`org.webjars:swagger-ui:5.32.0`）直接取得：
+
+- webjar 的 jar 內含 `META-INF/resources/webjars/swagger-ui/5.32.0/`，Tomcat 會自動把
+  jar 內這段資源掛到 `/webjars/**`，所以 `/bookstore-api/webjars/swagger-ui/5.32.0/swagger-ui.css`
+  直接就能存取（**不需要額外 servlet 設定**）。
+- 仍保留一個自訂 `index.html` 當入口，是因為 webjar 預設的 `swagger-initializer.js`
+  寫死連到 `https://petstore.swagger.io/v2/swagger.json`（也不支援 `?url=`），
+  必須由我們的頁面把規格指向 `/api/openapi.json`。
+
+`webapp/swagger-ui/` 只保留這一個檔，其餘全部來自 jar：
 
 ```html
 <!DOCTYPE html>
@@ -196,14 +214,15 @@ public class JaxRsActivator extends Application {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Bookstore API — Swagger UI</title>
-  <link rel="stylesheet" href="swagger-ui.css">
-  <link rel="icon" type="image/png" href="favicon-32x32.png">
+  <!-- 靜態資源全部來自 swagger-ui WebJar（META-INF/resources/webjars/swagger-ui/5.32.0/） -->
+  <link rel="stylesheet" href="../webjars/swagger-ui/5.32.0/swagger-ui.css">
+  <link rel="icon" type="image/png" href="../webjars/swagger-ui/5.32.0/favicon-32x32.png">
 </head>
 <body>
   <div id="swagger-ui"></div>
 
-  <script src="swagger-ui-bundle.js"></script>
-  <script src="swagger-ui-standalone-preset.js"></script>
+  <script src="../webjars/swagger-ui/5.32.0/swagger-ui-bundle.js"></script>
+  <script src="../webjars/swagger-ui/5.32.0/swagger-ui-standalone-preset.js"></script>
 
   <script>
     window.onload = function () {
@@ -227,9 +246,11 @@ public class JaxRsActivator extends Application {
 </html>
 ```
 
-> 同目錄還需要 `swagger-ui.css`、`swagger-ui-bundle.js`、`swagger-ui-standalone-preset.js`、
-> `favicon-16x16.png`、`favicon-32x32.png`、`oauth2-redirect.html`，這些是第三方套件（bundle.js 約
-> 1.5MB），直接從 webjar 複製、不要手改。若換成 Maven 的 `maven-war-plugin` webjar 過濾也能自動帶入。
+> **為什麼用 `../webjars/...`？** 頁面位於 `/bookstore-api/swagger-ui/`，`../webjars/...`
+> 會解析成 `/bookstore-api/webjars/...`，與 context path 無關都能正確載入。
+>
+> **換版本注意**：升級 webjar 時要同步改兩處——`pom.xml` 的 `<version>`，以及
+> index.html 裡 3 個 `5.32.0` 路徑，否則 404。
 
 ---
 
@@ -316,8 +337,9 @@ public Response getById(@PathParam("id") Long id) { ... }
    檢查瀏覽器快取（強制重新整理）。
 4. **不想自動掃描 / 想限制掃描範圍？** 用 `resourcePackages` / `resourceClasses` 明確指定，
    避免把 `/openapi` 自身或不相干類別列進規格。
-5. **swagger-ui 的靜態檔**：bundle.js / css 等是第三方檔案，不要手改；`index.html` 由我們
-   自訂，`specUrl` 用相對路徑 `../api/openapi.json` 才能在不同 context path 下都正確。
+5. **swagger-ui 的靜態檔**：bundle.js / css / favicon 都來自 WebJar（`org.webjars:swagger-ui`，
+   路徑 `/webjars/swagger-ui/<版本>/`），不要手改也不要手動抽出；只有入口 `index.html` 由我們
+   自訂，`specUrl` 與 webjar 路徑都用相對路徑（`../`）才能在不同 context path 下都正確。
 
 ---
 
