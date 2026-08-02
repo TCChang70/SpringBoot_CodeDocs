@@ -26,6 +26,26 @@ Day 2 新增了查詢能力與關聯映射：
 
 ---
 
+## 文件重組說明
+
+本版本對原 Day 3 文件進行了以下重組，主要集中在 **Section 3.6（@Transactional 測試）**：
+
+| 修改項目 | 原本 | 改後 |
+|---------|------|------|
+| 測試類別數量 | 1 個大型 `BookServiceTest` | 4 個各自獨立的小單元 |
+| 缺少 Commit 驗證測試 | ❌ 無 | ✅ 新增 `BookTransactionCommitTest` |
+| 測試資料清理 | 無 `@AfterEach`，靠 H2 重啟 | `@AfterEach` 清理，測試間不互相污染 |
+| `BookServiceTest` 混用查詢與寫入 | 同一個類別 | 分離為 `CrudTest` 和 `QueryTest` |
+| 測試命名風格 | 混用 | 統一為 `動作_條件_預期結果` |
+| `BookTransactionRollbackTest` 無背景資料 | 無 `@BeforeEach` | 加入 `@BeforeEach` 建立背景資料 |
+
+**其他細節修正**：
+- `BookCreateRequest.java` 補上 `import java.math.BigDecimal;`（原本遺漏）
+- `BookResponse.java` 的 `fromList()` 方法補上 `import java.util.List;`（原本遺漏）
+- Rollback 測試的 ISBN 改用獨立命名空間（`978-004-xxx`），避免與其他測試類別衝突
+
+---
+
 ## 0. Controller 為中心的分層架構
 
 本文件從 **Controller 出發**，由上而下認識每一層。一個 HTTP 請求的完整旅程：
@@ -457,9 +477,29 @@ private void doInternal() { ... }
 
 > 💡 **根本原因**：`@Transactional` 透過 **AOP 動態代理**實現，Spring 會為標記了 `@Transactional` 的類別建立代理物件。只有透過代理物件呼叫的**公開（public）方法**才受交易管理。
 
-### 3.6 @Transactional 測試方法（BookServiceTest）
+### 3.6 @Transactional 測試方法 — 小單元切割設計
 
-測試是驗證交易行為最可靠的方式。以下測試完整驗證 `BookService` 每個 `@Transactional` 方法的正確性。
+測試 `@Transactional` 有兩個截然不同的目的，需要**不同的測試策略**，原本的大型 `BookServiceTest` 拆成 4 個各自獨立可執行的小單元：
+
+| 目的 | 測試類別加 `@Transactional`？ | 說明 |
+|------|------------------------------|------|
+| 驗證 CRUD 業務邏輯（隔離環境） | ✅ 是 | 測試結束自動 rollback，不污染其他測試 |
+| 驗證唯讀查詢正確性（隔離環境） | ✅ 是 | 同上 |
+| 驗證資料**確實 commit**（寫入資料庫） | ❌ 否 | 需觀察真實的資料庫持久化狀態 |
+| 驗證例外觸發 **rollback**（資料回滾） | ❌ 否 | 需觀察交易結束後資料庫是否乾淨 |
+
+**切割後的測試檔案架構**：
+
+```
+src/test/java/com/example/bookcrud/service/
+├── BookServiceCrudTest.java            ← 寫入操作（@Transactional → 每個測試自動 rollback）
+├── BookServiceQueryTest.java           ← 唯讀查詢（@Transactional → 每個測試自動 rollback）
+├── TransactionRollbackDemoService.java ← 示範 Service（供 Commit / Rollback 測試使用）
+├── BookTransactionCommitTest.java      ← Commit 驗證（無 @Transactional，@AfterEach 清理）
+└── BookTransactionRollbackTest.java    ← Rollback 驗證（無 @Transactional，@AfterEach 清理）
+```
+
+> 💡 **核心原則**：有 `@Transactional` 的測試類別是「隔離沙盒」——每個測試在自己的交易中執行，結束後自動回滾，資料不會留下來。要驗證真實的 commit/rollback 行為，必須拿掉 `@Transactional`，讓 Service 的交易真正提交，再從資料庫直接查詢確認。
 
 #### 3.6.1 加入測試依賴（pom.xml）
 
@@ -499,7 +539,106 @@ spring.jpa.open-in-view=false
 
 > 💡 **關鍵**：Spring Boot 測試加上 `@Transactional` 後，每個測試方法執行完畢會**自動 rollback**，不會污染其他測試。這就是測試與 `@Transactional` 結合的威力。
 
-#### 3.6.3 完整測試類別（BookServiceTest.java）
+#### 3.6.3 BookServiceCrudTest.java（寫入操作 — 自動 Rollback）
+
+專注驗證 `create` / `update` / `delete` 的業務邏輯。類別標記 `@Transactional` → 每個測試方法結束後**自動 rollback**，測試之間完全隔離。
+
+```java
+package com.example.bookcrud.service;
+
+import com.example.bookcrud.model.Book;
+import com.example.bookcrud.repository.BookRepository;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+@SpringBootTest
+@ActiveProfiles("test")
+@Transactional  // ← 每個測試方法結束後自動 rollback，不影響其他測試
+class BookServiceCrudTest {
+
+    @Autowired
+    private BookService bookService;
+
+    @Autowired
+    private BookRepository bookRepository;
+
+    private Book book(String title, String isbn) {
+        return new Book(title, "Alice Chen", isbn,
+                new BigDecimal("550.00"), 30, "Programming");
+    }
+
+    @Test
+    void create_shouldAssignIdAndPersistInSameTransaction() {
+        Book saved = bookService.create(book("Spring Boot 實戰", "978-001-001-001-0"));
+
+        assertNotNull(saved.getId());
+        Optional<Book> found = bookRepository.findById(saved.getId());
+        assertTrue(found.isPresent());
+        assertEquals("Spring Boot 實戰", found.get().getTitle());
+    }
+
+    @Test
+    void create_duplicateIsbn_shouldThrowIllegalArgumentException() {
+        bookService.create(book("Spring Boot 實戰", "978-001-001-002-0"));
+
+        Book duplicate = book("Spring Boot 第二版", "978-001-001-002-0");
+
+        IllegalArgumentException ex = assertThrows(
+                IllegalArgumentException.class,
+                () -> bookService.create(duplicate));
+        assertTrue(ex.getMessage().contains("ISBN 已存在"));
+    }
+
+    @Test
+    void update_shouldModifyAllFields() {
+        Book saved = bookService.create(book("Java 入門", "978-001-001-003-0"));
+
+        Book updateData = new Book("Java 入門（第二版）", "Bob Wang",
+                "978-001-001-003-0", new BigDecimal("680.00"), 20, "Programming");
+        Optional<Book> result = bookService.update(saved.getId(), updateData);
+
+        assertTrue(result.isPresent());
+        Book updated = result.get();
+        assertEquals("Java 入門（第二版）", updated.getTitle());
+        assertEquals("Bob Wang", updated.getAuthor());
+        assertEquals(new BigDecimal("680.00"), updated.getPrice());
+    }
+
+    @Test
+    void update_nonExistentId_shouldReturnEmpty() {
+        Optional<Book> result = bookService.update(999L, book("不存在", "978-001-001-004-0"));
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void delete_existingBook_shouldReturnTrueAndRemove() {
+        Book saved = bookService.create(book("演算法導論", "978-001-001-005-0"));
+
+        boolean deleted = bookService.delete(saved.getId());
+
+        assertTrue(deleted);
+        assertFalse(bookRepository.existsById(saved.getId()));
+    }
+
+    @Test
+    void delete_nonExistentId_shouldReturnFalse() {
+        assertFalse(bookService.delete(999L));
+    }
+}
+```
+
+#### 3.6.4 BookServiceQueryTest.java（唯讀查詢 — 自動 Rollback）
+
+專注驗證 `findAll` / `findById` / `findByCategory` / `searchByTitle`。同樣標記 `@Transactional`，每個測試的資料在該測試方法的沙盒中準備，結束後回滾。
 
 ```java
 package com.example.bookcrud.service;
@@ -518,107 +657,23 @@ import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// @SpringBootTest：啟動完整 Spring 容器（整合測試）
-// @ActiveProfiles("test")：使用 application-test.properties
-// @Transactional：每個測試方法結束後自動 rollback，測試間互不影響
 @SpringBootTest
 @ActiveProfiles("test")
 @Transactional
-class BookServiceTest {
+class BookServiceQueryTest {
 
     @Autowired
     private BookService bookService;
 
-    @Autowired
-    private BookRepository bookRepository;
-
-    // 建立測試用 Book 的輔助方法
-    private Book createBook(String title, String isbn) {
+    private Book book(String title, String isbn, String category) {
         return new Book(title, "Alice Chen", isbn,
-                new BigDecimal("550.00"), 30, "Programming");
+                new BigDecimal("420.00"), 10, category);
     }
 
-    // ═══════════ 測試 1：create() 正常新增 ═══════════
     @Test
-    void create_shouldSaveBook() {
-        Book book = createBook("Spring Boot 實戰", "978-986-434-000-1");
-
-        Book saved = bookService.create(book);
-
-        // 儲存成功後 id 應由資料庫自動產生（非 null）
-        assertNotNull(saved.getId());
-        // 從資料庫再次讀取，確認真的寫入成功
-        Optional<Book> found = bookRepository.findById(saved.getId());
-        assertTrue(found.isPresent());
-        assertEquals("Spring Boot 實戰", found.get().getTitle());
-    }
-
-    // ═══════════ 測試 2：create() 重複 ISBN 拋例外 ═══════════
-    @Test
-    void create_duplicateIsbn_shouldThrowException() {
-        Book book1 = createBook("Spring Boot 實戰", "978-986-434-000-1");
-        bookService.create(book1);
-
-        // 相同 ISBN 再新增一次 → 應拋出 IllegalArgumentException
-        Book duplicate = createBook("Spring Boot 實戰 第二版", "978-986-434-000-1");
-
-        IllegalArgumentException ex = assertThrows(
-                IllegalArgumentException.class,
-                () -> bookService.create(duplicate));
-        assertTrue(ex.getMessage().contains("ISBN 已存在"));
-    }
-
-    // ═══════════ 測試 3：update() 正常修改 ═══════════
-    @Test
-    void update_shouldModifyBook() {
-        Book saved = bookService.create(createBook("Java 入門", "978-986-434-000-2"));
-
-        Book updatedData = new Book("Java 入門（第二版）", "Bob Wang",
-                "978-986-434-000-2", new BigDecimal("680.00"), 20, "Programming");
-
-        Optional<Book> result = bookService.update(saved.getId(), updatedData);
-
-        assertTrue(result.isPresent());
-        Book updated = result.get();
-        assertEquals("Java 入門（第二版）", updated.getTitle());
-        assertEquals("Bob Wang", updated.getAuthor());
-        assertEquals(new BigDecimal("680.00"), updated.getPrice());
-    }
-
-    // ═══════════ 測試 4：update() 不存在的書籍 ═══════════
-    @Test
-    void update_nonExistentId_shouldReturnEmpty() {
-        Book updatedData = createBook("不存在的書", "978-986-434-000-3");
-
-        Optional<Book> result = bookService.update(999L, updatedData);
-
-        assertTrue(result.isEmpty());   // 回傳 empty，不拋例外
-    }
-
-    // ═══════════ 測試 5：delete() 正常刪除 ═══════════
-    @Test
-    void delete_shouldRemoveBook() {
-        Book saved = bookService.create(createBook("演算法導論", "978-986-434-000-4"));
-
-        boolean deleted = bookService.delete(saved.getId());
-
-        assertTrue(deleted);
-        assertFalse(bookRepository.existsById(saved.getId()));
-    }
-
-    // ═══════════ 測試 6：delete() 不存在的書籍回傳 false ═══════════
-    @Test
-    void delete_nonExistentId_shouldReturnFalse() {
-        boolean deleted = bookService.delete(999L);
-
-        assertFalse(deleted);
-    }
-
-    // ═══════════ 測試 7：findAll() 與 findById() 唯讀查詢 ═══════════
-    @Test
-    void findAll_shouldReturnAllBooks() {
-        bookService.create(createBook("書A", "978-986-434-000-5"));
-        bookService.create(createBook("書B", "978-986-434-000-6"));
+    void findAll_shouldReturnAllBooksInCurrentTransaction() {
+        bookService.create(book("書 A", "978-002-001-001-0", "Programming"));
+        bookService.create(book("書 B", "978-002-001-002-0", "Programming"));
 
         List<Book> books = bookService.findAll();
 
@@ -626,34 +681,40 @@ class BookServiceTest {
     }
 
     @Test
-    void findById_shouldReturnBook() {
-        Book saved = bookService.create(createBook("書C", "978-986-434-000-7"));
+    void findById_existingId_shouldReturnBook() {
+        Book saved = bookService.create(book("書 C", "978-002-001-003-0", "Database"));
 
         Optional<Book> found = bookService.findById(saved.getId());
 
         assertTrue(found.isPresent());
-        assertEquals("書C", found.get().getTitle());
+        assertEquals("書 C", found.get().getTitle());
     }
 
-    // ═══════════ 測試 8：findByCategory / searchByTitle 查詢 ═══════════
     @Test
-    void findByCategory_shouldFilterBooks() {
-        bookService.create(createBook("書D", "978-986-434-000-8"));
-        Book dbBook = new Book("資料庫系統概論", "Charlie", "978-986-434-000-9",
-                new BigDecimal("420.00"), 20, "Database");
-        bookService.create(dbBook);
+    void findById_nonExistentId_shouldReturnEmpty() {
+        Optional<Book> found = bookService.findById(999L);
+
+        assertTrue(found.isEmpty());
+    }
+
+    @Test
+    void findByCategory_shouldFilterByCategory() {
+        bookService.create(book("書 D", "978-002-001-004-0", "Programming"));
+        bookService.create(book("資料庫概論", "978-002-001-005-0", "Database"));
 
         List<Book> programming = bookService.findByCategory("Programming");
-        List<Book> database = bookService.findByCategory("Database");
+        List<Book> database    = bookService.findByCategory("Database");
 
         assertEquals(1, programming.size());
         assertEquals(1, database.size());
+        assertEquals("書 D", programming.get(0).getTitle());
     }
 
     @Test
-    void searchByTitle_shouldFindMatchingBooks() {
-        bookService.create(createBook("Spring Boot 實戰", "978-986-434-001-0"));
-        bookService.create(createBook("Spring Cloud 微服務", "978-986-434-001-1"));
+    void searchByTitle_shouldFindMatchingKeyword() {
+        bookService.create(book("Spring Boot 實戰",  "978-002-001-006-0", "Programming"));
+        bookService.create(book("Spring Cloud 微服務", "978-002-001-007-0", "Programming"));
+        bookService.create(book("Java 核心技術",      "978-002-001-008-0", "Programming"));
 
         List<Book> results = bookService.searchByTitle("Spring");
 
@@ -662,11 +723,11 @@ class BookServiceTest {
 }
 ```
 
-#### 3.6.4 交易 Rollback 行為測試（進階）
+#### 3.6.5 TransactionRollbackDemoService.java（測試輔助 Service）
 
-驗證「中途失敗 → 全部回滾」的交易核心行為。這些測試**不標記** `@Transactional`，才能真正觀察資料庫狀態。
+放在 `src/test/java` 下，不影響正式程式碼。提供「先執行 INSERT、再拋例外」的方法，讓後面兩個測試類別能驗證真實的 commit / rollback 行為。
 
-> ⚠️ **錯誤修正**：早期的版本會在 `bookService.create()` **回傳之後**才拋出例外。例外必須發生在**交易方法內部**才會被 Spring 攔截並 rollback。正確做法是使用一個「先寫入、再拋例外」的示範 Service。
+> ⚠️ **例外必須在交易方法內部拋出**才會被 Spring AOP 攔截並 rollback。若在呼叫端才拋出例外，Service 方法早已 commit，不會回滾。
 
 為了不污染正式程式碼，我們在測試目錄建立一個示範用 Service，模擬「先執行 INSERT、再拋例外」的情境：
 
@@ -720,11 +781,121 @@ public class TransactionRollbackDemoService {
 
 > 💡 **受檢例外 vs 執行時期例外**：Spring 預設只針對 `RuntimeException` 與 `Error` 做 rollback。受檢例外（Checked Exception）代表「可預期的失敗」，預設被視為正常流程而**提交**交易。若希望受檢例外也回滾，必須明確指定 `rollbackFor = Exception.class`。
 
+#### 3.6.6 BookTransactionCommitTest.java（Commit 驗證測試）
+
+> 💡 **驗證重點**：沒有測試層級 `@Transactional`，`bookService` 的每個方法在自己的交易內獨立 commit。測試透過 `bookRepository` 直接查詢，確認資料確實持久化到 H2 資料庫。`@AfterEach` 負責清理本測試類別寫入的資料，避免污染後續測試。
+
 ```java
 package com.example.bookcrud.service;
 
 import com.example.bookcrud.model.Book;
 import com.example.bookcrud.repository.BookRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.math.BigDecimal;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+
+// 【無 @Transactional】— bookService 的每個方法在自己的交易中獨立 commit
+// 測試驗證：方法返回後，資料是否真的存在於資料庫（持久化成功）
+@SpringBootTest
+@ActiveProfiles("test")
+class BookTransactionCommitTest {
+
+    @Autowired
+    private BookService bookService;
+
+    @Autowired
+    private BookRepository bookRepository;
+
+    // 每個測試方法使用專屬 ISBN，避免 H2 記憶體庫內的 unique 衝突
+    private static final String ISBN_CREATE = "978-003-001-001-0";
+    private static final String ISBN_UPDATE = "978-003-001-002-0";
+    private static final String ISBN_DELETE = "978-003-001-003-0";
+
+    @AfterEach
+    void cleanup() {
+        // 清理本類別寫入的資料（即使測試失敗也執行）
+        bookRepository.findByIsbn(ISBN_CREATE).ifPresent(bookRepository::delete);
+        bookRepository.findByIsbn(ISBN_UPDATE).ifPresent(bookRepository::delete);
+        bookRepository.findByIsbn(ISBN_DELETE).ifPresent(bookRepository::delete);
+    }
+
+    // ─── Commit 驗證 1：create() 正常流程 → 資料應 commit ───
+    @Test
+    void create_normalFlow_shouldCommitToDatabase() {
+        Book book = new Book("Commit 測試書", "Tester", ISBN_CREATE,
+                new BigDecimal("300.00"), 10, "Test");
+
+        Book saved = bookService.create(book);
+
+        assertNotNull(saved.getId());
+
+        // 從資料庫重新查詢：驗證 commit 後資料確實持久化
+        Optional<Book> found = bookRepository.findById(saved.getId());
+        assertTrue(found.isPresent(), "create() commit 後資料應存在於資料庫");
+        assertEquals("Commit 測試書", found.get().getTitle());
+        assertNotNull(found.get().getCreatedAt(), "createdAt 應由 @PrePersist 填入");
+    }
+
+    // ─── Commit 驗證 2：update() 正常流程 → 修改應 commit ───
+    @Test
+    void update_normalFlow_shouldCommitChangesToDatabase() {
+        // 先建立資料（第一個交易 commit）
+        Book original = bookService.create(new Book("原書名", "Tester", ISBN_UPDATE,
+                new BigDecimal("200.00"), 5, "Test"));
+
+        // 更新資料（第二個交易 commit）
+        Book updateData = new Book("更新後書名", "NewAuthor", ISBN_UPDATE,
+                new BigDecimal("250.00"), 8, "Test");
+        bookService.update(original.getId(), updateData);
+
+        // 從資料庫重新查詢：驗證 update commit 後欄位值已反映
+        Optional<Book> found = bookRepository.findById(original.getId());
+        assertTrue(found.isPresent());
+        assertEquals("更新後書名", found.get().getTitle(),
+                "update() commit 後書名應更新");
+        assertEquals("NewAuthor", found.get().getAuthor(),
+                "update() commit 後作者應更新");
+        assertEquals(new BigDecimal("250.00"), found.get().getPrice(),
+                "update() commit 後價格應更新");
+    }
+
+    // ─── Commit 驗證 3：delete() 正常流程 → 資料應從資料庫移除 ───
+    @Test
+    void delete_normalFlow_shouldCommitRemovalToDatabase() {
+        // 先建立資料（commit）
+        Book book = bookService.create(new Book("待刪除書", "Tester", ISBN_DELETE,
+                new BigDecimal("150.00"), 3, "Test"));
+        Long id = book.getId();
+
+        // 刪除（commit）
+        boolean result = bookService.delete(id);
+
+        assertTrue(result, "delete() 應回傳 true 表示刪除成功");
+        // 驗證：commit 後資料確實不存在
+        assertFalse(bookRepository.existsById(id),
+                "delete() commit 後資料不應存在於資料庫");
+    }
+}
+```
+
+#### 3.6.7 BookTransactionRollbackTest.java（Rollback 驗證測試）
+
+> 💡 **驗證重點**：`demoService` 的方法在**交易內部**拋出例外，Spring AOP 攔截並執行 rollback。測試驗證 rollback 後資料庫中不存在該筆資料。`@BeforeEach` 建立背景資料，`@AfterEach` 清理所有本類別寫入的資料。
+
+```java
+package com.example.bookcrud.service;
+
+import com.example.bookcrud.model.Book;
+import com.example.bookcrud.repository.BookRepository;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -734,8 +905,7 @@ import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-// 注意：這裡【沒有】@Transactional
-// 才能真實驗證 rollback 後資料庫是否維持原狀
+// 【無 @Transactional】— 觀察 Service 方法執行後真實的資料庫狀態
 @SpringBootTest
 @ActiveProfiles("test")
 class BookTransactionRollbackTest {
@@ -749,96 +919,133 @@ class BookTransactionRollbackTest {
     @Autowired
     private TransactionRollbackDemoService demoService;
 
-    @Test
-    void create_withRuntimeException_shouldRollback() {
-        // 建立一本正常書籍（獨立交易，會 commit 到資料庫）
-        bookService.create(new Book("存在的書", "Alice", "978-986-434-100-0",
-                new BigDecimal("100.00"), 5, "Programming"));
+    private static final String ISBN_EXISTING         = "978-004-001-001-0";
+    private static final String ISBN_RUNTIME_ROLLBACK = "978-004-001-002-0";
+    private static final String ISBN_CHECKED_COMMIT   = "978-004-001-003-0";
+    private static final String ISBN_CHECKED_ROLLBACK = "978-004-001-004-0";
 
-        // demoService 方法內部：先 INSERT → 再拋 RuntimeException
-        // 因為 @Transactional 存在，INSERT 應該被回滾
-        assertThrows(RuntimeException.class, () -> demoService.saveThenThrowRuntime(
-                new Book("ROLLBACK_TEST", "Bob", "978-986-434-100-1",
-                        new BigDecimal("200.00"), 10, "Programming")));
-
-        // 驗證：資料庫中【不應該】存在 ROLLBACK_TEST 這本書（INSERT 被回滾）
-        assertFalse(bookRepository.findByIsbn("978-986-434-100-1").isPresent(),
-                "rollback 後不應存在 ROLLBACK_TEST");
-
-        // 驗證：原本的書還在（rollback 只回滾當前交易，不影響其他資料）
-        assertTrue(bookRepository.findByIsbn("978-986-434-100-0").isPresent());
+    @BeforeEach
+    void setup() {
+        // 每個測試前確保有一筆正常 commit 的資料（驗證 rollback 不影響它）
+        if (!bookRepository.existsByIsbn(ISBN_EXISTING)) {
+            bookService.create(new Book("背景資料書", "Alice", ISBN_EXISTING,
+                    new BigDecimal("100.00"), 5, "Test"));
+        }
     }
 
-    @Test
-    void create_withCheckedException_shouldNotRollbackByDefault() {
-        // 受檢例外（IOException）在預設設定下【不會】觸發 rollback
-        // 因此 INSERT 的資料會【保留】在資料庫中
-        try {
-            demoService.saveThenThrowChecked(new Book("CHECKED_TEST", "Carol",
-                    "978-986-434-100-2", new BigDecimal("300.00"), 8, "Programming"));
-        } catch (Exception expected) {
-            // 預期拋出受檢例外（IOException）
-        }
-
-        // 資料依然存在 → 證明受檢例外預設不回滾
-        assertTrue(bookRepository.findByIsbn("978-986-434-100-2").isPresent(),
-                "受檢例外預設不回滾，資料應保留");
+    @AfterEach
+    void cleanup() {
+        bookRepository.findByIsbn(ISBN_EXISTING).ifPresent(bookRepository::delete);
+        bookRepository.findByIsbn(ISBN_RUNTIME_ROLLBACK).ifPresent(bookRepository::delete);
+        bookRepository.findByIsbn(ISBN_CHECKED_COMMIT).ifPresent(bookRepository::delete);
+        bookRepository.findByIsbn(ISBN_CHECKED_ROLLBACK).ifPresent(bookRepository::delete);
     }
 
+    // ─── Rollback 驗證 1：RuntimeException → 交易 rollback ───
     @Test
-    void create_withCheckedException_rollbackFor_shouldRollback() {
-        // 加上 rollbackFor = Exception.class 後，受檢例外也會觸發 rollback
-        try {
-            demoService.saveThenThrowCheckedRollbackFor(new Book("CHECKED_ROLLBACK", "David",
-                    "978-986-434-100-3", new BigDecimal("400.00"), 6, "Programming"));
-        } catch (Exception expected) {
-            // 預期拋出受檢例外（IOException）
-        }
+    void runtimeException_shouldRollbackTransaction() {
+        // demoService 內部：INSERT → 拋 RuntimeException
+        // Spring @Transactional 攔截到 RuntimeException → ROLLBACK
+        assertThrows(RuntimeException.class, () ->
+                demoService.saveThenThrowRuntime(
+                        new Book("ROLLBACK 書", "Bob", ISBN_RUNTIME_ROLLBACK,
+                                new BigDecimal("200.00"), 10, "Test")));
 
-        // 資料被回滾 → 證明 rollbackFor 讓受檢例外也能回滾
-        assertFalse(bookRepository.findByIsbn("978-986-434-100-3").isPresent(),
-                "rollbackFor 應讓受檢例外的資料回滾");
+        // 驗證：INSERT 已被回滾，資料不存在
+        assertFalse(bookRepository.findByIsbn(ISBN_RUNTIME_ROLLBACK).isPresent(),
+                "RuntimeException 觸發 rollback，INSERT 應撤銷");
+
+        // 驗證：其他已 commit 的資料不受影響
+        assertTrue(bookRepository.findByIsbn(ISBN_EXISTING).isPresent(),
+                "rollback 只回滾當前交易，不影響其他已 commit 的資料");
+    }
+
+    // ─── Rollback 驗證 2：受檢例外（預設）→ 不觸發 rollback，資料保留 ───
+    @Test
+    void checkedException_withoutRollbackFor_shouldNotRollback() {
+        // Spring 預設：受檢例外（IOException）視為正常流程，交易仍然 commit
+        try {
+            demoService.saveThenThrowChecked(
+                    new Book("CHECKED 書", "Carol", ISBN_CHECKED_COMMIT,
+                            new BigDecimal("300.00"), 8, "Test"));
+        } catch (Exception ignored) { /* 預期拋出 IOException */ }
+
+        // 驗證：資料保留 → 受檢例外預設不回滾（交易已 commit）
+        assertTrue(bookRepository.findByIsbn(ISBN_CHECKED_COMMIT).isPresent(),
+                "受檢例外預設不 rollback，INSERT 應保留（已 commit）");
+    }
+
+    // ─── Rollback 驗證 3：受檢例外 + rollbackFor → 觸發 rollback ───
+    @Test
+    void checkedException_withRollbackFor_shouldRollbackTransaction() {
+        // rollbackFor = Exception.class：讓受檢例外也觸發 rollback
+        try {
+            demoService.saveThenThrowCheckedRollbackFor(
+                    new Book("ROLLBACK_FOR 書", "David", ISBN_CHECKED_ROLLBACK,
+                            new BigDecimal("400.00"), 6, "Test"));
+        } catch (Exception ignored) { /* 預期拋出 IOException */ }
+
+        // 驗證：INSERT 已被回滾，資料不存在
+        assertFalse(bookRepository.findByIsbn(ISBN_CHECKED_ROLLBACK).isPresent(),
+                "rollbackFor = Exception.class 使受檢例外也回滾");
     }
 }
 ```
 
-> ⚠️ **執行順序注意**：這個測試類別沒有 `@Transactional`，三個測試各自 commit 到同一個 H2 記憶體資料庫。因為每個測試使用不同 ISBN，彼此不會互相干擾。測試失敗時可觀察 Console 的 `INSERT INTO books` SQL 與例外堆疊，確認交易確實發生。
+**Commit / Rollback 行為對照表**：
 
-#### 3.6.5 測試執行方式
+| `demoService` 方法 | 拋出例外 | `rollbackFor` 設定 | 交易結果 | 資料庫是否有資料 |
+|-------------------|---------|-------------------|---------|----------------|
+| `saveThenThrowRuntime` | `RuntimeException` | 無（預設） | **ROLLBACK** | ❌ 無（被回滾） |
+| `saveThenThrowChecked` | `IOException` | 無（預設） | **COMMIT** | ✅ 有（正常提交）|
+| `saveThenThrowCheckedRollbackFor` | `IOException` | `Exception.class` | **ROLLBACK** | ❌ 無（被回滾） |
+
+#### 3.6.8 測試執行方式
 
 ```bash
 # 執行所有測試
 mvn test
 
-# 執行特定測試類別
-mvn test -Dtest=BookServiceTest
+# 執行單一類別
+mvn test -Dtest=BookServiceCrudTest
+mvn test -Dtest=BookServiceQueryTest
+mvn test -Dtest=BookTransactionCommitTest
+mvn test -Dtest=BookTransactionRollbackTest
 
-# 執行單一測試方法
-mvn test -Dtest=BookServiceTest#create_shouldSaveBook
+# 執行單一方法（Commit / Rollback 驗證）
+mvn test -Dtest=BookTransactionCommitTest#create_normalFlow_shouldCommitToDatabase
+mvn test -Dtest=BookTransactionRollbackTest#runtimeException_shouldRollbackTransaction
 
-# 執行時顯示詳細輸出
-mvn test -Dtest=BookServiceTest -Dspring.profiles.active=test
+# 觀察 SQL 輸出（確認 commit / rollback 行為）
+mvn test -Dtest=BookTransactionRollbackTest -Dspring.jpa.show-sql=true
 ```
 
-#### 3.6.6 測試結果預期
+#### 3.6.9 測試結果預期（16 個測試方法）
 
-| 測試方法 | 預期結果 | 驗證重點 |
-|---------|---------|---------|
-| `create_shouldSaveBook` | 通過 | create() 成功寫入資料庫 |
-| `create_duplicateIsbn_shouldThrowException` | 通過 | ISBN 重複業務規則正確 |
-| `update_shouldModifyBook` | 通過 | update() 正確更新欄位 |
-| `update_nonExistentId_shouldReturnEmpty` | 通過 | 不存在的 id 回傳 empty |
-| `delete_shouldRemoveBook` | 通過 | delete() 成功刪除 |
-| `delete_nonExistentId_shouldReturnFalse` | 通過 | 不存在的 id 回傳 false |
-| `findAll_shouldReturnAllBooks` | 通過 | 查詢回傳全部資料 |
-| `findById_shouldReturnBook` | 通過 | 依 id 查詢成功 |
-| `findByCategory_shouldFilterBooks` | 通過 | 依分類過濾正確 |
-| `searchByTitle_shouldFindMatchingBooks` | 通過 | 關鍵字搜尋正確 |
-| `create_withRuntimeException_shouldRollback` | 通過 | RuntimeException 觸發 rollback（資料不保留） |
-| `create_withCheckedException_shouldNotRollbackByDefault` | 通過 | 受檢例外預設不回滾（資料保留） |
-| `create_withCheckedException_rollbackFor_shouldRollback` | 通過 | rollbackFor 讓受檢例外也回滾（資料不保留） |
+| 測試類別 | 測試方法 | 預期結果 | 驗證重點 |
+|---------|---------|---------|---------|
+| `BookServiceCrudTest` | `create_shouldAssignIdAndPersistInSameTransaction` | ✅ 通過 | create() 在同一交易內可見 |
+| `BookServiceCrudTest` | `create_duplicateIsbn_shouldThrowIllegalArgumentException` | ✅ 通過 | ISBN 重複業務規則 |
+| `BookServiceCrudTest` | `update_shouldModifyAllFields` | ✅ 通過 | 所有欄位正確更新 |
+| `BookServiceCrudTest` | `update_nonExistentId_shouldReturnEmpty` | ✅ 通過 | 不存在 id → empty |
+| `BookServiceCrudTest` | `delete_existingBook_shouldReturnTrueAndRemove` | ✅ 通過 | 刪除成功 + 資料移除 |
+| `BookServiceCrudTest` | `delete_nonExistentId_shouldReturnFalse` | ✅ 通過 | 不存在 id → false |
+| `BookServiceQueryTest` | `findAll_shouldReturnAllBooksInCurrentTransaction` | ✅ 通過 | 同交易內查詢正確 |
+| `BookServiceQueryTest` | `findById_existingId_shouldReturnBook` | ✅ 通過 | 依 id 查詢成功 |
+| `BookServiceQueryTest` | `findById_nonExistentId_shouldReturnEmpty` | ✅ 通過 | 不存在 id → empty |
+| `BookServiceQueryTest` | `findByCategory_shouldFilterByCategory` | ✅ 通過 | 分類過濾正確 |
+| `BookServiceQueryTest` | `searchByTitle_shouldFindMatchingKeyword` | ✅ 通過 | 關鍵字搜尋正確 |
+| `BookTransactionCommitTest` | `create_normalFlow_shouldCommitToDatabase` | ✅ 通過 | create() 確實 commit |
+| `BookTransactionCommitTest` | `update_normalFlow_shouldCommitChangesToDatabase` | ✅ 通過 | update() 確實 commit |
+| `BookTransactionCommitTest` | `delete_normalFlow_shouldCommitRemovalToDatabase` | ✅ 通過 | delete() 確實 commit |
+| `BookTransactionRollbackTest` | `runtimeException_shouldRollbackTransaction` | ✅ 通過 | RuntimeException → rollback |
+| `BookTransactionRollbackTest` | `checkedException_withoutRollbackFor_shouldNotRollback` | ✅ 通過 | 受檢例外預設 commit |
+| `BookTransactionRollbackTest` | `checkedException_withRollbackFor_shouldRollbackTransaction` | ✅ 通過 | `rollbackFor` → rollback |
 
-> 💡 **測試與 @Transactional 的關係**：一般測試類別加上 `@Transactional` 是為了讓每個測試自動 rollback（隔離測試）。而**驗證 rollback 行為本身**的測試則不能加，因為需要觀察真實的資料庫狀態。
+> 💡 **測試策略總結**：
+> - `BookServiceCrudTest` / `BookServiceQueryTest` 加 `@Transactional` → 隔離沙盒，驗證**業務邏輯**
+> - `BookTransactionCommitTest` 無 `@Transactional` + `@AfterEach` 清理 → 驗證資料**確實 commit**
+> - `BookTransactionRollbackTest` 無 `@Transactional` + `@BeforeEach`/`@AfterEach` → 驗證例外觸發**真實 rollback**
 
 ---
 
@@ -868,6 +1075,7 @@ mvn test -Dtest=BookServiceTest -Dspring.profiles.active=test
 package com.example.bookcrud.dto;
 
 import jakarta.validation.constraints.*;
+import java.math.BigDecimal;
 
 // 新增書籍時，客戶端傳入的資料格式（不含 id，因為 id 由資料庫自動產生）
 public class BookCreateRequest {
@@ -915,6 +1123,7 @@ public class BookCreateRequest {
 package com.example.bookcrud.dto;
 
 import jakarta.validation.constraints.*;
+import java.math.BigDecimal;
 
 // 修改書籍時的資料格式（所有欄位可選填，只更新有傳入的欄位）
 public class BookUpdateRequest {
@@ -960,6 +1169,7 @@ package com.example.bookcrud.dto;
 import com.example.bookcrud.model.Book;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 
 // 回傳給客戶端的資料格式（控制哪些欄位回傳）
 public class BookResponse {
