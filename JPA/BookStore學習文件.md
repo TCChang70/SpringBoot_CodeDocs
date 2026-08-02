@@ -1225,18 +1225,31 @@ curl -X POST http://localhost:8080/bookstore-api/api/books \
 
 ```sql
 INSERT INTO books (title, author, isbn, price, publish_date, category, stock, created_at, updated_at) VALUES
-('哈利波特：神秘的魔法石','J.K. Rowling','978-957-33-1724-3',350.0,'2001-04-01','小說',100,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-('三體','劉慈欣','978-986-216-632-1',480.0,'2014-01-01','科幻',60,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-('Java 程式設計','張三','978-111-222-333',650.0,'2024-05-01','程式設計',50,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-('Spring Boot 實戰','李四','978-111-222-334',720.0,'2023-11-15','程式設計',30,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-('被討厭的勇氣','岸見一郎','978-986-175-351-7',300.0,'2015-09-01','心理',80,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-('人類大歷史','哈拉瑞','978-986-509-132-3',520.0,'2016-03-10','歷史',40,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-('小王子','聖修伯里','978-957-33-2642-3',199.0,'2010-06-15','小說',200,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP),
-('深入淺出設計模式','Eric Freeman','978-986-594-131-2',680.0,'2021-08-20','程式設計',25,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP);
+('哈利波特：神秘的魔法石','J.K. Rowling','978-957-33-1724-3',350.0,CAST(strftime('%s','2001-04-01') AS INTEGER)*1000,'小說',100,CAST(strftime('%s','now') AS INTEGER)*1000,CAST(strftime('%s','now') AS INTEGER)*1000),
+('三體','劉慈欣','978-986-216-632-1',480.0,CAST(strftime('%s','2014-01-01') AS INTEGER)*1000,'科幻',60,CAST(strftime('%s','now') AS INTEGER)*1000,CAST(strftime('%s','now') AS INTEGER)*1000),
+('Java 程式設計','張三','978-111-222-333',650.0,CAST(strftime('%s','2024-05-01') AS INTEGER)*1000,'程式設計',50,CAST(strftime('%s','now') AS INTEGER)*1000,CAST(strftime('%s','now') AS INTEGER)*1000),
+('Spring Boot 實戰','李四','978-111-222-334',720.0,CAST(strftime('%s','2023-11-15') AS INTEGER)*1000,'程式設計',30,CAST(strftime('%s','now') AS INTEGER)*1000,CAST(strftime('%s','now') AS INTEGER)*1000),
+('被討厭的勇氣','岸見一郎','978-986-175-351-7',300.0,CAST(strftime('%s','2015-09-01') AS INTEGER)*1000,'心理',80,CAST(strftime('%s','now') AS INTEGER)*1000,CAST(strftime('%s','now') AS INTEGER)*1000),
+('人類大歷史','哈拉瑞','978-986-509-132-3',520.0,CAST(strftime('%s','2016-03-10') AS INTEGER)*1000,'歷史',40,CAST(strftime('%s','now') AS INTEGER)*1000,CAST(strftime('%s','now') AS INTEGER)*1000),
+('小王子','聖修伯里','978-957-33-2642-3',199.0,CAST(strftime('%s','2010-06-15') AS INTEGER)*1000,'小說',200,CAST(strftime('%s','now') AS INTEGER)*1000,CAST(strftime('%s','now') AS INTEGER)*1000),
+('深入淺出設計模式','Eric Freeman','978-986-594-131-2',680.0,CAST(strftime('%s','2021-08-20') AS INTEGER)*1000,'程式設計',25,CAST(strftime('%s','now') AS INTEGER)*1000,CAST(strftime('%s','now') AS INTEGER)*1000);
 ```
 
+> **⚠️ 為什麼日期要用 `CAST(strftime('%s',...) AS INTEGER)*1000`？**
+> SQLite 沒有原生日期型別，日期只能存成文字或整數。Hibernate 6.6 讀取 `LocalDate` 時是走 JDBC 的 `ResultSet.getDate()`，而 sqlite-jdbc（3.46.x 到 3.50.x 皆同）對**文字日期只認 `yyyy-MM-dd HH:mm:ss.SSS` 完整格式**，所以：
+> - `publish_date` 塞純文字 `'2001-04-01'`、`created_at`/`updated_at` 塞 `CURRENT_TIMESTAMP`（文字 `yyyy-MM-dd HH:mm:ss`）
+> → 讀取時噴 **`Could not extract column [7] ... Error parsing date`**。
+> - 用上面的 **epoch 毫秒整數**（與 Hibernate 自己寫入的格式一致）→ 讀取完全正常。
+
 > **提醒**：
-> - 方法 A 由 `@PrePersist` 自動填時間，最符合專案設計；方法 B 要手動填 `created_at` / `updated_at`（NOT NULL）。
+> - 方法 A（API 新增）由 `@PrePersist` 自動填時間，最符合專案設計；方法 B 要手動填 `created_at` / `updated_at`（NOT NULL）。
+> - 若已經用舊格式塞過資料（TEXT 日期），可直接轉成整數救回：
+>   ```sql
+>   UPDATE books
+>   SET publish_date = CAST(strftime('%s', publish_date) AS INTEGER)*1000,
+>       created_at   = CAST(strftime('%s', created_at)   AS INTEGER)*1000,
+>       updated_at   = CAST(strftime('%s', updated_at)   AS INTEGER)*1000;
+>   ```
 > - 想重來：先執行 `DELETE FROM books;`（保留 id 繼續累加），或刪掉 `bookstore.db` 重啟 Tomcat 讓它重建。
 > - 若先前已新增過資料，id 順序可能不同，查單筆時以實際回傳的 id 為準。
 
