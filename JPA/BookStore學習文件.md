@@ -219,6 +219,180 @@ try {
 
 **寫入操作（新增/更新/刪除）必須有交易；唯讀查詢則可省去交易，但都要在 `finally` 關閉 `EntityManager`。**
 
+#### 六個 CRUD 方法逐步解說
+
+> 以下六個方法對應 `Repository<T, ID>` 介面，是 Controller 呼叫 Repository 的六個入口。
+> 解說重點不在 API 語法，而在 **JPA 實體狀態（Entity State）**。先記住一句話：
+> **只有「受 EntityManager 管理的實體（managed）」的修改會被自動同步回資料庫。**
+
+##### ① `save(Book book)` — 新增
+
+```java
+public Book save(Book book) {
+    EntityManager em = JpaUtil.createEntityManager();
+    EntityTransaction tx = em.getTransaction();
+    try {
+        tx.begin();
+        em.persist(book);          // ← 關鍵
+        tx.commit();
+        return book;
+    } catch (Exception e) {
+        if (tx.isActive()) tx.rollback();
+        throw e;
+    } finally {
+        em.close();
+    }
+}
+```
+
+逐步執行：
+1. `persist(book)` 把新物件註冊進「持久化上下文」（persistence context），狀態從 **transient（無人管理）→ managed（受管理）**。
+2. 觸發 `@PrePersist → onCreate()`，自動填 `createdAt` / `updatedAt`。
+3. `commit()` 送出 `INSERT INTO books(...) VALUES(...)`；資料庫自增的 `id` 回寫到 `book.id`。
+4. `close()` 後 `book` 變成 **detached**，但 `id` 與時間已填好，可直接回傳給 Controller。
+
+> 新增回傳的是**同一個物件**，差別在於它現在「有了 id、有了時間」。
+
+##### ② `findById(Long id)` — 查單筆
+
+```java
+public Optional<Book> findById(Long id) {
+    EntityManager em = JpaUtil.createEntityManager();
+    try {
+        return Optional.ofNullable(em.find(Book.class, id));
+    } finally {
+        em.close();
+    }
+}
+```
+
+逐步執行：
+1. `em.find(Book.class, id)` 依主鍵查詢：有資料回傳 **managed** 的 `Book`，查無回傳 `null`。
+2. `Optional.ofNullable(...)` 把 `null` 轉成 `Optional.empty()`，讓 Controller 用 `.map()/.orElse()` 處理「有/無」。
+3. 唯讀查詢，**不需要交易**，但仍在 `finally` 關閉 EntityManager。
+
+> 回傳 `Optional` 是介面設計的關鍵——**把「可能查無」寫進型別裡**，呼叫端無法忽略空值情況。
+
+##### ③ `findAll()` — 查全部
+
+```java
+public List<Book> findAll() {
+    EntityManager em = JpaUtil.createEntityManager();
+    try {
+        return em.createQuery("SELECT b FROM Book b ORDER BY b.id", Book.class)
+                 .getResultList();
+    } finally {
+        em.close();
+    }
+}
+```
+
+逐步執行：
+1. `createQuery("SELECT b FROM Book b ORDER BY b.id", Book.class)` 用 **JPQL**（以實體與欄位為準）建立查詢。
+2. `getResultList()` 執行並回傳 `List<Book>`；查無資料時回傳**空 List**（不是 `null`）。
+3. 唯讀查詢，不需交易。
+
+> `createQuery` 的字串是 JPQL 不是 SQL：`Book` 是實體類別名、`b` 是別名、`b.id` 是實體欄位名。
+
+##### ④ `update(Book book)` — 更新
+
+```java
+public Book update(Book book) {
+    EntityManager em = JpaUtil.createEntityManager();
+    EntityTransaction tx = em.getTransaction();
+    try {
+        tx.begin();
+        Book merged = em.merge(book);   // ← 關鍵
+        tx.commit();
+        return merged;
+    } catch (Exception e) {
+        if (tx.isActive()) tx.rollback();
+        throw e;
+    } finally {
+        em.close();
+    }
+}
+```
+
+逐步執行：
+1. 進來的 `book` 通常是 **detached**（先前 `findById` 拿到、關閉 EM 後脫離管理；或由前端 JSON 反序列化而來）。
+2. `merge(book)` 讓 JPA 比對現有資料：
+   - 有同 `id` 的記錄 → 合併，產生 `UPDATE books SET ... WHERE id = ?`
+   - 沒有同 `id` 的記錄 → 當作新增（INSERT）
+3. 觸發 `@PreUpdate → onUpdate()`，重新填 `updatedAt`。
+4. `commit()` 後回傳 `merged`（**managed** 的新副本）。
+
+> **重要**：`merge` 回傳的是「新的 managed 物件」，不是傳進去的 `book`，所以要回傳 `merged`。
+> 更新是**整筆覆蓋**：`book` 為 `null` 的欄位，UPDATE 時也會被寫成 `null`（呼應第 6.4 節的提醒）。
+
+##### ⑤ `deleteById(Long id)` — 刪除
+
+```java
+public void deleteById(Long id) {
+    EntityManager em = JpaUtil.createEntityManager();
+    EntityTransaction tx = em.getTransaction();
+    try {
+        tx.begin();
+        Book book = em.find(Book.class, id);
+        if (book != null) em.remove(book);   // ← 先查出 managed 才能 remove
+        tx.commit();
+    } catch (Exception e) {
+        if (tx.isActive()) tx.rollback();
+        throw e;
+    } finally {
+        em.close();
+    }
+}
+```
+
+逐步執行：
+1. 先 `em.find()` 查出實體——**JPA 只能刪除「受管理的實體」**，不能直接 `em.remove(id)`。
+2. `em.remove(book)` 標記刪除，`commit()` 送出 `DELETE FROM books WHERE id = ?`。
+3. 查無資料就不刪（`if (book != null)`），空交易也能正常 commit，不會丟例外。
+
+> 對照 Controller：`delete()` 先 `existsById()` 檢查、找不到回 404，找到才呼叫 `deleteById`，
+> 所以正常流程中這裡的 `book` 不會是 `null`。
+
+##### ⑥ `existsById(Long id)` — 檢查存在
+
+```java
+public boolean existsById(Long id) {
+    EntityManager em = JpaUtil.createEntityManager();
+    try {
+        return em.find(Book.class, id) != null;
+    } finally {
+        em.close();
+    }
+}
+```
+
+逐步執行：
+1. `em.find(Book.class, id)` 依主鍵查；有資料回傳實體（`!= null` → `true`），查無回傳 `null`（→ `false`）。
+2. 唯讀、不需交易，`finally` 關閉 EM。
+
+> 它是 `findById` 的「只問存在與否、忽略資料」版本。Controller 在 `update` / `delete` 前用它做 404 防呆。
+
+##### 六個方法對照表
+
+| 方法 | 寫入? | 交易 | 回傳 | 對應 Controller | SQL 概念 |
+|------|-------|------|------|------------------|----------|
+| `save` | 是 | 是 | `Book`（已含 id） | `create` | INSERT |
+| `findById` | 否 | 否 | `Optional<Book>` | `getById` | SELECT ... WHERE id |
+| `findAll` | 否 | 否 | `List<Book>` | `getAll` 的預設分支 | SELECT 全表 |
+| `update` | 是 | 是 | `Book`（managed） | `update` | UPDATE |
+| `deleteById` | 是 | 是 | `void` | `delete` | DELETE |
+| `existsById` | 否 | 否 | `boolean` | `update`/`delete` 的防呆 | SELECT 存在與否 |
+
+##### 實體狀態（Entity State）一覽
+
+| 狀態 | 意義 | 進入方式 | 修改是否自動存回 DB |
+|------|------|----------|--------------------|
+| **transient** | 從未碰過 EntityManager 的新物件 | `new Book()` | 否 |
+| **managed** | 正被 EntityManager 管理 | `persist`、`find`、`merge` 回傳值 | 是（commit 時同步） |
+| **detached** | 曾被管理、EM 關閉後脫離 | 任何 managed 物件在 `em.close()` 後 | 否 |
+
+> 實務上：新增用 `persist`、查詢用 `find`、更新用 `merge`、刪除用「`find` 後 `remove`」——這是 JPA 的標準 CRUD 心法。
+
 進階查詢用 **JPQL**（以實體類別/欄位為準的查詢語法，而非 SQL 表格）：
 
 ```java
@@ -241,6 +415,18 @@ em.createQuery("SELECT b FROM Book b ORDER BY b.id", Book.class)
 - 一律用 `setParameter` 綁定參數，**不要用字串拼接**，這是防 SQL 注入的標準做法。
 - `em.find()` 是依主鍵查詢最簡單的方式。
 - `em.merge()` 用來處理「已經離開 EntityManager（detached）的物件」的更新。
+
+##### 進階查詢方法一覽
+
+| 方法 | 用途 | JPQL 重點 | 對應 Controller 呼叫 |
+|------|------|-----------|----------------------|
+| `findByCategory` | 依分類篩選（不分大小寫） | `LOWER(b.category) = LOWER(:cat)` + `ORDER BY b.title` | `getAll` 的 `category` 分支 |
+| `findByPriceRange` | 依價格區間篩選 | `b.price BETWEEN :min AND :max` + `ORDER BY b.price` | `getAll` 的 `minPrice/maxPrice` 分支 |
+| `findAllPaged` | 分頁查詢（page 從 1 開始） | `setFirstResult((page-1)*size)` + `setMaxResults(size)` | `getAll` 的預設分支 |
+| `count` | 取得總筆數 | `SELECT COUNT(b) FROM Book b` | 目前未使用（可做分頁總頁數） |
+
+> 這四個方法都沿用同一個 `EntityManager` 模式（建立 → 執行 → `finally` 關閉），差別只在 JPQL 字串。
+> 參數一律用 `setParameter` 綁定，避免 SQL 注入。
 
 > 完整檔案：見[附錄 14.6](#14-附錄完整程式碼總覽) `repository/BookRepository.java`。
 
