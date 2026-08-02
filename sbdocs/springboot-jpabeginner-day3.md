@@ -664,7 +664,61 @@ class BookServiceTest {
 
 #### 3.6.4 交易 Rollback 行為測試（進階）
 
-驗證「中途失敗 → 全部回滾」的交易核心行為。這些測試需要**不標記** `@Transactional`，才能真正觀察資料庫狀態：
+驗證「中途失敗 → 全部回滾」的交易核心行為。這些測試**不標記** `@Transactional`，才能真正觀察資料庫狀態。
+
+> ⚠️ **錯誤修正**：早期的版本會在 `bookService.create()` **回傳之後**才拋出例外。例外必須發生在**交易方法內部**才會被 Spring 攔截並 rollback。正確做法是使用一個「先寫入、再拋例外」的示範 Service。
+
+為了不污染正式程式碼，我們在測試目錄建立一個示範用 Service，模擬「先執行 INSERT、再拋例外」的情境：
+
+```java
+package com.example.bookcrud.service;
+
+import com.example.bookcrud.model.Book;
+import com.example.bookcrud.repository.BookRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.io.IOException;
+
+// 僅供測試使用的示範 Service（位於 src/test/java 下）
+// 目的：在不修改正式 BookService 的前提下，示範交易的 rollback 行為
+// 因為與正式程式碼同一個 package（com.example.bookcrud.service），
+// @SpringBootTest 的元件掃描會自動找到它。
+@Service
+public class TransactionRollbackDemoService {
+
+    private final BookRepository bookRepository;
+
+    public TransactionRollbackDemoService(BookRepository bookRepository) {
+        this.bookRepository = bookRepository;
+    }
+
+    // 先寫入資料，再拋出 RuntimeException
+    // 預設規則：RuntimeException → 交易 rollback
+    @Transactional
+    public void saveThenThrowRuntime(Book book) {
+        bookRepository.save(book);          // 先執行 INSERT
+        throw new RuntimeException("模擬執行時期例外，交易應 rollback！");
+    }
+
+    // 先寫入資料，再拋出受檢例外（IOException）
+    // 預設規則：受檢例外【不】觸發 rollback → 資料會被 commit 保留
+    @Transactional
+    public void saveThenThrowChecked(Book book) throws IOException {
+        bookRepository.save(book);          // 先執行 INSERT
+        throw new IOException("模擬受檢例外，交易【不會】rollback！");
+    }
+
+    // 加上 rollbackFor = Exception.class：受檢例外也會觸發 rollback
+    @Transactional(rollbackFor = Exception.class)
+    public void saveThenThrowCheckedRollbackFor(Book book) throws IOException {
+        bookRepository.save(book);          // 先執行 INSERT
+        throw new IOException("模擬受檢例外，但 rollbackFor 使其 rollback！");
+    }
+}
+```
+
+> 💡 **受檢例外 vs 執行時期例外**：Spring 預設只針對 `RuntimeException` 與 `Error` 做 rollback。受檢例外（Checked Exception）代表「可預期的失敗」，預設被視為正常流程而**提交**交易。若希望受檢例外也回滾，必須明確指定 `rollbackFor = Exception.class`。
 
 ```java
 package com.example.bookcrud.service;
@@ -677,7 +731,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.math.BigDecimal;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -693,30 +746,24 @@ class BookTransactionRollbackTest {
     @Autowired
     private BookRepository bookRepository;
 
+    @Autowired
+    private TransactionRollbackDemoService demoService;
+
     @Test
     void create_withRuntimeException_shouldRollback() {
-        // 建立一本正常書籍（先確保資料庫有資料）
-        Book saved = bookService.create(
-                new Book("存在的書", "Alice", "978-986-434-100-0",
-                        new BigDecimal("100.00"), 5, "Programming"));
+        // 建立一本正常書籍（獨立交易，會 commit 到資料庫）
+        bookService.create(new Book("存在的書", "Alice", "978-986-434-100-0",
+                new BigDecimal("100.00"), 5, "Programming"));
 
-        // 建立一本「特殊書名」觸發 Service 內部的 rollback 邏輯
-        // （參照「課後練習 - Rollback 實驗」：title = "ROLLBACK_TEST" 時拋例外）
-        Book rollbackBook = new Book("ROLLBACK_TEST", "Bob", "978-986-434-100-1",
-                new BigDecimal("200.00"), 10, "Programming");
+        // demoService 方法內部：先 INSERT → 再拋 RuntimeException
+        // 因為 @Transactional 存在，INSERT 應該被回滾
+        assertThrows(RuntimeException.class, () -> demoService.saveThenThrowRuntime(
+                new Book("ROLLBACK_TEST", "Bob", "978-986-434-100-1",
+                        new BigDecimal("200.00"), 10, "Programming")));
 
-        // create() 內部：先執行 INSERT → 再拋 RuntimeException
-        // 因 @Transactional 存在，INSERT 應該被回滾
-        assertThrows(RuntimeException.class, () -> {
-            Book b = bookService.create(rollbackBook);
-            if (b.getTitle().equals("ROLLBACK_TEST")) {
-                throw new RuntimeException("模擬交易失敗，應該 rollback！");
-            }
-        });
-
-        // 驗證：資料庫中【不應該】存在 ROLLBACK_TEST 這本書
-        Optional<Book> rollbackFound = bookRepository.findByIsbn("978-986-434-100-1");
-        assertFalse(rollbackFound.isPresent(), "rollback 後不應存在 ROLLBACK_TEST");
+        // 驗證：資料庫中【不應該】存在 ROLLBACK_TEST 這本書（INSERT 被回滾）
+        assertFalse(bookRepository.findByIsbn("978-986-434-100-1").isPresent(),
+                "rollback 後不應存在 ROLLBACK_TEST");
 
         // 驗證：原本的書還在（rollback 只回滾當前交易，不影響其他資料）
         assertTrue(bookRepository.findByIsbn("978-986-434-100-0").isPresent());
@@ -724,27 +771,38 @@ class BookTransactionRollbackTest {
 
     @Test
     void create_withCheckedException_shouldNotRollbackByDefault() {
-        // 建立一本「特殊書名」觸發 Service 內部拋出受檢例外（IOException）
-        // 注意：@Transactional 預設【只回滾 RuntimeException 與 Error】
-        //       受檢例外（Checked Exception）預設【不】回滾！
-        Book checkedBook = new Book("CHECKED_TEST", "Carol", "978-986-434-100-2",
-                new BigDecimal("300.00"), 8, "Programming");
-
-        // 若 Service 內 create() 拋出的是受檢例外且沒有 rollbackFor 設定，
-        // 資料會【保留】在資料庫中（不回滾）
+        // 受檢例外（IOException）在預設設定下【不會】觸發 rollback
+        // 因此 INSERT 的資料會【保留】在資料庫中
         try {
-            bookService.create(checkedBook);  // 假設內部拋 IOException
-        } catch (Exception ignored) {
-            // 忽略例外，重點在觀察下方資料庫狀態
+            demoService.saveThenThrowChecked(new Book("CHECKED_TEST", "Carol",
+                    "978-986-434-100-2", new BigDecimal("300.00"), 8, "Programming"));
+        } catch (Exception expected) {
+            // 預期拋出受檢例外（IOException）
         }
 
-        // 驗證資料庫狀態（不同 Service 實作結果不同，作為討論重點）
-        Optional<Book> found = bookRepository.findByIsbn("978-986-434-100-2");
-        // 實作此測試前，先思考：資料應該存在還是不存在？
-        System.out.println("CHECKED_TEST 是否存在於資料庫: " + found.isPresent());
+        // 資料依然存在 → 證明受檢例外預設不回滾
+        assertTrue(bookRepository.findByIsbn("978-986-434-100-2").isPresent(),
+                "受檢例外預設不回滾，資料應保留");
+    }
+
+    @Test
+    void create_withCheckedException_rollbackFor_shouldRollback() {
+        // 加上 rollbackFor = Exception.class 後，受檢例外也會觸發 rollback
+        try {
+            demoService.saveThenThrowCheckedRollbackFor(new Book("CHECKED_ROLLBACK", "David",
+                    "978-986-434-100-3", new BigDecimal("400.00"), 6, "Programming"));
+        } catch (Exception expected) {
+            // 預期拋出受檢例外（IOException）
+        }
+
+        // 資料被回滾 → 證明 rollbackFor 讓受檢例外也能回滾
+        assertFalse(bookRepository.findByIsbn("978-986-434-100-3").isPresent(),
+                "rollbackFor 應讓受檢例外的資料回滾");
     }
 }
 ```
+
+> ⚠️ **執行順序注意**：這個測試類別沒有 `@Transactional`，三個測試各自 commit 到同一個 H2 記憶體資料庫。因為每個測試使用不同 ISBN，彼此不會互相干擾。測試失敗時可觀察 Console 的 `INSERT INTO books` SQL 與例外堆疊，確認交易確實發生。
 
 #### 3.6.5 測試執行方式
 
@@ -776,8 +834,9 @@ mvn test -Dtest=BookServiceTest -Dspring.profiles.active=test
 | `findById_shouldReturnBook` | 通過 | 依 id 查詢成功 |
 | `findByCategory_shouldFilterBooks` | 通過 | 依分類過濾正確 |
 | `searchByTitle_shouldFindMatchingBooks` | 通過 | 關鍵字搜尋正確 |
-| `create_withRuntimeException_shouldRollback` | 通過 | RuntimeException 觸發 rollback |
-| `create_withCheckedException_shouldNotRollbackByDefault` | 討論 | 受檢例外預設不回滾 |
+| `create_withRuntimeException_shouldRollback` | 通過 | RuntimeException 觸發 rollback（資料不保留） |
+| `create_withCheckedException_shouldNotRollbackByDefault` | 通過 | 受檢例外預設不回滾（資料保留） |
+| `create_withCheckedException_rollbackFor_shouldRollback` | 通過 | rollbackFor 讓受檢例外也回滾（資料不保留） |
 
 > 💡 **測試與 @Transactional 的關係**：一般測試類別加上 `@Transactional` 是為了讓每個測試自動 rollback（隔離測試）。而**驗證 rollback 行為本身**的測試則不能加，因為需要觀察真實的資料庫狀態。
 
@@ -1387,7 +1446,8 @@ GET http://localhost:8080/api/books/1
 - [ ] 在 `pom.xml` 加入 `spring-boot-starter-test` 與 H2 依賴
 - [ ] 建立 `src/test/resources/application-test.properties`
 - [ ] 新增 `BookServiceTest.java`（參考 Section 3.6.3），驗證 10 個基本測試全部通過
-- [ ] 執行 `mvn test`，觀察每個測試方法是否自動 rollback
+- [ ] 新增 `TransactionRollbackDemoService.java` 與 `BookTransactionRollbackTest.java`（參考 Section 3.6.4），驗證 rollback 行為與受檢例外
+- [ ] 執行 `mvn test`，觀察每個測試方法是否自動 rollback；預期 13 個測試方法全部通過
 
 ### ✅ 預期結果驗證
 
@@ -1441,6 +1501,8 @@ DELETE /api/books/99999
 
 **實驗：觀察 @Transactional rollback 行為**
 
+> 💡 **兩種做法**：以下為手動實驗（暫時修改正式程式碼）。若想用自動化測試驗證，直接執行 Section 3.6.4 的 `BookTransactionRollbackTest` 即可，不需修改正式程式碼。
+
 在 `BookService.create()` 中暫時加入測試用程式碼：
 
 ```java
@@ -1457,11 +1519,14 @@ public Book create(Book book) {
 }
 ```
 
+> ⚠️ **注意**：例外必須在 `create()` **方法內部**拋出才會被 Spring 攔截並 rollback。若在呼叫端（例如測試程式碼）才拋出例外，`create()` 早已成功 commit，資料不會被回滾。
+
 測試步驟：
 1. 呼叫 `POST /api/books`，title 設為 `"ROLLBACK_TEST"`
 2. 觀察 Console：是否印出 `INSERT INTO books`？
 3. 呼叫 `GET /api/books`，查看資料庫是否有這筆資料
 4. 若 `@Transactional` 正常運作，資料**不應該**存在（已被 rollback）
+5. 實驗完成後，記得**移除** `create()` 中臨時加入的 if 判斷，恢復正常程式碼
 
 > 💡 **重要**：若你不加 `@Transactional`，`INSERT` 會成功但不會 rollback，資料會留在資料庫中。這就是有無交易的差別。
 
