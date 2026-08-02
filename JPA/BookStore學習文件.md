@@ -522,6 +522,121 @@ public class BookController {
 | PUT | 更新 | `update` | `/api/books/{id}` |
 | DELETE | 刪除 | `delete` | `/api/books/{id}` |
 
+#### 五個 API 方法的完整程式碼
+
+> 以下節錄 `BookController.java` 的實際程式碼。為聚焦 **JAX-RS 映射**，此處省略 Swagger 文件註解
+> （`@Operation`、`@Parameter`、`@ApiResponse`，見《[Swagger學習文件](Swagger學習文件.md)》）；
+> 含完整註解的原始碼見[附錄 14.7](#14-附錄完整程式碼總覽)。
+> 每個方法的**逐步執行細節**見[第 6 節](#6-控制器方法執行過程詳解)。
+
+##### POST `create` — 新增（`/api/books`）
+
+```java
+@POST
+public Response create(Book book) {
+    try {
+        Book saved = repo.save(book);
+        return Response.status(Response.Status.CREATED)
+                       .entity(ok(saved)).build();
+    } catch (Exception e) {
+        return Response.status(Response.Status.BAD_REQUEST)
+                       .entity(fail("新增失敗：" + e.getMessage())).build();
+    }
+}
+```
+
+`Book book` 參數 = 請求的 JSON 由 Jackson 自動反序列化；成功回 201，失敗回 400（詳細流程見[第 6 節](#6-控制器方法執行過程詳解) 6.1）。
+
+##### GET `getAll` — 查全部 / 篩選 / 分頁（`/api/books`）
+
+```java
+@GET
+public Response getAll(
+        @QueryParam("category") String category,
+        @QueryParam("minPrice")  Double minPrice,
+        @QueryParam("maxPrice")  Double maxPrice,
+        @DefaultValue("1")  @QueryParam("page") int page,
+        @DefaultValue("10") @QueryParam("size") int size) {
+    Object data;
+    if (category != null) {
+        data = repo.findByCategory(category);
+    } else if (minPrice != null || maxPrice != null) {
+        double lo = (minPrice != null) ? minPrice : 0;
+        double hi = (maxPrice != null) ? maxPrice : Double.MAX_VALUE;
+        data = repo.findByPriceRange(lo, hi);
+    } else {
+        data = repo.findAllPaged(page, size);
+    }
+    return Response.ok(ok(data)).build();
+}
+```
+
+`if-else` 對應三種查詢分支（呼應 5.2 節的進階查詢方法）；`@DefaultValue` 處理沒帶參數的預設值。
+
+##### GET `getById` — 查單筆（`/api/books/{id}`）
+
+```java
+@GET
+@Path("/{id}")
+public Response getById(@PathParam("id") Long id) {
+    return repo.findById(id)
+        .map(book -> Response.ok(ok(book)).build())
+        .orElse(Response.status(Response.Status.NOT_FOUND)
+                        .entity(fail("書籍不存在")).build());
+}
+```
+
+`Optional.map().orElse()`：有值回 200、查無回 404，完全不寫 `if (book == null)`。
+
+##### PUT `update` — 更新（`/api/books/{id}`）
+
+```java
+@PUT
+@Path("/{id}")
+public Response update(@PathParam("id") Long id, Book book) {
+    if (!repo.existsById(id)) {
+        return Response.status(Response.Status.NOT_FOUND)
+                       .entity(fail("書籍不存在")).build();
+    }
+    book.setId(id);
+    try {
+        Book updated = repo.update(book);
+        return Response.ok(ok(updated)).build();
+    } catch (Exception e) {
+        return Response.status(Response.Status.BAD_REQUEST)
+                       .entity(fail("更新失敗：" + e.getMessage())).build();
+    }
+}
+```
+
+先 `existsById` 防呆（回 404），再 `book.setId(id)` 讓 id 以 URL 為準，避免前端亂傳。
+
+##### DELETE `delete` — 刪除（`/api/books/{id}`）
+
+```java
+@DELETE
+@Path("/{id}")
+public Response delete(@PathParam("id") Long id) {
+    if (!repo.existsById(id)) {
+        return Response.status(Response.Status.NOT_FOUND)
+                       .entity(fail("書籍不存在")).build();
+    }
+    repo.deleteById(id);
+    return Response.ok(ok("已刪除")).build();
+}
+```
+
+找不到先回 404，找到才呼叫 `deleteById` 刪除。
+
+##### 共用工具方法 `ok()` / `fail()`
+
+```java
+private Map<String, Object> ok(Object data)  { return Map.of("success", true, "data", data); }
+private Map<String, Object> fail(String msg) { return Map.of("success", false, "error", msg); }
+```
+
+所有成功回應共用 `ok(data)`、失敗共用 `fail(msg)`，前端只需判斷 `success` 欄位。
+
 **學習重點：**
 1. **參數來源註解**：
    - `@QueryParam`：從 `?xxx=yyy` 取參數
@@ -807,6 +922,7 @@ public class JacksonConfig implements ContextResolver<ObjectMapper> {
 ## 6. 控制器方法執行過程詳解
 
 > 這節是重點中的重點：**把 Controller 的每個方法「從請求進來到回應出去」拆成一步步**，並說明每一步背後的框架行為。
+> 每個方法的**實際程式碼**見[第 5.3 節](#53-controller-層controllerbookcontrollerjava)。
 
 ### 6.1 POST `/api/books` → `create(Book book)`
 
