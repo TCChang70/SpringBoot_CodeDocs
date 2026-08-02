@@ -601,15 +601,21 @@ public class JpaUtil {
 #### `config/JacksonConfig.java` — JSON 行為設定
 
 ```java
-@Provider                                        // 告訴 Jersey：這是給框架用的 Provider
+@Provider
 public class JacksonConfig implements ContextResolver<ObjectMapper> {
-
-    public JacksonConfig() {
-        mapper.registerModule(new JavaTimeModule());          // 支援 LocalDate/LocalDateTime
-        mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);  // 日期輸出成字串而非數字
-        mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES); // 忽略未知欄位
-        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);    // null 欄位不輸出
-    }
+ private final ObjectMapper mapper;
+ public JacksonConfig() {
+     mapper = new ObjectMapper();
+     mapper.registerModule(new JavaTimeModule());
+     mapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+     mapper.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES);
+     mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+     mapper.setPropertyNamingStrategy(PropertyNamingStrategies.LOWER_CAMEL_CASE);
+ }
+ @Override
+ public ObjectMapper getContext(Class<?> type) {
+     return mapper;
+ }
 }
 ```
 
@@ -726,6 +732,11 @@ public class JacksonConfig implements ContextResolver<ObjectMapper> {
             <groupId>org.glassfish.jersey.media</groupId>
             <artifactId>jersey-media-json-jackson</artifactId>
             <version>${jersey.version}</version>
+        </dependency>
+         <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
