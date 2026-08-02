@@ -1,0 +1,15 @@
+# Swagger / OpenAPI 3 產生設定
+# 只掃描 controller 與 config 套件（config 含 @OpenAPIDefinition 的 JaxRsActivator）
+# 避免把 /openapi 自身也列進去
+resourcePackages:
+  - controller
+  - config
+
+# 輸出排版
+prettyPrint: true
+
+# 快取秒數：0 表示每次呼叫都重新解析（開發方便，正式可改大）
+cacheTTL: 0
+
+# 依 OpenAPI 規範重新排序
+sortOutput: true

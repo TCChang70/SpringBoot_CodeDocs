@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Bookstore API — Swagger UI</title>
+  <!-- 靜態資源全部來自 swagger-ui WebJar（META-INF/resources/webjars/swagger-ui/5.32.0/） -->
+  <link rel="stylesheet" href="../webjars/swagger-ui/5.32.0/swagger-ui.css">
+  <link rel="icon" type="image/png" href="../webjars/swagger-ui/5.32.0/favicon-32x32.png">
+</head>
+<body>
+  <div id="swagger-ui"></div>
+
+  <script src="../webjars/swagger-ui/5.32.0/swagger-ui-bundle.js"></script>
+  <script src="../webjars/swagger-ui/5.32.0/swagger-ui-standalone-preset.js"></script>
+
+  <script>
+    window.onload = function () {
+      // 以目前頁面的網址計算 OpenAPI 文件位置：
+      // 頁面在 /<context>/swagger-ui/，文件在 /<context>/api/openapi.json
+      var specUrl = new URL("../api/openapi.json", window.location.href).href;
+
+      window.ui = SwaggerUIBundle({
+        url: specUrl,
+        dom_id: "#swagger-ui",
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        layout: "StandaloneLayout"
+      });
+    };
+  </script>
+</body>
+</html>
