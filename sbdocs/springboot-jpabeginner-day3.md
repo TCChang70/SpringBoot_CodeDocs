@@ -1521,7 +1521,11 @@ spring.flyway.enabled=true
 spring.flyway.locations=classpath:db/migration
 spring.flyway.baseline-on-migrate=true
 ```
-
+```
+spring.flyway.enabled=true — 啟用 Flyway，啟動時自動執行遷移
+spring.flyway.locations=classpath:db/migration — 遷移腳本存放位置（放在 src/main/resources/db/migration/，檔名格式 V1__init.sql、V2__xxx.sql，Flyway 依序執行並記錄版本到 flyway_schema_history 表）
+spring.flyway.baseline-on-migrate=true — 當資料庫已有資料但沒有 Flyway 版本記錄時，不報錯，直接以目前狀態當作 baseline（基準版本），之後才開始跑 V* 腳本
+```
 ### Flyway 遷移腳本（V1__create_books_table.sql）
 
 ```sql
