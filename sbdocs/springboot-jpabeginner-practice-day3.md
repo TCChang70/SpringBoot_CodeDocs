@@ -27,7 +27,7 @@
 
 | 練習 | 主題 | 難度 | 預估時間 |
 |------|------|------|---------|
-| [3-1](#練習-3-1--transactional-陷阱除錯) | @Transactional 陷阱除錯 | ⭐⭐ Medium | 15 min |
+| [3-1](#練習-3-1--transactional-陷阱除錯) | @Transactional 陷阱除錯 + 對應 Controller | ⭐⭐ Medium | 15 min |
 | [3-2](#練習-3-2--建立-dto-類別) | 建立 DTO 類別 | ⭐⭐ Medium | 20 min |
 | [3-3](#練習-3-3--bean-validation-填入驗證規則) | Bean Validation 填入驗證規則 | ⭐⭐ Medium | 10 min |
 | [3-4](#練習-3-4--建立-globalexceptionhandler) | 建立 GlobalExceptionHandler | ⭐⭐⭐ Hard | 25 min |
@@ -181,6 +181,166 @@ public void doInternalSave(Product product) {  // ← 改成 public ✅
 > 💡 **核心原理**：`@Transactional` 透過 **AOP 動態代理** 運作。Spring 為有 `@Transactional` 的類別建立代理物件，代理攔截**外部呼叫的 public 方法**。`this.xxx()` 直接呼叫和 `private` 方法都繞過了代理，所以交易不生效。
 
 > 🚀 **現在試試看**：刻意觸發問題 B（不 re-throw），執行後查詢資料庫，確認資料雖然拋出例外但仍被修改；再加上 `throw e`，重新執行，確認 rollback 生效。
+
+---
+
+### 🔧 優化版 ProductService + 對應 ProductController
+
+> 將三個修正整合為**可直接執行的版本**，加入庫存驗證與查詢端點，方便用 curl / Postman 驗證 rollback 效果。
+
+**優化版 ProductService**：
+
+```java
+package com.example.shop.service;
+
+import com.example.shop.model.Product;
+import com.example.shop.repository.ProductRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+@Service
+public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    // 查詢（readOnly 效能最佳化）
+    @Transactional(readOnly = true)
+    public Product findById(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("商品不存在，id: " + id));
+    }
+
+    // 修正 A：placeOrder 直接在自身交易內完成，不呼叫同類別其他方法
+    @Transactional
+    public int placeOrder(Long productId, int quantity) {
+        Product p = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("商品不存在，id: " + productId));
+        if (p.getStock() < quantity) {
+            throw new IllegalArgumentException(
+                    "庫存不足，現有 " + p.getStock() + " 件，請求 " + quantity + " 件");
+        }
+        p.setStock(p.getStock() - quantity);
+        productRepository.save(p);
+        return p.getStock(); // 回傳剩餘庫存；若後續拋例外，此 save 也會 rollback
+    }
+
+    // 修正 B：catch 後重新拋出，確保 @Transactional 收到例外並 rollback
+    @Transactional
+    public void updatePrice(Long productId, Double newPrice) {
+        if (newPrice <= 0) {
+            throw new IllegalArgumentException("價格必須大於 0");
+        }
+        try {
+            Product p = productRepository.findById(productId)
+                    .orElseThrow(() -> new IllegalArgumentException("商品不存在，id: " + productId));
+            p.setPrice(newPrice);
+            productRepository.save(p);
+        } catch (Exception e) {
+            throw e; // 重新拋出，確保 rollback ✅
+        }
+    }
+
+    // 修正 C：public 才能被 Spring AOP 代理
+    @Transactional
+    public Product saveProduct(Product product) {
+        return productRepository.save(product);
+    }
+}
+```
+
+**對應 ProductController**：
+
+```java
+package com.example.shop.controller;
+
+import com.example.shop.model.Product;
+import com.example.shop.service.ProductService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.Map;
+
+@RestController
+@RequestMapping("/api/products")
+public class ProductController {
+
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    // GET /api/products/{id} — 查詢（用於驗證 rollback 前後的實際資料）
+    @GetMapping("/{id}")
+    public ResponseEntity<Product> getById(@PathVariable Long id) {
+        return ResponseEntity.ok(productService.findById(id));
+    }
+
+    // POST /api/products/{id}/order?quantity=3 — 驗證問題 A 修正
+    @PostMapping("/{id}/order")
+    public ResponseEntity<Map<String, Object>> placeOrder(
+            @PathVariable Long id,
+            @RequestParam int quantity) {
+        int remaining = productService.placeOrder(id, quantity);
+        return ResponseEntity.ok(Map.of(
+                "message",        "訂購成功",
+                "orderedQty",     quantity,
+                "remainingStock", remaining));
+    }
+
+    // PATCH /api/products/{id}/price?newPrice=999.0 — 驗證問題 B 修正
+    @PatchMapping("/{id}/price")
+    public ResponseEntity<String> updatePrice(
+            @PathVariable Long id,
+            @RequestParam Double newPrice) {
+        productService.updatePrice(id, newPrice);
+        return ResponseEntity.ok("價格已更新為 " + newPrice);
+    }
+
+    // POST /api/products — 驗證問題 C 修正（saveProduct 為 public）
+    @PostMapping
+    public ResponseEntity<Product> create(@RequestBody Product product) {
+        return ResponseEntity.ok(productService.saveProduct(product));
+    }
+
+    // 練習 3-4 完成前的暫時做法：在 Controller 本地攔截 IllegalArgumentException
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException e) {
+        return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
+    }
+}
+```
+
+**驗證 rollback 的 HTTP 測試腳本**：
+
+```http
+### 查詢初始狀態（記下 stock 與 price）
+GET http://localhost:8080/api/products/1
+
+### 正常下訂單
+POST http://localhost:8080/api/products/1/order?quantity=2
+### 預期：200 + {"message":"訂購成功","orderedQty":2,"remainingStock":...}
+
+### 庫存不足（應 rollback，stock 不應被扣減）
+POST http://localhost:8080/api/products/1/order?quantity=9999
+### 預期：400 + {"error":"庫存不足..."}
+### ✅ 再次 GET /api/products/1，確認 stock 維持原值
+
+### 更新為負價格（應 rollback，price 不應被修改）
+PATCH http://localhost:8080/api/products/1/price?newPrice=-1
+### 預期：400 + {"error":"價格必須大於 0"}
+### ✅ 再次 GET /api/products/1，確認 price 維持原值
+```
+
+| 端點 | 對應修正 | 驗證重點 |
+|------|---------|---------|
+| `POST /{id}/order?quantity=N` | 問題 A | 庫存不足時整筆交易 rollback，stock 不變 |
+| `PATCH /{id}/price?newPrice=N` | 問題 B | 負價格例外重新拋出後 rollback，price 不變 |
+| `POST /` | 問題 C | `saveProduct()` 為 public，代理可正常攔截 |
+| `GET /{id}` | — | 呼叫前後各查一次，確認 rollback 成效 |
 
 ---
 
