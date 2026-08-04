@@ -32,6 +32,7 @@
 | [3-3](#練習-3-3--bean-validation-填入驗證規則) | Bean Validation 填入驗證規則 | ⭐⭐ Medium | 10 min |
 | [3-4](#練習-3-4--建立-globalexceptionhandler) | 建立 GlobalExceptionHandler | ⭐⭐⭐ Hard | 25 min |
 | [整合](#-完整程式碼整合練習-3-1--3-4) | 完整 ProductController + ProductService | 參考 | — |
+| [測試](#-productcontrollertest控制器測試) | ProductControllerTest（@WebMvcTest）| ⭐⭐ Medium | 20 min |
 | [3-5](#練習-3-5--綜合題完整系統整合) | 綜合題：完整系統整合 | ⭐⭐⭐ Hard | 45 min |
 
 ---
@@ -884,6 +885,273 @@ public class ProductController {
 > | `update` | `Optional.map` 回 `ResponseEntity` | `ProductUpdateRequest` 、直接回 DTO |
 > | `delete` | 回傳 `boolean` 自行判斷 | `void`，找不到自動 404 |
 > | 查詢端點 | 回傳 `List<Product>` | 回傳 `List<ProductResponse>` |
+
+---
+
+## 🧪 ProductControllerTest（控制器測試）
+
+> `@WebMvcTest` 只載入 Web 層（Controller + ControllerAdvice），不啟動資料庫。
+> `ProductService` 以 `@MockBean` 取代，測試專注控制器的變換、驗證、例外處理行為。
+
+```java
+package com.example.shop.controller;
+
+import com.example.shop.dto.ProductCreateRequest;
+import com.example.shop.dto.ProductUpdateRequest;
+import com.example.shop.exception.ProductNotFoundException;
+import com.example.shop.model.Product;
+import com.example.shop.service.ProductService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.bean.MockBean;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
+
+import static org.hamcrest.Matchers.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+// 只載入 ProductController 及其 @RestControllerAdvice（GlobalExceptionHandler 自動包含）
+@WebMvcTest(ProductController.class)
+class ProductControllerTest {
+
+    @Autowired MockMvc mockMvc;
+    @Autowired ObjectMapper objectMapper; // 用于將 DTO 物件序列化為 JSON
+    @MockBean  ProductService productService;
+
+    // 建立 Product stub（不需連資料庫）
+    private Product stub(Long id, String name, double price, int stock) {
+        Product p = new Product();
+        p.setId(id); p.setName(name); p.setPrice(price); p.setStock(stock);
+        return p;
+    }
+
+    // ======================================================================
+    // GET /api/products
+    // ======================================================================
+
+    @Test
+    void getAll_returns200AndList() throws Exception {
+        given(productService.findAll()).willReturn(
+                List.of(stub(1L, "MacBook", 59999.0, 10),
+                        stub(2L, "iPhone",  39999.0, 20)));
+
+        mockMvc.perform(get("/api/products"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].name", is("MacBook")))
+                .andExpect(jsonPath("$[0].stock").doesNotExist()); // ProductResponse 不含 stock
+    }
+
+    // ======================================================================
+    // GET /api/products/{id}
+    // ======================================================================
+
+    @Test
+    void getById_found_returns200AndDto() throws Exception {
+        given(productService.findByIdOrThrow(1L))
+                .willReturn(stub(1L, "MacBook", 59999.0, 10));
+
+        mockMvc.perform(get("/api/products/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id",    is(1)))
+                .andExpect(jsonPath("$.name",  is("MacBook")))
+                .andExpect(jsonPath("$.price", is(59999.0)))
+                .andExpect(jsonPath("$.stock").doesNotExist());
+    }
+
+    @Test
+    void getById_notFound_returns404WithErrorJson() throws Exception {
+        // findByIdOrThrow 拋出例外 → GlobalExceptionHandler 轉 404
+        given(productService.findByIdOrThrow(99L))
+                .willThrow(new ProductNotFoundException(99L));
+
+        mockMvc.perform(get("/api/products/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status",    is(404)))
+                .andExpect(jsonPath("$.error",     containsString("99")))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    // ======================================================================
+    // POST /api/products
+    // ======================================================================
+
+    @Test
+    void create_validRequest_returns201AndLocation() throws Exception {
+        given(productService.create(any(Product.class)))
+                .willReturn(stub(3L, "iPad", 25999.0, 5));
+
+        ProductCreateRequest req = new ProductCreateRequest();
+        req.setName("iPad"); req.setPrice(25999.0); req.setStock(5);
+
+        mockMvc.perform(post("/api/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isCreated())
+                .andExpect(header().string("Location", containsString("/api/products/3")))
+                .andExpect(jsonPath("$.id",   is(3)))
+                .andExpect(jsonPath("$.name", is("iPad")));
+    }
+
+    @Test
+    void create_blankNameAndNegativePrice_returns400WithErrorsList() throws Exception {
+        // @NotBlank 和 @Positive 同時違反 → GlobalExceptionHandler 回傳 errors 陣列
+        ProductCreateRequest req = new ProductCreateRequest();
+        req.setName("");       // @NotBlank 違反
+        req.setPrice(-100.0);  // @Positive 違反
+
+        mockMvc.perform(post("/api/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status",    is(400)))
+                .andExpect(jsonPath("$.errors",    hasSize(greaterThanOrEqualTo(2))))
+                .andExpect(jsonPath("$.timestamp").exists());
+    }
+
+    @Test
+    void create_businessRuleViolation_returns400WithErrorString() throws Exception {
+        // Service 拋 IllegalArgumentException → GlobalExceptionHandler 回傳 error 字串
+        given(productService.create(any(Product.class)))
+                .willThrow(new IllegalArgumentException("商品名稱重複"));
+
+        ProductCreateRequest req = new ProductCreateRequest();
+        req.setName("MacBook"); req.setPrice(59999.0);
+
+        mockMvc.perform(post("/api/products")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.error", is("商品名稱重複")));
+    }
+
+    // ======================================================================
+    // PUT /api/products/{id}
+    // ======================================================================
+
+    @Test
+    void update_found_returns200AndUpdatedDto() throws Exception {
+        given(productService.update(eq(1L), any(ProductUpdateRequest.class)))
+                .willReturn(stub(1L, "MacBook Pro", 69999.0, 8));
+
+        ProductUpdateRequest req = new ProductUpdateRequest();
+        req.setName("MacBook Pro"); req.setPrice(69999.0);
+
+        mockMvc.perform(put("/api/products/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name",  is("MacBook Pro")))
+                .andExpect(jsonPath("$.price", is(69999.0)));
+    }
+
+    @Test
+    void update_notFound_returns404() throws Exception {
+        given(productService.update(eq(99L), any(ProductUpdateRequest.class)))
+                .willThrow(new ProductNotFoundException(99L));
+
+        ProductUpdateRequest req = new ProductUpdateRequest();
+        req.setPrice(1.0);
+
+        mockMvc.perform(put("/api/products/99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(req)))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status", is(404)));
+    }
+
+    // ======================================================================
+    // DELETE /api/products/{id}
+    // ======================================================================
+
+    @Test
+    void delete_found_returns204() throws Exception {
+        willDoNothing().given(productService).delete(1L);
+
+        mockMvc.perform(delete("/api/products/1"))
+                .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void delete_notFound_returns404() throws Exception {
+        // void 方法用 willThrow(...).given(...).delete(...)
+        willThrow(new ProductNotFoundException(99L))
+                .given(productService).delete(99L);
+
+        mockMvc.perform(delete("/api/products/99"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.status", is(404)))
+                .andExpect(jsonPath("$.error",  containsString("99")));
+    }
+
+    // ======================================================================
+    // GET /api/products/page
+    // ======================================================================
+
+    @Test
+    void getPage_returns200WithPagedDtos() throws Exception {
+        Page<Product> page = new PageImpl<>(List.of(stub(1L, "MacBook", 59999.0, 10)));
+        given(productService.findPaged(0, 5, "price")).willReturn(page);
+
+        mockMvc.perform(get("/api/products/page")
+                        .param("page",   "0")
+                        .param("size",   "5")
+                        .param("sortBy", "price"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.content",         hasSize(1)))
+                .andExpect(jsonPath("$.content[0].name", is("MacBook")))
+                .andExpect(jsonPath("$.totalElements",   is(1)));
+    }
+
+    // ======================================================================
+    // GET /api/products/search
+    // ======================================================================
+
+    @Test
+    void search_returns200WithMatchingDtos() throws Exception {
+        given(productService.findByNameContaining("Mac"))
+                .willReturn(List.of(stub(1L, "MacBook", 59999.0, 10)));
+
+        mockMvc.perform(get("/api/products/search").param("keyword", "Mac"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name", is("MacBook")));
+    }
+}
+```
+
+```bash
+# 單跟一個測試
+mvn test -Dtest=ProductControllerTest#getById_notFound_returns404WithErrorJson
+
+# 跑全部測試
+mvn test -Dtest=ProductControllerTest
+```
+
+### 測試覆蓋對照表
+
+| 測試方法 | 驗證重點 |
+|---|---|
+| `getAll_returns200AndList` | `stock` 不出現在 DTO 中 |
+| `getById_found_returns200AndDto` | `id`、`name`、`price` 對應正確；`stock` 不存在 |
+| `getById_notFound_returns404WithErrorJson` | `GlobalExceptionHandler` 轉換為 `{"status":404,"error":"..."}` |
+| `create_validRequest_returns201AndLocation` | 201 + `Location` header |
+| `create_blankNameAndNegativePrice_returns400WithErrorsList` | `errors`（陣列）包含多個驗證訊息 |
+| `create_businessRuleViolation_returns400WithErrorString` | `error`（字串）單一業務錯誤 |
+| `update_found_returns200AndUpdatedDto` | 更新後的名稱、價格回傳正確 |
+| `update_notFound_returns404` | 找不到 → 404 |
+| `delete_found_returns204` | `void` 服務方法用 `willDoNothing()` |
+| `delete_notFound_returns404` | `void` 服務方法用 `willThrow()` |
+| `getPage_returns200WithPagedDtos` | `content`、`totalElements` 分頁結構 |
+| `search_returns200WithMatchingDtos` | keyword 查詢回傳 DTO |
 
 ---
 
