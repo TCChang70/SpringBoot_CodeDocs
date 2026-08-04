@@ -39,28 +39,41 @@
 
 ## 🌱 測試資料 Seed Data
 
-> 在 `src/main/resources/data.sql` 放入以下內容，Spring Boot 啟動時會自動執行，**5 筆 Product + 3 筆 Category** 直接可用。
+> `data.sql` 隨練習進度分兩個階段。`spring.jpa.hibernate.ddl-auto=create-drop` 讓 Hibernate 每次啟動時重建表格，`data.sql` 在建表後自動執行。
 
-### Category 資料（先建類別，因為 Product 有外鍵關聯）
+### 📋 Phase 1：練習 2-1、2-2（`Product` 仍使用 `String category`）
+
+> 此階段尚未建立 `Category` Entity，`product` 表只有 `category`（字串欄位），**不存在** `category_id` 外鍵。
 
 ```sql
--- src/main/resources/data.sql
--- 類別資料
-INSERT INTO category (id, name) VALUES (1, '電腦');
-INSERT INTO category (id, name) VALUES (2, '手機');
-INSERT INTO category (id, name) VALUES (3, '配件');
+-- src/main/resources/data.sql（適用練習 2-1、2-2）
+INSERT INTO product (name, price, stock, category) VALUES
+  ('MacBook Pro 14', 69999.0, 5,  '電腦'),
+  ('iPhone 15 Pro',  39999.0, 20, '手機'),
+  ('iPad Air',       24999.0, 15, '電腦'),
+  ('AirPods Pro',    7999.0,  50, '配件'),
+  ('Magic Keyboard', 3999.0,  30, '配件');
 ```
 
-### Product 資料
+### 📋 Phase 2：練習 2-3 之後（`Category` Entity 建立，`Product` 加入 `category_id` FK）
+
+> 完成練習 2-3 後，Hibernate 依 `@Table(name = "categories")` 建立 `categories` 表，依 `@Table(name = "products")` 建立 `products` 表（需先在 `Product.java` 加上此標注，詳見練習 2-3 Step 2）。
 
 ```sql
--- 商品資料（category_id 對應上面的類別 id）
-INSERT INTO product (name, price, stock, category_id, created_at) VALUES
-('MacBook Pro 14', 69999.0, 5,  1, datetime('now')),
-('iPhone 15 Pro',  39999.0, 20, 2, datetime('now')),
-('iPad Air',       24999.0, 15, 1, datetime('now')),
-('AirPods Pro',    7999.0,  50, 3, datetime('now')),
-('Magic Keyboard', 3999.0,  30, 3, datetime('now'));
+-- src/main/resources/data.sql（練習 2-3 完成後替換為此版本）
+-- categories 表：對應 Category entity 的 @Table(name = "categories")
+INSERT INTO categories (id, name) VALUES (1, '電腦');
+INSERT INTO categories (id, name) VALUES (2, '手機');
+INSERT INTO categories (id, name) VALUES (3, '配件');
+
+-- products 表：對應 Product entity 的 @Table(name = "products")
+-- category_id 為外鍵，對應上方 categories.id
+INSERT INTO products (name, price, stock, category_id) VALUES
+  ('MacBook Pro 14', 69999.0, 5,  1),
+  ('iPhone 15 Pro',  39999.0, 20, 2),
+  ('iPad Air',       24999.0, 15, 1),
+  ('AirPods Pro',    7999.0,  50, 3),
+  ('Magic Keyboard', 3999.0,  30, 3);
 ```
 
 ### application.properties 設定
@@ -74,20 +87,24 @@ spring.jpa.hibernate.ddl-auto=create-drop
 ### 啟動後驗證
 
 ```bash
-# 啟動專案後，呼叫 API 確認資料
+# Phase 1（練習 2-1、2-2）啟動後確認
+curl http://localhost:8080/api/products
+curl http://localhost:8080/api/products/category/電腦
+
+# Phase 2（練習 2-3 後）啟動後確認
 curl http://localhost:8080/api/products
 curl http://localhost:8080/api/categories
-curl http://localhost:8080/api/products/category/電腦
+curl http://localhost:8080/api/categories/with-products
 ```
 
 ### 注意事項
 
 | 情況 | 處理方式 |
 |------|---------|
-| `category_id` 欄位不存在 | 改用 `category` 欄位（String），不需 foreign key |
-| `created_at` 欄位不存在 | 移除 `created_at` 欄位，或改用 `@CreationTimestamp` |
-| 資料重複插入 | 加 `IF NOT EXISTS`：`INSERT INTO product ... WHERE NOT EXISTS (SELECT 1 FROM product WHERE name = 'MacBook Pro 14')` |
-| 只執行一次 | 將 `data.sql` 改名為 `data-once.sql`，或啟動後刪除 |
+| `product` / `products` 表找不到，SQL error | `Product.java` 缺少 `@Table(name = "products")`（練習 2-3 Step 2 加入）|
+| `categories` 表找不到 | `Category.java` 缺少 `@Table(name = "categories")`（Category 解答中已有）|
+| `category_id` 欄位不存在 | 尚未完成練習 2-3，請先用 Phase 1 版 `data.sql`（`category` 字串欄位）|
+| 資料重複插入 | `create-drop` 每次啟動都會重建表格，不會重複；改為 `validate` 模式才需處理 |
 
 ---
 
@@ -179,6 +196,8 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 > 🚀 **現在試試看**：新增一個測試方法，呼叫 `findByNameContaining("MacBook")`，在 Console 觀察實際產生的 SQL 是否包含 `LIKE '%MacBook%'`。
 
+> ⚠️ **注意（練習 2-3 之後）**：完成練習 2-3 將 `Product.category` 改為 `Category` 物件後，`findByCategory(String)`、`countByCategory`、`findByCategoryAndPriceGreaterThan` 等方法名稱必須更新（改用 `findByCategoryName` 等）。詳見練習 2-3 **Step 4**。
+
 ---
 
 ## 練習 2-2 ─ @Query 自訂 JPQL
@@ -201,7 +220,7 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
 
 | 差異點 | JPQL | 原生 SQL（nativeQuery） |
 |--------|------|------------------------|
-| FROM 後接 | Java 類別名（`Product`）| 資料表名（`products`）|
+| FROM 後接 | Java 類別名（`Product`）| 資料表名（`product`；練習 2-3 加 `@Table(name = "products")` 後為 `products`）|
 | WHERE 後接 | Java 屬性名（`p.price`）| 資料庫欄位名（`price`）|
 | 參數綁定 | `:paramName` + `@Param` | `:paramName` + `@Param` |
 
@@ -237,23 +256,29 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Product, Long> {
 
-    // (1) JPQL：查詢有庫存且依價格升序
-    // FROM 後接 Java 類別名稱 Product（不是資料表名 products）
+    // (1) JPQL：查詢有庫存且依價格升序（此時 p.category 型別仍為 String）
+    // FROM 後接 Java 類別名稱 Product（不是資料表名）
+    // ⚠️ 練習 2-3 完成後，product.category 型別改為 Category 物件，
+    //    須更新為：WHERE p.category.name = :cat（詳見練習 2-3 Step 4）
     @Query("SELECT p FROM Product p WHERE p.category = :cat AND p.stock > 0 ORDER BY p.price ASC")
     List<Product> findAvailableByCategory(@Param("cat") String category);
 
     // (2) 聚合查詢：計算某類別平均價格
+    // ⚠️ 練習 2-3 完成後，需改為：WHERE p.category.name = :cat
     @Query("SELECT AVG(p.price) FROM Product p WHERE p.category = :cat")
     Double averagePriceByCategory(@Param("cat") String cat);
 
     // (3) @Modifying 批次更新：庫存歸零
     // ★ 呼叫此方法的 Service 方法上必須加 @Transactional
+    // ⚠️ 練習 2-3 完成後，需改為：WHERE p.category.name = :cat
     @Modifying
     @Query("UPDATE Product p SET p.stock = 0 WHERE p.category = :cat")
     int clearStockByCategory(@Param("cat") String cat);
 
-    // (4) 原生 SQL（nativeQuery = true）：使用資料表名稱 products
-    @Query(value = "SELECT * FROM products WHERE name LIKE %:keyword%", nativeQuery = true)
+    // (4) 原生 SQL（nativeQuery = true）：使用資料庫表名
+    // 練習 2-3 前：Product 無 @Table，Hibernate 預設表名為 product（不加 s）
+    // 練習 2-3 後：加上 @Table(name = "products")，表名改為 products，此行也需同步更新
+    @Query(value = "SELECT * FROM product WHERE name LIKE %:keyword%", nativeQuery = true)
     List<Product> searchByNameNative(@Param("keyword") String keyword);
 }
 ```
@@ -398,12 +423,25 @@ public class Category {
 }
 ```
 
-**Step 2 — 修改 Product.java，加入多對一關聯**：
+**Step 2 — 修改 Product.java，加入 `@Table` + 多對一關聯**：
 
 ```java
-// 在 Product.java 中，移除原本的 String category，加入以下欄位與 import：
+// 在 Product.java 中做以下三件事：
+// (a) 在 @Entity 下方加 @Table(name = "products")，明確指定表名
+//     （與 Category 的 "categories" 命名風格一致；原生 SQL 和 Phase 2 data.sql 都依賴此設定）
+// (b) 移除原本的 String category 欄位及其 getter/setter
+// (c) 加入以下 import 與新欄位
 
-import com.fasterxml.jackson.annotation.JsonBackReference;  // ← 避免遞迴：此端序列化時略過
+// ─── 類別宣告（在 @Entity 後加 @Table）────────────────────────────────
+import jakarta.persistence.Table;
+
+@Entity
+@Table(name = "products")   // ← 新增：明確指定表名為 products（不加此行 Hibernate 預設用 product）
+public class Product {
+    // ...其餘欄位不變...
+
+// ─── 新增欄位（替換原本的 private String category）────────────────────
+import com.fasterxml.jackson.annotation.JsonBackReference;
 
     // @ManyToOne：多個 Product 屬於一個 Category
     // @JsonBackReference → 「反向端」，序列化 Product 時不輸出 category 欄位
@@ -458,6 +496,63 @@ public interface CategoryRepository extends JpaRepository<Category, Long> {
     List<Category> findAllWithProducts();
 }
 ```
+
+---
+
+**Step 4 — 更新 ProductRepository：`product.category` 型別改變，所有相關查詢必須同步更新**
+
+> `String category` 改為 `Category category` 後，以下會造成**啟動失敗或查詢錯誤**：
+> - Derived Query 如 `findByCategory(String)` → `PropertyReferenceException`（`category` 已非 String）
+> - JPQL `WHERE p.category = :cat`（String 比對）→ `IllegalArgumentException`（型別不符）
+> - Native SQL `FROM product` → 加了 `@Table(name = "products")` 後表名不同
+
+```java
+package com.example.shop.repository;
+
+import com.example.shop.model.Product;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import java.util.List;
+
+@Repository
+public interface ProductRepository extends JpaRepository<Product, Long> {
+
+    // ===== 練習 2-1（更新：category → CategoryName 關聯導航）=====
+
+    List<Product> findByCategoryName(String name);                                          // (1)
+    List<Product> findByNameContaining(String keyword);                                     // (2)
+    List<Product> findByPriceLessThan(Double maxPrice);                                     // (3)
+    List<Product> findByCategoryNameAndPriceGreaterThan(String name, Double minPrice);      // (4)
+    List<Product> findByCategoryNameOrderByPriceDesc(String name);                          // (5)
+    long countByCategoryName(String name);                                                  // (6)
+    boolean existsByName(String name);                                                      // (7)
+
+    // ===== 練習 2-2（更新：p.category → p.category.name）=====
+
+    @Query("SELECT p FROM Product p WHERE p.category.name = :cat AND p.stock > 0 ORDER BY p.price ASC")
+    List<Product> findAvailableByCategory(@Param("cat") String categoryName);
+
+    @Query("SELECT AVG(p.price) FROM Product p WHERE p.category.name = :cat")
+    Double averagePriceByCategory(@Param("cat") String categoryName);
+
+    @Modifying
+    @Query("UPDATE Product p SET p.stock = 0 WHERE p.category.name = :cat")
+    int clearStockByCategory(@Param("cat") String categoryName);
+
+    // 表名由 product → products（加了 @Table(name = "products") 後同步更新）
+    @Query(value = "SELECT * FROM products WHERE name LIKE %:keyword%", nativeQuery = true)
+    List<Product> searchByNameNative(@Param("keyword") String keyword);
+}
+```
+
+| 變更點 | 練習 2-3 之前 | 練習 2-3 之後 |
+|--------|-------------|-------------|
+| Derived Query 方法名 | `findByCategory(String)` | `findByCategoryName(String)` |
+| JPQL 條件 | `WHERE p.category = :cat` | `WHERE p.category.name = :cat` |
+| Native SQL 表名 | `FROM product` | `FROM products` |
 
 ---
 
@@ -781,10 +876,10 @@ public class ProductService {
         return false;
     }
 
-    // ====== Day 2 練習 2-1：Derived Query ======
+    // ====== Day 2 練習 2-1：Derived Query（練習 2-3 後改用 CategoryName 方法）======
 
-    public List<Product> findByCategory(String category) {
-        return productRepository.findByCategory(category);
+    public List<Product> findByCategory(String categoryName) {
+        return productRepository.findByCategoryName(categoryName);
     }
 
     public List<Product> findByNameContaining(String keyword) {
@@ -795,19 +890,19 @@ public class ProductService {
         return productRepository.findByPriceLessThan(maxPrice);
     }
 
-    public List<Product> findByCategoryAndPriceGreaterThan(String category, Double minPrice) {
-        return productRepository.findByCategoryAndPriceGreaterThan(category, minPrice);
+    public List<Product> findByCategoryAndPriceGreaterThan(String categoryName, Double minPrice) {
+        return productRepository.findByCategoryNameAndPriceGreaterThan(categoryName, minPrice);
     }
 
-    public long countByCategory(String category) {
-        return productRepository.countByCategory(category);
+    public long countByCategory(String categoryName) {
+        return productRepository.countByCategoryName(categoryName);
     }
 
     public boolean existsByName(String name) {
         return productRepository.existsByName(name);
     }
 
-    // ====== Day 2 練習 2-2：@Query JPQL ======
+    // ====== Day 2 練習 2-2：@Query JPQL（練習 2-3 後改用 p.category.name）======
 
     public List<Product> findAvailableByCategory(String category) {
         return productRepository.findAvailableByCategory(category);
@@ -965,10 +1060,10 @@ mvn test -Dtest=ProductControllerTest
     @Test
     void getAll_returnsList() throws Exception {
         // Arrange（準備測試資料）
-        Product p1 = new Product("MacBook", 59999.0, 10, "電腦");
-        p1.setId(1L);
-        Product p2 = new Product("iPhone", 35999.0, 20, "手機");
-        p2.setId(2L);
+        Product p1 = new Product();
+        p1.setId(1L); p1.setName("MacBook"); p1.setPrice(59999.0); p1.setStock(10);
+        Product p2 = new Product();
+        p2.setId(2L); p2.setName("iPhone"); p2.setPrice(35999.0); p2.setStock(20);
         given(productService.findAll()).willReturn(List.of(p1, p2));
 
         // Act & Assert（執行請求，驗證回應）
@@ -996,8 +1091,8 @@ mvn test -Dtest=ProductControllerTest#getAll_returnsList
 ```java
     @Test
     void getById_exists_returnsOk() throws Exception {
-        Product p = new Product("MacBook", 59999.0, 10, "電腦");
-        p.setId(1L);
+        Product p = new Product();
+        p.setId(1L); p.setName("MacBook"); p.setPrice(59999.0); p.setStock(10);
         given(productService.findById(1L)).willReturn(Optional.of(p));
 
         mockMvc.perform(get("/api/products/1"))
@@ -1040,13 +1135,13 @@ mvn test -Dtest=ProductControllerTest#getById_notExists_returns404
 ```java
     @Test
     void create_returnsCreated() throws Exception {
-        Product p = new Product("iPad", 25999.0, 5, "電腦");
-        p.setId(3L);
+        Product p = new Product();
+        p.setId(3L); p.setName("iPad"); p.setPrice(25999.0); p.setStock(5);
         given(productService.create(any(Product.class))).willReturn(p);
 
         mockMvc.perform(post("/api/products")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"iPad\",\"price\":25999,\"stock\":5,\"category\":\"電腦\"}"))
+                        .content("{\"name\":\"iPad\",\"price\":25999,\"stock\":5}"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.name", is("iPad")))
                 .andExpect(header().exists("Location"));
@@ -1106,8 +1201,8 @@ mvn test -Dtest=ProductControllerTest#delete_notExists_returns404
 ```java
     @Test
     void getPage_returnsPagedResult() throws Exception {
-        Product p = new Product("MacBook", 59999.0, 10, "電腦");
-        p.setId(1L);
+        Product p = new Product();
+        p.setId(1L); p.setName("MacBook"); p.setPrice(59999.0); p.setStock(10);
         Page<Product> page = new PageImpl<>(List.of(p));
         given(productService.findPaged(0, 3, "price")).willReturn(page);
 
@@ -1134,8 +1229,8 @@ mvn test -Dtest=ProductControllerTest#getPage_returnsPagedResult
 ```java
     @Test
     void search_returnsMatchingProducts() throws Exception {
-        Product p = new Product("MacBook", 59999.0, 10, "電腦");
-        p.setId(1L);
+        Product p = new Product();
+        p.setId(1L); p.setName("MacBook"); p.setPrice(59999.0); p.setStock(10);
         given(productService.findByNameContaining("Mac")).willReturn(List.of(p));
 
         mockMvc.perform(get("/api/products/search").param("keyword", "Mac"))
@@ -1252,8 +1347,8 @@ mvn test -Dtest=CategoryControllerTest#getAll_returnsList
     void getAllWithProducts_returnsCategoriesWithProducts() throws Exception {
         Category cat = new Category("電腦");
         cat.setId(1L);
-        Product p = new Product("MacBook", 59999.0, 10, "電腦");
-        p.setId(1L);
+        Product p = new Product();
+        p.setId(1L); p.setName("MacBook"); p.setPrice(59999.0); p.setStock(10);
         cat.setProducts(List.of(p));
         given(categoryRepository.findAllWithProducts()).willReturn(List.of(cat));
 
