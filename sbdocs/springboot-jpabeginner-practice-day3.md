@@ -31,9 +31,8 @@
 | [3-2](#練習-3-2--建立-dto-類別) | 建立 DTO 類別 | ⭐⭐ Medium | 20 min |
 | [3-3](#練習-3-3--bean-validation-填入驗證規則) | Bean Validation 填入驗證規則 | ⭐⭐ Medium | 10 min |
 | [3-4](#練習-3-4--建立-globalexceptionhandler) | 建立 GlobalExceptionHandler | ⭐⭐⭐ Hard | 25 min |
+| [整合](#-完整程式碼整合練習-3-1--3-4) | 完整 ProductController + ProductService | 參考 | — |
 | [3-5](#練習-3-5--綜合題完整系統整合) | 綜合題：完整系統整合 | ⭐⭐⭐ Hard | 45 min |
-
----
 
 ---
 
@@ -307,7 +306,7 @@ public class ProductResponse {
         resp.id = product.getId();
         resp.name = product.getName();
         resp.price = product.getPrice();
-        resp.category = product.getCategory() != null ? product.getCategory() : null;
+        resp.category = product.getCategory(); // String（完成 Day 2 練習 2-3 後改為 .getCategory().getName()）
         return resp;
     }
 
@@ -569,15 +568,36 @@ public class ProductNotFoundException extends RuntimeException {
 }
 ```
 
-**Step 2 — 在 ProductService 新增 findByIdOrThrow()**：
+**Step 2 — 在 ProductService 新增 / 修改方法**：
 
 ```java
-// ProductService.java 新增方法
+// ProductService.java — 新增 findByIdOrThrow，並修改 update / delete 利用它
+import com.example.shop.dto.ProductUpdateRequest;
+import com.example.shop.exception.ProductNotFoundException;
+
 @Transactional(readOnly = true)
 public Product findByIdOrThrow(Long id) {
     return productRepository.findById(id)
             .orElseThrow(() -> new ProductNotFoundException(id));
     // 找不到 → 拋出自訂例外 → GlobalExceptionHandler 捕獲 → 回傳 404 JSON
+}
+
+// update：改為接受 ProductUpdateRequest（所有欄位選填），找不到自動拋 404
+@Transactional
+public Product update(Long id, ProductUpdateRequest req) {
+    Product existing = findByIdOrThrow(id);
+    if (req.getName() != null)     existing.setName(req.getName());
+    if (req.getPrice() != null)    existing.setPrice(req.getPrice());
+    if (req.getStock() != null)    existing.setStock(req.getStock());
+    if (req.getCategory() != null) existing.setCategory(req.getCategory());
+    return productRepository.save(existing);
+}
+
+// delete：改為回傳 void，找不到自動拋 404（不再需要 Controller 自行判斷 boolean）
+@Transactional
+public void delete(Long id) {
+    findByIdOrThrow(id);
+    productRepository.deleteById(id);
 }
 ```
 
@@ -664,6 +684,206 @@ Content-Type: application/json
 ```
 
 > 🚀 **現在試試看**：故意請求一個不存在的 id，確認回傳的 JSON 格式符合 `{"status": 404, "error": "...", "timestamp": "..."}` 結構，而非 Spring 預設的 `/error` 頁面格式。
+
+---
+
+## 🧩 完整程式碼整合（練習 3-1 ~ 3-4）
+
+> 整合給 `com.example.shop` 專案，展示將練習 3-2（DTO）、3-3（@Valid）、3-4（例外處理）全部整入後的完整 Controller + Service。
+
+### 完整 ProductService（整入 3-4 例外處理）
+
+```java
+package com.example.shop.service;
+
+import com.example.shop.dto.ProductUpdateRequest;
+import com.example.shop.exception.ProductNotFoundException;
+import com.example.shop.model.Product;
+import com.example.shop.repository.ProductRepository;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.Optional;
+
+@Service
+public class ProductService {
+
+    private final ProductRepository productRepository;
+
+    public ProductService(ProductRepository productRepository) {
+        this.productRepository = productRepository;
+    }
+
+    // ====== 基本查詢 ======
+
+    @Transactional(readOnly = true)
+    public List<Product> findAll() { return productRepository.findAll(); }
+
+    @Transactional(readOnly = true)
+    public Optional<Product> findById(Long id) { return productRepository.findById(id); }
+
+    @Transactional(readOnly = true)
+    public Product findByIdOrThrow(Long id) {
+        return productRepository.findById(id)
+                .orElseThrow(() -> new ProductNotFoundException(id));
+    }
+
+    // ====== CRUD（update / delete 改用 findByIdOrThrow，找不到直接拋 404）======
+
+    @Transactional
+    public Product create(Product product) { return productRepository.save(product); }
+
+    @Transactional
+    public Product update(Long id, ProductUpdateRequest req) {
+        Product existing = findByIdOrThrow(id);             // 找不到 → ProductNotFoundException → 404
+        if (req.getName() != null)     existing.setName(req.getName());
+        if (req.getPrice() != null)    existing.setPrice(req.getPrice());
+        if (req.getStock() != null)    existing.setStock(req.getStock());
+        if (req.getCategory() != null) existing.setCategory(req.getCategory());
+        return productRepository.save(existing);
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        findByIdOrThrow(id);                                // 找不到 → ProductNotFoundException → 404
+        productRepository.deleteById(id);
+    }
+
+    // ====== Day 2 查詢方法 ======
+
+    @Transactional(readOnly = true)
+    public List<Product> findByCategory(String c) { return productRepository.findByCategoryName(c); }
+
+    @Transactional(readOnly = true)
+    public List<Product> findByNameContaining(String k) { return productRepository.findByNameContaining(k); }
+
+    @Transactional(readOnly = true)
+    public List<Product> findByPriceLessThan(Double max) { return productRepository.findByPriceLessThan(max); }
+
+    @Transactional(readOnly = true)
+    public long countByCategory(String c) { return productRepository.countByCategoryName(c); }
+
+    @Transactional(readOnly = true)
+    public boolean existsByName(String name) { return productRepository.existsByName(name); }
+
+    @Transactional(readOnly = true)
+    public Page<Product> findPaged(int page, int size, String sortBy) {
+        return productRepository.findAll(PageRequest.of(page, size, Sort.by(sortBy).ascending()));
+    }
+}
+```
+
+### 完整 ProductController（整入 3-2 DTO + 3-3 @Valid + 3-4 例外處理）
+
+```java
+package com.example.shop.controller;
+
+import com.example.shop.dto.ProductCreateRequest;
+import com.example.shop.dto.ProductResponse;
+import com.example.shop.dto.ProductUpdateRequest;
+import com.example.shop.model.Product;
+import com.example.shop.service.ProductService;
+import jakarta.validation.Valid;
+import org.springframework.data.domain.Page;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.net.URI;
+import java.util.List;
+
+@RestController
+@RequestMapping("/api/products")
+public class ProductController {
+
+    private final ProductService productService;
+
+    public ProductController(ProductService productService) {
+        this.productService = productService;
+    }
+
+    // GET /api/products
+    @GetMapping
+    public List<ProductResponse> getAll() {
+        return productService.findAll().stream().map(ProductResponse::from).toList();
+    }
+
+    // GET /api/products/{id} — 找不到會拋 ProductNotFoundException → GlobalExceptionHandler 轉 404
+    @GetMapping("/{id}")
+    public ProductResponse getById(@PathVariable Long id) {
+        return ProductResponse.from(productService.findByIdOrThrow(id));
+    }
+
+    // POST /api/products — @Valid 啟用 Bean Validation，失敗 → GlobalExceptionHandler 轉 400
+    @PostMapping
+    public ResponseEntity<ProductResponse> create(@Valid @RequestBody ProductCreateRequest req) {
+        Product product = new Product(req.getName(), req.getPrice(), req.getStock(), req.getCategory());
+        Product saved = productService.create(product);
+        return ResponseEntity.created(URI.create("/api/products/" + saved.getId()))
+                .body(ProductResponse.from(saved));
+    }
+
+    // PUT /api/products/{id} — ProductUpdateRequest 所有欄位選填，找不到自動 404
+    @PutMapping("/{id}")
+    public ProductResponse update(@PathVariable Long id,
+                                  @RequestBody ProductUpdateRequest req) {
+        return ProductResponse.from(productService.update(id, req));
+    }
+
+    // DELETE /api/products/{id} — 找不到自動 404，成功回 204 No Content
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        productService.delete(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    // ====== Day 2 查詢端點（回傳 DTO）======
+
+    @GetMapping("/category/{category}")
+    public List<ProductResponse> getByCategory(@PathVariable String category) {
+        return productService.findByCategory(category).stream().map(ProductResponse::from).toList();
+    }
+
+    @GetMapping("/search")
+    public List<ProductResponse> search(@RequestParam String keyword) {
+        return productService.findByNameContaining(keyword).stream().map(ProductResponse::from).toList();
+    }
+
+    @GetMapping("/cheap")
+    public List<ProductResponse> getCheap(@RequestParam Double maxPrice) {
+        return productService.findByPriceLessThan(maxPrice).stream().map(ProductResponse::from).toList();
+    }
+
+    @GetMapping("/category/{cat}/count")
+    public long countByCategory(@PathVariable String cat) {
+        return productService.countByCategory(cat);
+    }
+
+    @GetMapping("/exists")
+    public boolean existsByName(@RequestParam String name) {
+        return productService.existsByName(name);
+    }
+
+    @GetMapping("/page")
+    public Page<ProductResponse> getPage(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "id") String sortBy) {
+        return productService.findPaged(page, size, sortBy).map(ProductResponse::from);
+    }
+}
+```
+
+> **主要改變整理**：
+>
+> | 端點 | 練習 3-2 前 | 練習 3-4 後 |
+> |--------|------------|-------------|
+> | `getById` | `findById` + Optional | `findByIdOrThrow` 拋例外、直接回 DTO |
+> | `create` | `@RequestBody Product` | `@Valid @RequestBody ProductCreateRequest` |
+> | `update` | `Optional.map` 回 `ResponseEntity` | `ProductUpdateRequest` 、直接回 DTO |
+> | `delete` | 回傳 `boolean` 自行判斷 | `void`，找不到自動 404 |
+> | 查詢端點 | 回傳 `List<Product>` | 回傳 `List<ProductResponse>` |
 
 ---
 
@@ -859,11 +1079,36 @@ public class BookResponse {
 }
 ```
 
+**BookUpdateRequest.java（修改用 DTO，所有欄位選填）**：
+
+```java
+package com.example.library.dto;
+
+// 修改書籍時，客戶端只需傳入要更改的欄位（其餘保持原值）
+public class BookUpdateRequest {
+
+    private String title;
+    private String author;
+    private String isbn;
+    private Double price;
+
+    public String getTitle() { return title; }
+    public void setTitle(String title) { this.title = title; }
+    public String getAuthor() { return author; }
+    public void setAuthor(String author) { this.author = author; }
+    public String getIsbn() { return isbn; }
+    public void setIsbn(String isbn) { this.isbn = isbn; }
+    public Double getPrice() { return price; }
+    public void setPrice(Double price) { this.price = price; }
+}
+```
+
 **BookService.java**：
 
 ```java
 package com.example.library.service;
 
+import com.example.library.dto.BookUpdateRequest;
 import com.example.library.exception.BookNotFoundException;
 import com.example.library.model.Book;
 import com.example.library.repository.BookRepository;
@@ -921,25 +1166,23 @@ public class BookService {
         return bookRepository.save(book);
     }
 
+    // update：接受 BookUpdateRequest（選填欄位），找不到直接拋 BookNotFoundException → 404
     @Transactional
-    public Optional<Book> update(Long id, Book updated) {
-        return bookRepository.findById(id).map(existing -> {
-            existing.setTitle(updated.getTitle());
-            existing.setAuthor(updated.getAuthor());
-            existing.setIsbn(updated.getIsbn());
-            existing.setPrice(updated.getPrice());
-            // createdAt 不更新（@Column(updatable = false) 保護）
-            return bookRepository.save(existing);
-        });
+    public Book update(Long id, BookUpdateRequest req) {
+        Book existing = findByIdOrThrow(id);
+        if (req.getTitle()  != null) existing.setTitle(req.getTitle());
+        if (req.getAuthor() != null) existing.setAuthor(req.getAuthor());
+        if (req.getIsbn()   != null) existing.setIsbn(req.getIsbn());
+        if (req.getPrice()  != null) existing.setPrice(req.getPrice());
+        // createdAt 不更新（@Column(updatable = false) 保護）
+        return bookRepository.save(existing);
     }
 
+    // delete：找不到直接拋 BookNotFoundException → 404，不再回傳 boolean
     @Transactional
-    public boolean delete(Long id) {
-        if (!bookRepository.existsById(id)) {
-            return false;
-        }
+    public void delete(Long id) {
+        findByIdOrThrow(id);
         bookRepository.deleteById(id);
-        return true;
     }
 }
 ```
@@ -951,6 +1194,7 @@ package com.example.library.controller;
 
 import com.example.library.dto.BookCreateRequest;
 import com.example.library.dto.BookResponse;
+import com.example.library.dto.BookUpdateRequest;
 import com.example.library.model.Book;
 import com.example.library.service.BookService;
 import jakarta.validation.Valid;
@@ -1004,22 +1248,18 @@ public class BookController {
         return ResponseEntity.created(location).body(BookResponse.from(saved));
     }
 
+    // PUT：使用 BookUpdateRequest（選填欄位）；找不到由 GlobalExceptionHandler 轉 404
     @PutMapping("/{id}")
-    public ResponseEntity<BookResponse> update(@PathVariable Long id,
-                                               @RequestBody BookCreateRequest req) {
-        Book updated = new Book(req.getTitle(), req.getAuthor(), req.getIsbn(), req.getPrice());
-        return bookService.update(id, updated)
-                .map(BookResponse::from)
-                .map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+    public BookResponse update(@PathVariable Long id,
+                               @RequestBody BookUpdateRequest req) {
+        return BookResponse.from(bookService.update(id, req));
     }
 
+    // DELETE：找不到由 GlobalExceptionHandler 轉 404，不需判斷 boolean
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
-        if (bookService.delete(id)) {
-            return ResponseEntity.noContent().build();
-        }
-        return ResponseEntity.notFound().build();
+        bookService.delete(id);
+        return ResponseEntity.noContent().build();
     }
 }
 ```
@@ -1036,6 +1276,61 @@ public class BookNotFoundException extends RuntimeException {
 }
 ```
 
+**GlobalExceptionHandler.java（library 版）**：
+
+```java
+package com.example.library.exception;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
+import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(BookNotFoundException.class)
+    public ResponseEntity<Map<String, Object>> handleNotFound(BookNotFoundException e) {
+        return buildError(HttpStatus.NOT_FOUND, e.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, Object>> handleBadRequest(IllegalArgumentException e) {
+        return buildError(HttpStatus.BAD_REQUEST, e.getMessage());
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<Map<String, Object>> handleValidation(MethodArgumentNotValidException e) {
+        List<String> errors = e.getBindingResult().getFieldErrors().stream()
+                .map(FieldError::getDefaultMessage).toList();
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", HttpStatus.BAD_REQUEST.value());
+        body.put("errors", errors);
+        body.put("timestamp", LocalDateTime.now());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> handleGeneral(Exception e) {
+        return buildError(HttpStatus.INTERNAL_SERVER_ERROR, "伺服器發生錯誤，請稍後再試");
+    }
+
+    private ResponseEntity<Map<String, Object>> buildError(HttpStatus status, String message) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("status", status.value());
+        body.put("error", message);
+        body.put("timestamp", LocalDateTime.now());
+        return ResponseEntity.status(status).body(body);
+    }
+}
+```
+
 **專案架構圖**：
 
 ```
@@ -1046,7 +1341,8 @@ com.example.library
 │   └── BookRepository.java        ← JpaRepository 介面
 ├── dto/
 │   ├── BookCreateRequest.java     ← 新增請求 DTO（含驗證）
-│   └── BookResponse.java          ← 回應 DTO（隱藏敏感欄位）
+│   ├── BookUpdateRequest.java     ← 修改請求 DTO（所有欄位選填）
+│   └── BookResponse.java          ← 回應 DTO（含 createdAt）
 ├── service/
 │   └── BookService.java           ← 業務邏輯層（含交易）
 ├── controller/
@@ -1060,8 +1356,6 @@ com.example.library
 > 1. 新增書籍 → 確認 201 + `createdAt` 自動填入
 > 2. 再次新增相同 ISBN → 確認 400 + `"ISBN 已存在：..."` 錯誤訊息
 > 3. 分頁查詢 `?page=0&size=2` → 確認回傳 `content` 最多 2 筆且按 price 升序
-
----
 
 ---
 
