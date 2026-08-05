@@ -158,17 +158,20 @@ import jakarta.ws.rs.core.Application;
 import java.util.Set;
 
 @OpenAPIDefinition(
-    info = @Info(
-        title = "Bookstore API",
-        version = "1.0.0",
-        description = "書籍管理 REST API（JAX-RS + JPA + SQLite）。所有 API 統一回應格式："
-            + "成功 {\"success\":true,\"data\":...}，失敗 {\"success\":false,\"error\":\"訊息\"}。",
-        contact = @Contact(name = "Bookstore Team")
-    ),
-    tags = {
-        @Tag(name = "書籍", description = "書籍 CRUD 操作")
-    }
-)
+	     info = @Info(
+	        title = "Bookstore SQLite API",
+	        version = "1.0.0",
+	        description = "書籍管理 REST API（JAX-RS + JPA + SQLite）。所有 API 統一回應格式："
+	            + "成功 {\"success\":true,\"data\":...}，失敗 {\"success\":false,\"error\":\"訊息\"}。",
+	        contact = @Contact(name = "Bookstore Team")
+	        ),
+	     servers = {
+	             @Server(url = "/mvsqlite0803", description = "本機 mvsqlite0803 部署路徑（context 為 /mvsqlite0803）")
+	     },
+	     tags = {
+	             @Tag(name = "書籍", description = "書籍 CRUD 操作")
+	    }
+	)
 @ApplicationPath("/api")   // 所有 API 前綴：http://localhost:8080/bookstore-api/api/
 public class JaxRsActivator extends Application {
 
