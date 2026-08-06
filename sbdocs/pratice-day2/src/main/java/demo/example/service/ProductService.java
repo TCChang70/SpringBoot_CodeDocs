@@ -20,6 +20,39 @@ public class ProductService {
         this.productRepository = productRepository;
     }
 
+    // 修正 A：placeOrder 直接在自身交易內完成，不呼叫同類別其他方法
+    @Transactional
+    public int placeOrder(Long productId, int quantity) {
+        Product p = productRepository.findById(productId)
+                .orElseThrow(() -> new IllegalArgumentException("商品不存在，id: " + productId));
+        if (p.getStock() < quantity) {
+            throw new IllegalArgumentException(
+                    "庫存不足，現有 " + p.getStock() + " 件，請求 " + quantity + " 件");
+        }
+        p.setStock(p.getStock() - quantity);
+        productRepository.save(p);
+        if(p.getStock()<10)
+           throw new RuntimeException("模擬交易失敗，測試 rollback"); // 模擬交易失敗，測試 rollback
+        return p.getStock(); // 回傳剩餘庫存；若後續拋例外，此 save 也會 rollback
+    }
+    
+    @Transactional
+    public void updatePrice(Long productId, Double newPrice) {
+        if (newPrice <= 0) {
+            throw new IllegalArgumentException("價格必須大於 0");
+        }
+        try {
+            Product p = productRepository.findById(productId)
+                    .orElseThrow(() -> new IllegalArgumentException("商品不存在，id: " + productId));
+            p.setPrice(newPrice);
+            productRepository.save(p);
+            throw new RuntimeException("模擬交易失敗，測試 rollback"); // 模擬交易失敗，測試 rollback
+        } catch (Exception e) {
+        	   System.out.println("交易失敗，已回滾(catch 觸發): " + e.getMessage()); // 交易失敗，已回滾
+           throw e; // 重新拋出，確保 rollback ✅        	  
+        }
+    }
+
     // ====== Day 1：基本 CRUD ======
 
     public List<Product> findAll() {

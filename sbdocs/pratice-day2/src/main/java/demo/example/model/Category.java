@@ -19,7 +19,7 @@ public class Category {
 
  // ✅ 方法一：使用 @JsonManagedReference + @JsonBackReference（見下方 Entity 範例）
  // ✅ 方法二：使用 @JsonIgnoreProperties
-    @OneToMany(mappedBy = "category", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "category", targetEntity=Product.class, fetch = FetchType.LAZY, cascade = CascadeType.PERSIST)
     @JsonIgnoreProperties("category")   // 序列化 products 時，忽略每個 product 的 category 欄位
     private List<Product> products = new ArrayList<>();
 

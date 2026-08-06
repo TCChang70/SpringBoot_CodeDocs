@@ -33,7 +33,29 @@ public class ProductController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
-
+    @GetMapping("/{id}/place-order")
+    public ResponseEntity<String> placeOrder(@PathVariable Long id, @RequestParam int quantity) {
+		try {
+			int remainingStock = productService.placeOrder(id, quantity);
+			return ResponseEntity.ok("訂單成功，剩餘庫存: " + remainingStock);
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (RuntimeException e) {
+			return ResponseEntity.status(500).body("訂單失敗，交易已回滾: " + e.getMessage());
+		}
+	}
+    
+    @GetMapping("/{id}/update-price")
+    public ResponseEntity<String> updatePrice(@PathVariable Long id, @RequestParam double price) {
+		try {
+			productService.updatePrice(id, price);
+			return ResponseEntity.ok("價格更新成功:"+price);
+		} catch (IllegalArgumentException e) {
+			return ResponseEntity.badRequest().body(e.getMessage());
+		} catch (RuntimeException e) {
+			return ResponseEntity.status(500).body("價格更新失敗，交易已回滾: " + e.getMessage());
+		}
+	}
     // POST /api/products → 新增商品（201 Created）
     @PostMapping
     public ResponseEntity<Product> create(@RequestBody Product product) {
