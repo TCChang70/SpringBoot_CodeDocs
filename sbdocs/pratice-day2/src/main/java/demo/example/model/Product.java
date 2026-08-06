@@ -2,27 +2,34 @@ package demo.example.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.*;
 
 @Entity
 @Table(name = "products")       // 對應資料庫中的 products 表
+@Schema(description = "商品資料模型")
 public class Product {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)  // MySQL AUTO_INCREMENT
+    @Schema(description = "商品 ID（自動產生）", example = "1", accessMode = Schema.AccessMode.READ_ONLY)
     private Long id;
 
     @Column(nullable = false)   // NOT NULL：商品名稱必填
+    @Schema(description = "商品名稱", example = "MacBook Pro 14", requiredMode = Schema.RequiredMode.REQUIRED)
     private String name;
 
     @Column(nullable = false)   // NOT NULL：價格必填
+    @Schema(description = "價格", example = "69999.0", requiredMode = Schema.RequiredMode.REQUIRED)
     private Double price;
 
+    @Schema(description = "庫存數量（可為 null）", example = "20")
     private Integer stock;      // 允許 null：庫存可以不設定
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     @JsonIgnoreProperties("products")   // 序列化 category 時，忽略其 products 欄位
+    @Schema(description = "所屬類別（多對一關聯）")
     private Category category;
 
     public Category getCategory() { return category; }
