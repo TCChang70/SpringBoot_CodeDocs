@@ -72,87 +72,86 @@ function Navbar({ setCurrentPage }) {
 
 ---
 
-## 完整可執行 HTML
+## 在 Vite React 專案中執行
 
-```html
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <title>Demo 04 — 條件渲染與頁面切換</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css">
-</head>
-<body>
-  <div id="root"></div>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script type="text/babel">
-    const { useState, useEffect } = React
+本演示位於 `demo-app/`，啟動方式：
 
-    function MountLogger({ name, color }) {
-      useEffect(() => {
-        console.log(`✅ ${name} 掛載 (Mount)`)
-        return () => console.log(`❌ ${name} 卸載 (Unmount)`)
-      }, [])
-      return (
-        <div className={`alert alert-${color}`}>
-          {name} — 請開啟 Console (F12) 觀察掛載/卸載訊息
-        </div>
-      )
-    }
+```bash
+cd demo-app
+npm run dev    # 開啟 http://localhost:5173
+```
 
-    function App() {
-      const [currentPage, setCurrentPage] = useState('login')
-      const [isLoggedIn,  setIsLoggedIn]  = useState(false)
+切換到頂部導覽列「04 條件渲染」。
 
-      return (
-        <div className="container mt-4">
-          <h2 className="text-primary">Demo 04 — 條件渲染與頁面切換</h2>
+對應原始碼：`src/demos/Demo04ConditionalRender.jsx`
 
-          <h5 className="mt-3">① && 短路 — 頁面切換</h5>
-          <div className="d-flex flex-wrap gap-2 mb-2">
-            {['login','products','cart','orders'].map(p => (
-              <button key={p}
-                className={`btn btn-sm ${currentPage===p ? 'btn-primary' : 'btn-outline-primary'}`}
-                onClick={() => setCurrentPage(p)}>{p}</button>
-            ))}
-          </div>
-          {currentPage === 'login'    && <div className="alert alert-info">📋 登入頁面</div>}
-          {currentPage === 'products' && <div className="alert alert-success">🛍️ 產品列表</div>}
-          {currentPage === 'cart'     && <div className="alert alert-warning">🛒 購物車</div>}
-          {currentPage === 'orders'   && <div className="alert alert-danger">📦 訂單管理</div>}
+> ⚠️ **StrictMode + 掛載/卸載 Log**：本專案開發模式啟用 `<StrictMode>`，`MountLogger` 的 `useEffect` 在掛載時會被刻意執行兩次（Mount → Unmount → Mount），因此 Console 可能看到每組訊息印兩次 —— 這是 StrictMode 正常現象，生產模式不會發生。
 
-          <h5 className="mt-3">② 三元運算子 — 登入狀態</h5>
-          <button className={`btn btn-sm ${isLoggedIn ? 'btn-success' : 'btn-outline-success'}`}
-            onClick={() => setIsLoggedIn(v => !v)}>
-            {isLoggedIn ? '✅ 已登入（點擊登出）' : '🔒 未登入（點擊登入）'}
-          </button>
-          <div className="p-2 border rounded bg-dark text-white mt-2">
-            導覽列：<strong className="ms-2 text-warning">
-              {isLoggedIn ? '歡迎，admin' : '未登入'}
-            </strong>
-          </div>
+---
 
-          <h5 className="mt-3">③ Unmount 示範（開啟 Console 觀察）</h5>
-          <div className="d-flex gap-2 mb-2">
-            {['A頁面','B頁面','C頁面'].map(p => (
-              <button key={p}
-                className={`btn btn-sm ${currentPage===p ? 'btn-dark' : 'btn-outline-dark'}`}
-                onClick={() => setCurrentPage(p)}>{p}</button>
-            ))}
-          </div>
-          {currentPage === 'A頁面' && <MountLogger name="A頁面" color="primary" />}
-          {currentPage === 'B頁面' && <MountLogger name="B頁面" color="success" />}
-          {currentPage === 'C頁面' && <MountLogger name="C頁面" color="danger" />}
-        </div>
-      )
-    }
+## 完整原始碼（Vite React）
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />)
-  </script>
-</body>
-</html>
+```jsx
+import { useState, useEffect } from 'react'
+
+function MountLogger({ name, color }) {
+  useEffect(() => {
+    console.log(`✅ ${name} 掛載 (Mount)`)
+    return () => console.log(`❌ ${name} 卸載 (Unmount)`)
+  }, [])
+  return (
+    <div className={`alert alert-${color}`}>
+      {name} — 請開啟 Console (F12) 觀察掛載/卸載訊息
+    </div>
+  )
+}
+
+export default function Demo04ConditionalRender() {
+  const [currentPage, setCurrentPage] = useState('login')
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+
+  return (
+    <div className="container mt-4">
+      <h2 className="text-primary">Demo 04 — 條件渲染與頁面切換</h2>
+
+      <h5 className="mt-3">① && 短路 — 頁面切換</h5>
+      <div className="d-flex flex-wrap gap-2 mb-2">
+        {['login', 'products', 'cart', 'orders'].map(p => (
+          <button key={p}
+            className={`btn btn-sm ${currentPage === p ? 'btn-primary' : 'btn-outline-primary'}`}
+            onClick={() => setCurrentPage(p)}>{p}</button>
+        ))}
+      </div>
+      {currentPage === 'login'    && <div className="alert alert-info">📋 登入頁面</div>}
+      {currentPage === 'products' && <div className="alert alert-success">🛍️ 產品列表</div>}
+      {currentPage === 'cart'     && <div className="alert alert-warning">🛒 購物車</div>}
+      {currentPage === 'orders'   && <div className="alert alert-danger">📦 訂單管理</div>}
+
+      <h5 className="mt-3">② 三元運算子 — 登入狀態</h5>
+      <button className={`btn btn-sm ${isLoggedIn ? 'btn-success' : 'btn-outline-success'}`}
+        onClick={() => setIsLoggedIn(v => !v)}>
+        {isLoggedIn ? '✅ 已登入（點擊登出）' : '🔒 未登入（點擊登入）'}
+      </button>
+      <div className="p-2 border rounded bg-dark text-white mt-2">
+        導覽列：<strong className="ms-2 text-warning">
+          {isLoggedIn ? '歡迎，admin' : '未登入'}
+        </strong>
+      </div>
+
+      <h5 className="mt-3">③ Unmount 示範（開啟 Console 觀察）</h5>
+      <div className="d-flex gap-2 mb-2">
+        {['A頁面', 'B頁面', 'C頁面'].map(p => (
+          <button key={p}
+            className={`btn btn-sm ${currentPage === p ? 'btn-dark' : 'btn-outline-dark'}`}
+            onClick={() => setCurrentPage(p)}>{p}</button>
+        ))}
+      </div>
+      {currentPage === 'A頁面' && <MountLogger name="A頁面" color="primary" />}
+      {currentPage === 'B頁面' && <MountLogger name="B頁面" color="success" />}
+      {currentPage === 'C頁面' && <MountLogger name="C頁面" color="danger" />}
+    </div>
+  )
+}
 ```
 
 [← 回目錄](index.md)

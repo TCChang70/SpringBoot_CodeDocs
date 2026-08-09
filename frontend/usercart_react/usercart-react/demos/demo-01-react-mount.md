@@ -7,15 +7,16 @@
 - `ReactDOM.createRoot()` — React 18 掛載 API（取代舊版 `ReactDOM.render`）
 - `<React.StrictMode>` — 開發模式副作用偵測，生產環境不影響行為
 - `index.html` 只有空的 `<div id="root">`，所有內容由 React 產生
+- Vite 以 `/src/main.jsx` 作為模組化入口，由 `@vitejs/plugin-react` 負責 JSX 轉譯
 
 ---
 
 ## 執行流程
 
-瀏覽器載入後依序發生：
+`npm run dev` 啟動後，瀏覽器載入依序發生：
 
 1. 解析 `index.html`，看到空的 `<div id="root">`
-2. 載入 `main.jsx`（Vite 的模組化入口）
+2. 載入 `src/main.jsx`（Vite 的模組化入口，type="module"）
 3. `ReactDOM.createRoot()` 找到 root div，建立 React 接管節點
 4. `.render()` 把 `<App />` 轉成真實 DOM 插入 root
 
@@ -35,10 +36,12 @@
 </body>
 ```
 
-### `main.jsx` — React 掛載
+### `src/main.jsx` — React 掛載
 
 ```jsx
+import React from 'react'
 import ReactDOM from 'react-dom/client'
+import 'bootstrap/dist/css/bootstrap.min.css'   // Vite 可直接 import CSS
 import App from './App'
 
 // ③ createRoot：React 18 新 API
@@ -82,61 +85,60 @@ ReactDOM.createRoot(
 
 ---
 
-## 完整可執行 HTML
+## 在 Vite React 專案中執行
 
-複製以下程式碼存為 `.html`，直接用瀏覽器開啟：
+本演示位於 `demo-app/`，啟動方式：
 
-```html
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <title>Demo 01 — React 掛載點</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css">
-</head>
-<body>
-  <div id="root"></div>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script type="text/babel">
-    function App() {
-      const [renderCount, setRenderCount] = React.useState(0)
-      return (
-        <div className="container mt-4">
-          <h2 className="text-primary">Demo 01 — React 掛載點</h2>
-          <p>對應 <code>index.html</code> + <code>src/main.jsx</code></p>
-          <h5 className="mt-3">❌ React 17 舊寫法（已棄用）</h5>
-          <pre className="bg-light p-2 rounded">
+```bash
+cd demo-app
+npm install    # 第一次執行即可
+npm run dev    # 開啟 http://localhost:5173
+```
+
+切換到頂部導覽列「01 掛載點」。
+
+對應原始碼：`src/demos/Demo01Mount.jsx`
+
+---
+
+## 完整原始碼（Vite React）
+
+```jsx
+import { useState } from 'react'
+
+export default function Demo01Mount() {
+  const [renderCount, setRenderCount] = useState(0)
+  return (
+    <div className="container mt-4">
+      <h2 className="text-primary">Demo 01 — React 掛載點</h2>
+      <p>對應 <code>index.html</code> + <code>src/main.jsx</code></p>
+      <h5 className="mt-3">❌ React 17 舊寫法（已棄用）</h5>
+      <pre className="bg-light p-2 rounded">
 {`ReactDOM.render(<App />, document.getElementById('root'))`}
-          </pre>
-          <h5>✅ React 18 新寫法（本專案使用）</h5>
-          <pre className="bg-light p-2 rounded">
+      </pre>
+      <h5>✅ React 18 新寫法（本專案使用）</h5>
+      <pre className="bg-light p-2 rounded">
 {`ReactDOM.createRoot(document.getElementById('root'))
   .render(
     <React.StrictMode>
       <App />
     </React.StrictMode>
   )`}
-          </pre>
-          <hr/>
-          <p>按下按鈕觸發 state 更新，確認 React 掛載並運作正常：</p>
-          <button className="btn btn-primary" onClick={() => setRenderCount(c => c + 1)}>
-            觸發重新渲染
-          </button>
-          <span className="ms-3 text-muted">已觸發次數：<strong>{renderCount}</strong></span>
-          <div className="alert alert-success mt-3">
-            ✅ 你看到的整個頁面，就是 React 掛載至 &lt;div id="root"&gt; 的結果！
-          </div>
-        </div>
-      )
-    }
-    ReactDOM.createRoot(document.getElementById('root')).render(
-      <React.StrictMode><App /></React.StrictMode>
-    )
-  </script>
-</body>
-</html>
+      </pre>
+      <hr/>
+      <p>按下按鈕觸發 state 更新，確認 React 掛載並運作正常：</p>
+      <button className="btn btn-primary" onClick={() => setRenderCount(c => c + 1)}>
+        觸發重新渲染
+      </button>
+      <span className="ms-3 text-muted">已觸發次數：<strong>{renderCount}</strong></span>
+      <div className="alert alert-success mt-3">
+        ✅ 你看到的整個頁面，就是 React 掛載至 &lt;div id="root"&gt; 的結果！
+      </div>
+    </div>
+  )
+}
 ```
+
+> 對照舊版 CDN + Babel：Vite 版把「`<script type="text/babel">` 包起來 + `const { useState } = React`」改成「`import { useState } from 'react'`」；掛載語法 `ReactDOM.createRoot(...)` 兩者相同。
 
 [← 回目錄](index.md)

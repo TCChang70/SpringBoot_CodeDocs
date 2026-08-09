@@ -103,89 +103,88 @@ className={`nav-link ${currentPage === key ? 'active' : ''}`}
 
 ---
 
-## 完整可執行 HTML
+## 在 Vite React 專案中執行
 
-```html
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <title>Demo 06 — .map() 與解構賦值</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css">
-</head>
-<body>
-  <div id="root"></div>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script type="text/babel">
-    const { useState } = React
+本演示位於 `demo-app/`，啟動方式：
 
-    function Navbar({ currentPage, setCurrentPage, isLoggedIn, username, cartCount }) {
-      const navItems = [
-        { key: 'login',    label: '帳戶登入' },
-        { key: 'products', label: '產品列表' },
-        { key: 'orders',   label: '訂單' },
-        { key: 'cart',     label: `購物車 (${cartCount})` },
-      ]
-      return (
-        <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
-          <div className="container-fluid">
-            <span className="navbar-brand">我的商城</span>
-            <div className="collapse navbar-collapse">
-              <ul className="navbar-nav me-auto">
-                {navItems.map(({ key, label }) => (
-                  <li className="nav-item" key={key}>
-                    <a
-                      className={`nav-link ${currentPage === key ? 'active' : ''}`}
-                      href="#"
-                      onClick={e => { e.preventDefault(); setCurrentPage(key) }}
-                    >{label}</a>
-                  </li>
-                ))}
-              </ul>
-              <span className="navbar-text text-white">
-                {isLoggedIn ? `歡迎，${username}` : '未登入'}
-              </span>
-            </div>
-          </div>
-        </nav>
-      )
-    }
+```bash
+cd demo-app
+npm run dev    # 開啟 http://localhost:5173
+```
 
-    function App() {
-      const [currentPage, setCurrentPage] = useState('login')
-      const [isLoggedIn,  setIsLoggedIn]  = useState(false)
-      const [cartCount,   setCartCount]   = useState(0)
-      const pageMap = {
-        login: '登入頁面', products: '產品列表',
-        orders: '訂單管理', cart: '購物車'
-      }
-      return (
-        <div>
-          <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage}
-            isLoggedIn={isLoggedIn} username="admin" cartCount={cartCount} />
-          <div className="container mt-3">
-            <div className="alert alert-primary">{pageMap[currentPage] || currentPage}</div>
-            <div className="d-flex gap-2">
-              <button className="btn btn-sm btn-outline-success"
-                onClick={() => setIsLoggedIn(v => !v)}>
-                {isLoggedIn ? '模擬登出' : '模擬登入'}
-              </button>
-              <button className="btn btn-sm btn-outline-warning"
-                onClick={() => setCartCount(c => c + 1)}>
-                ＋ 購物車加一
-              </button>
-            </div>
-          </div>
+切換到頂部導覽列「06 .map()」。
+
+對應原始碼：`src/demos/Demo06NavbarMap.jsx`
+
+> 小技巧：本演示的「Demo 切換器」`src/App.jsx` 本身也是用 `navItems.map()` + `key` 寫出來的，可互相對照。
+
+---
+
+## 完整原始碼（Vite React）
+
+```jsx
+import { useState } from 'react'
+
+function Navbar({ currentPage, setCurrentPage, isLoggedIn, username, cartCount }) {
+  const navItems = [
+    { key: 'login',    label: '帳戶登入' },
+    { key: 'products', label: '產品列表' },
+    { key: 'orders',   label: '訂單' },
+    { key: 'cart',     label: `購物車 (${cartCount})` },
+  ]
+  return (
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div className="container-fluid">
+        <span className="navbar-brand">我的商城</span>
+        <div className="collapse navbar-collapse">
+          <ul className="navbar-nav me-auto">
+            {navItems.map(({ key, label }) => (
+              <li className="nav-item" key={key}>
+                <a
+                  className={`nav-link ${currentPage === key ? 'active' : ''}`}
+                  href="#"
+                  onClick={e => { e.preventDefault(); setCurrentPage(key) }}
+                >{label}</a>
+              </li>
+            ))}
+          </ul>
+          <span className="navbar-text text-white">
+            {isLoggedIn ? `歡迎，${username}` : '未登入'}
+          </span>
         </div>
-      )
-    }
+      </div>
+    </nav>
+  )
+}
 
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />)
-  </script>
-</body>
-</html>
+export default function Demo06NavbarMap() {
+  const [currentPage, setCurrentPage] = useState('login')
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [cartCount, setCartCount] = useState(0)
+  const pageMap = {
+    login: '登入頁面', products: '產品列表',
+    orders: '訂單管理', cart: '購物車'
+  }
+  return (
+    <div>
+      <Navbar currentPage={currentPage} setCurrentPage={setCurrentPage}
+        isLoggedIn={isLoggedIn} username="admin" cartCount={cartCount} />
+      <div className="container mt-3">
+        <div className="alert alert-primary">{pageMap[currentPage] || currentPage}</div>
+        <div className="d-flex gap-2">
+          <button className="btn btn-sm btn-outline-success"
+            onClick={() => setIsLoggedIn(v => !v)}>
+            {isLoggedIn ? '模擬登出' : '模擬登入'}
+          </button>
+          <button className="btn btn-sm btn-outline-warning"
+            onClick={() => setCartCount(c => c + 1)}>
+            ＋ 購物車加一
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
 ```
 
 [← 回目錄](index.md)

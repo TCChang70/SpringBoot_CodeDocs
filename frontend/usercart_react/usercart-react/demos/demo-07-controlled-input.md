@@ -72,99 +72,96 @@ async function handleLogin(e) {
 
 ---
 
-## 完整可執行 HTML
+## 在 Vite React 專案中執行
 
-> 提示：帳號 `admin`，密碼 `1234`
+本演示位於 `demo-app/`，啟動方式：
 
-```html
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-  <meta charset="UTF-8">
-  <title>Demo 07 — 受控輸入元件</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5/dist/css/bootstrap.min.css">
-</head>
-<body>
-  <div id="root"></div>
-  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-  <script type="text/babel">
-    const { useState } = React
+```bash
+cd demo-app
+npm run dev    # 開啟 http://localhost:5173
+```
 
-    async function login(username, password) {
-      return new Promise((resolve, reject) => {
-        setTimeout(() => {
-          if (username === 'admin' && password === '1234')
-            resolve({ token: 'mock-jwt-token-abc123' })
-          else
-            reject(new Error('帳號或密碼錯誤'))
-        }, 600)
-      })
-    }
+切換到頂部導覽列「07 受控輸入」。
 
-    function Login({ onLoginSuccess }) {
-      const [username, setUsername] = useState('')
-      const [password, setPassword] = useState('')
-      const [errorMsg, setErrorMsg] = useState('')
-      const [loading,  setLoading]  = useState(false)
+對應原始碼：`src/demos/Demo07ControlledInput.jsx`
 
-      async function handleLogin(e) {
-        e.preventDefault()
-        if (!username || !password) { setErrorMsg('請輸入帳號與密碼'); return }
-        setLoading(true)
-        try {
-          const res = await login(username, password)
-          localStorage.setItem('token', res.token)
-          onLoginSuccess(username)
-          setErrorMsg('')
-        } catch {
-          setErrorMsg('帳號或密碼錯誤')
-        } finally { setLoading(false) }
-      }
+> 提示：帳號 `admin`，密碼 `1234`。
 
-      return (
-        <div>
-          <h3>帳戶登入</h3>
-          <input type="text" className="form-control mb-1 w-25" placeholder="admin"
-            value={username} onChange={e => setUsername(e.target.value)} />
-          <input type="password" className="form-control mb-1 w-25" placeholder="1234"
-            value={password} onChange={e => setPassword(e.target.value)} />
-          <button className="btn btn-primary" onClick={handleLogin} disabled={loading}>
-            {loading ? '登入中...' : '登入'}
-          </button>
-          {errorMsg && <div className="mt-2 text-danger">{errorMsg}</div>}
-          <div className="mt-2 text-muted small">提示：admin / 1234</div>
-        </div>
-      )
-    }
+---
 
-    function App() {
-      const [isLoggedIn, setIsLoggedIn] = useState(false)
-      const [username,   setUsername]   = useState('')
-      return (
-        <div className="container mt-4">
-          <h2 className="text-primary">Demo 07 — 受控輸入元件</h2>
-          <div className="mt-3">
-            {isLoggedIn ? (
-              <div className="alert alert-success">
-                ✅ 登入成功！歡迎 <strong>{username}</strong>
-                <br/>
-                <button className="btn btn-sm btn-outline-secondary mt-2"
-                  onClick={() => { setIsLoggedIn(false); setUsername('') }}>登出</button>
-              </div>
-            ) : (
-              <Login onLoginSuccess={user => { setIsLoggedIn(true); setUsername(user) }} />
-            )}
+## 完整原始碼（Vite React）
+
+```jsx
+import { useState } from 'react'
+
+async function login(username, password) {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (username === 'admin' && password === '1234')
+        resolve({ token: 'mock-jwt-token-abc123' })
+      else
+        reject(new Error('帳號或密碼錯誤'))
+    }, 600)
+  })
+}
+
+function Login({ onLoginSuccess }) {
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleLogin(e) {
+    e.preventDefault()
+    if (!username || !password) { setErrorMsg('請輸入帳號與密碼'); return }
+    setLoading(true)
+    try {
+      const res = await login(username, password)
+      localStorage.setItem('token', res.token)
+      onLoginSuccess(username)
+      setErrorMsg('')
+    } catch {
+      setErrorMsg('帳號或密碼錯誤')
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <div>
+      <h3>帳戶登入</h3>
+      <input type="text" className="form-control mb-1 w-25" placeholder="admin"
+        value={username} onChange={e => setUsername(e.target.value)} />
+      <input type="password" className="form-control mb-1 w-25" placeholder="1234"
+        value={password} onChange={e => setPassword(e.target.value)} />
+      <button className="btn btn-primary" onClick={handleLogin} disabled={loading}>
+        {loading ? '登入中...' : '登入'}
+      </button>
+      {errorMsg && <div className="mt-2 text-danger">{errorMsg}</div>}
+      <div className="mt-2 text-muted small">提示：admin / 1234</div>
+    </div>
+  )
+}
+
+export default function Demo07ControlledInput() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false)
+  const [username, setUsername] = useState('')
+  return (
+    <div className="container mt-4">
+      <h2 className="text-primary">Demo 07 — 受控輸入元件</h2>
+      <div className="mt-3">
+        {isLoggedIn ? (
+          <div className="alert alert-success">
+            ✅ 登入成功！歡迎 <strong>{username}</strong>
+            <br/>
+            <button className="btn btn-sm btn-outline-secondary mt-2"
+              onClick={() => { setIsLoggedIn(false); setUsername('') }}>登出</button>
           </div>
-        </div>
-      )
-    }
-
-    ReactDOM.createRoot(document.getElementById('root')).render(<App />)
-  </script>
-</body>
-</html>
+        ) : (
+          <Login onLoginSuccess={user => { setIsLoggedIn(true); setUsername(user) }} />
+        )}
+      </div>
+    </div>
+  )
+}
 ```
 
 [← 回目錄](index.md)
