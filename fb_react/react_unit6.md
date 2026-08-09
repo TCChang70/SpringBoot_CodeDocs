@@ -6,6 +6,19 @@
 
 ---
 
+## 本單元學習地圖
+
+| 主題 | 學習內容 | 對應章節 |
+|------|---------|---------|
+| 伺服器 vs 客戶端狀態 | 兩種狀態的分類與工具 | 開頭 |
+| Fetch / Axios | GET / POST / PUT / PATCH / DELETE、Axios 實例與攔截器 | 6.1 |
+| React Query | `useQuery`、`useMutation`、樂觀更新、無限捲動 | 6.2 |
+| 完整 CRUD | 使用者管理頁（React Query 版） | 6.2 |
+
+> 💡 **學習心法**：先用手寫一遍 Fetch 的 loading/error/data 流程，再改用 React Query，你才會真正體會它解決了什麼問題。
+
+---
+
 ## 伺服器狀態 vs 客戶端狀態
 
 在學習 API 串接前，先理解這個重要區分：
@@ -688,6 +701,205 @@ function UserForm({ initialData = {}, onSubmit, onCancel, isLoading }) {
   );
 }
 ```
+
+---
+
+## 重點整理（Key Takeaways）
+
+### 快速複習表
+
+| 主題 | 一句話重點 |
+|------|-----------|
+| Fetch | `response.ok` 要手動判斷（4xx/5xx 不會自動 throw） |
+| Axios | 自動解析 JSON、自動 throw HTTP 錯誤；實例可設 baseURL / 攔截器 |
+| 攔截器 | 請求前自動加 token；回應 401 時統一導向登入 |
+| React Query `useQuery` | `queryKey` + `queryFn` 就拿到 `data / isLoading / error / refetch` |
+| `useMutation` | 寫入操作；`onSuccess` 後用 `invalidateQueries` 或 `setQueryData` 更新快取 |
+| 樂觀更新 | `onMutate` 先改 UI → 失敗用 `onError` 回滾 → `onSettled` 重新同步 |
+| 無限捲動 | `useInfiniteQuery` + Intersection Observer |
+
+### 難點詳解（Confusing Points）
+
+#### 1. 為什麼 fetch 的 404 不會拋出錯誤？
+
+`fetch` 只有「網路層失敗」（斷線、網址不存在）才會 reject。HTTP 4xx/5xx **不會** reject，Promise 一樣 resolve。所以必須手動檢查：
+
+```js
+const response = await fetch(url);
+if (!response.ok) {
+  throw new Error(`HTTP 錯誤：${response.status}`); // 手動拋出
+}
+```
+
+Axios 則預設把 4xx/5xx 當作錯誤 reject，這正是它「更好用」的原因之一。
+
+#### 2. `queryKey` 到底在幹嘛？
+
+`queryKey` 是快取的「唯一識別碼」。相同 key 的請求共用同一份快取：
+
+```js
+useQuery({ queryKey: ['users'] });              // 所有元件共享同一份
+useQuery({ queryKey: ['users', userId] });      // 每個 userId 一份快取
+```
+
+改 key（如改 userId）→ 自動重新請求；`invalidateQueries({ queryKey: ['users'] })` → 讓相關快取失效，重新 fetch。**key 的結構要一致**，否則會產生重複快取。
+
+#### 3. 樂觀更新的「回滾」是怎麼接住的？
+
+`onMutate` 的回傳值會傳給 `onError` / `onSettled` 的第三個參數（慣例命名 `context`）。流程：
+
+```js
+onMutate: async () => {
+  const previous = queryClient.getQueryData(['products']);
+  queryClient.setQueryData(['products'], optimisticData);
+  return { previous };              // ← 先備份
+},
+onError: (err, vars, context) => {
+  queryClient.setQueryData(['products'], context.previous); // ← 失敗就還原
+},
+onSettled: () => {
+  queryClient.invalidateQueries({ queryKey: ['products'] }); // ← 最終與伺服器同步
+},
+```
+
+---
+
+## 互動式練習題（Hands-On Practice）
+
+> 每題都有「提示」與「參考實作」。請**先自己動手做**，卡住再看提示，最後才對答案。
+
+### 練習 1：用 Fetch 封裝 `productService`（⭐⭐ 基礎）
+
+**目標**：建立 `productService`，包含 `getAll`、`getById`、`create`、`update`、`delete` 五個方法（使用 jsonplaceholder 的 `/posts` 當練習資源）。
+
+**提示**：
+- 每個方法都檢查 `response.ok`
+- 回傳 `response.json()`（DELETE 可能無 body）
+
+<details>
+<summary>點我看參考實作</summary>
+
+```js
+// services/productService.js
+const BASE = 'https://jsonplaceholder.typicode.com/posts';
+
+async function request(url, options = {}) {
+  const response = await fetch(url, options);
+  if (!response.ok) throw new Error(`HTTP 錯誤：${response.status}`);
+  return response.status === 204 ? null : response.json();
+}
+
+export const productService = {
+  getAll: () => request(BASE),
+  getById: (id) => request(`${BASE}/${id}`),
+  create: (data) =>
+    request(BASE, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+  update: (id, data) =>
+    request(`${BASE}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    }),
+  delete: (id) => request(`${BASE}/${id}`, { method: 'DELETE' }),
+};
+```
+
+</details>
+
+### 練習 2：`useQuery` 商品列表 + 搜尋（⭐⭐⭐ 中階）
+
+**目標**：用 React Query 載入商品列表，並用 `queryKey` 讓「分類」改變時自動重新請求。
+
+**提示**：
+- `queryKey: ['products', { category }]`
+- 用 `useState` 管理 category
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { productService } from '../services/productService';
+
+function ProductList() {
+  const [category, setCategory] = useState('all');
+
+  const { data: products, isLoading, isError, error } = useQuery({
+    queryKey: ['products', { category }],
+    queryFn: () => productService.getByCategory(category),
+  });
+
+  return (
+    <div>
+      <button onClick={() => setCategory('all')}>全部</button>
+      <button onClick={() => setCategory('electronics')}>電子</button>
+
+      {isLoading && <p>載入中...</p>}
+      {isError && <p>錯誤：{error.message}</p>}
+
+      <ul>
+        {products?.map(p => <li key={p.id}>{p.title} — ${p.price}</li>)}
+      </ul>
+    </div>
+  );
+}
+```
+
+> ⚠️ 練習時若沒有 `getByCategory`，可以先用 `productService.getAll()` 模擬（`queryFn: productService.getAll`）。
+
+</details>
+
+### 練習 3：`useMutation` 刪除商品 + 快取更新（⭐⭐⭐⭐ 進階）
+
+**目標**：用 `useMutation` 實作刪除商品，成功後**直接從快取移除**（不重新 fetch），並顯示刪除中的 loading 狀態。
+
+**提示**：
+- `mutationFn: (id) => productService.delete(id)`
+- `onSuccess` 用 `queryClient.setQueryData(['products'], old => old.filter(...))`
+- `isPending` 控制按鈕 disabled 與文字
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { productService } from '../services/productService';
+
+function ProductItem({ product }) {
+  const queryClient = useQueryClient();
+
+  const deleteMutation = useMutation({
+    mutationFn: () => productService.delete(product.id),
+    onSuccess: () => {
+      // 直接更新快取，不需重新 fetch
+      queryClient.setQueryData(['products'], (old) =>
+        old?.filter(p => p.id !== product.id)
+      );
+    },
+  });
+
+  return (
+    <li>
+      {product.title}
+      <button
+        onClick={() => {
+          if (confirm(`確定刪除「${product.title}」？`)) deleteMutation.mutate();
+        }}
+        disabled={deleteMutation.isPending}
+      >
+        {deleteMutation.isPending ? '刪除中...' : '刪除'}
+      </button>
+    </li>
+  );
+}
+```
+
+</details>
 
 ---
 

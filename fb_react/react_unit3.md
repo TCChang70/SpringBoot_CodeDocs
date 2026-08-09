@@ -6,6 +6,18 @@
 
 ---
 
+## 本單元學習地圖
+
+| 主題 | 學習內容 | 對應章節 |
+|------|---------|---------|
+| 常用 Hooks | `useRef`、`useContext`、`useReducer`、`useMemo`、`useCallback` | 3.1 |
+| 自訂 Hook | `useFetch`、`useLocalStorage`、設計原則 | 3.2 |
+| 元件設計模式 | 容器 vs 展示、受控 vs 非受控、組合優於繼承 | 3.3 |
+
+> 💡 **學習心法**：本單元不必一次背完所有 Hook。先弄懂「每個 Hook 解決什麼問題」，需要時再回來查語法。
+
+---
+
 ## 3.1 常用 Hooks
 
 ---
@@ -1147,6 +1159,215 @@ export default function UserDashboard() {
   );
 }
 ```
+
+---
+
+## 重點整理（Key Takeaways）
+
+### 快速複習表
+
+| Hook / 主題 | 一句話重點 |
+|-------------|-----------|
+| `useRef` | 回傳 `{ current }`；值改變「不會」觸發重渲染；可用於 DOM 操作與計時器 ID |
+| `useContext` | 建立全域資料容器，解決 Props Drilling；子元件直接消費 |
+| `useReducer` | `[state, dispatch] = useReducer(reducer, initialState)`；適合複雜、多子值相關的狀態 |
+| `useMemo` | 記憶「計算結果」；依賴沒變就不重算 |
+| `useCallback` | 記憶「函式參考」；搭配 `React.memo` 避免子元件無謂重渲染 |
+| 自訂 Hook | 以 `use` 開頭、只在頂層呼叫、回傳簡潔介面、記得 cleanup |
+| 設計模式 | 容器管資料、展示管 UI；受控元件由 React 掌控值 |
+
+### 難點詳解（Confusing Points）
+
+#### 1. `useRef` 和 `useState` 何時用哪個？
+
+| 情境 | 該用誰 | 原因 |
+|------|--------|------|
+| 要顯示在畫面上的值 | `useState` | 值改變需要重渲染 |
+| 計時器 ID、上一次的值、不需要顯示的暫存 | `useRef` | 值改變不需重渲染，且重渲染不會遺失 |
+
+> 判斷口訣：**「值要不要出現在畫面上？」** 要 → `useState`；不要 → `useRef`。
+
+#### 2. 為什麼 `reducer` 必須是「純函式」？
+
+純函式 = 同樣輸入一定得到同樣輸出、且不修改外部狀態。因為 React 可能為了偵錯**重複呼叫 reducer**（例如 Strict Mode），若 reducer 有副作用（改全域變數、呼叫 API），結果會不一致、難以追蹤。
+
+```js
+// ❌ 有副作用：直接改外部陣列
+function reducer(state, action) {
+  state.items.push(action.payload); // 污染原 state！
+  return state;
+}
+
+// ✅ 純函式：回傳新物件
+function reducer(state, action) {
+  return { ...state, items: [...state.items, action.payload] };
+}
+```
+
+#### 3. `useMemo` / `useCallback` 的「閉包陷阱」
+
+如果依賴陣列漏寫了函式內使用的變數，記憶起來的函式會「記住舊的值」（閉包）。寫依賴時要**把函式內用到的每個外部變數都列進去**，或直接依靠 ESLint（exhaustive-deps）提醒。
+
+```js
+const handleSave = useCallback(() => {
+  saveToApi(userId); // 用了 userId
+}, [userId]);        // ✅ 必須包含 userId，否則會抓到舊值
+```
+
+---
+
+## 互動式練習題（Hands-On Practice）
+
+> 每題都有「提示」與「參考實作」。請**先自己動手做**，卡住再看提示，最後才對答案。
+
+### 練習 1：用 `useRef` 自動聚焦表單（⭐⭐ 基礎）
+
+**目標**：建立一個登入表單，頁面載入後**自動把游標 focus 到第一個輸入框**，點「清除」按鈕後再次聚焦。
+
+**提示**：
+- `useRef(null)` 建立 ref，綁到 `<input ref={inputRef} />`
+- 用 `useEffect`（`[]`）在掛載後呼叫 `inputRef.current.focus()`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { useRef, useEffect } from 'react';
+
+function AutoFocusForm() {
+  const emailRef = useRef(null);
+
+  useEffect(() => {
+    emailRef.current?.focus();
+  }, []);
+
+  return (
+    <form>
+      <input ref={emailRef} type="email" placeholder="Email" />
+      <input type="password" placeholder="密碼" />
+      <button type="button" onClick={() => emailRef.current?.focus()}>
+        聚焦 Email
+      </button>
+    </form>
+  );
+}
+```
+
+</details>
+
+### 練習 2：`useReducer` 管理購物車（⭐⭐⭐ 中階）
+
+**目標**：用 `useReducer` 實作購物車的 `ADD_ITEM`（數量累加）與 `REMOVE_ITEM` 兩個 action。
+
+**提示**：
+- `initialState = { items: [] }`
+- `ADD_ITEM`：若已存在 → `quantity + 1`；否則新增 `{ ...product, quantity: 1 }`
+- 元件中用 `dispatch({ type, payload })` 觸發
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { useReducer } from 'react';
+
+const initialState = { items: [] };
+
+function cartReducer(state, action) {
+  switch (action.type) {
+    case 'ADD_ITEM': {
+      const exists = state.items.find(i => i.id === action.payload.id);
+      if (exists) {
+        return {
+          items: state.items.map(i =>
+            i.id === action.payload.id ? { ...i, quantity: i.quantity + 1 } : i
+          ),
+        };
+      }
+      return { items: [...state.items, { ...action.payload, quantity: 1 }] };
+    }
+    case 'REMOVE_ITEM':
+      return { items: state.items.filter(i => i.id !== action.payload) };
+    default:
+      return state;
+  }
+}
+
+function Cart() {
+  const [cart, dispatch] = useReducer(cartReducer, initialState);
+
+  return (
+    <div>
+      <button onClick={() => dispatch({ type: 'ADD_ITEM', payload: { id: 1, name: 'iPhone' } })}>
+        加入 iPhone
+      </button>
+      <ul>
+        {cart.items.map(i => (
+          <li key={i.id}>
+            {i.name} x {i.quantity}
+            <button onClick={() => dispatch({ type: 'REMOVE_ITEM', payload: i.id })}>
+              移除
+            </button>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+</details>
+
+### 練習 3：實作 `useDebounce` 自訂 Hook（⭐⭐⭐⭐ 進階）
+
+**目標**：實作 `useDebounce(value, delay)`：當 `value` 在 `delay` 毫秒內沒有變化，才回傳更新後的值。用於搜尋框避免頻繁呼叫 API。
+
+**提示**：
+- 內部用 `useState` 儲存「延遲後的值」
+- 用 `useEffect` 設定 `setTimeout`，在 `delay` 過後才 `setState`
+- 清理函式要 `clearTimeout`（這樣重複輸入會不斷重置計時器）
+
+<details>
+<summary>點我看參考實作</summary>
+
+```js
+// hooks/useDebounce.js
+import { useState, useEffect } from 'react';
+
+function useDebounce(value, delay = 300) {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebounced(value);
+    }, delay);
+
+    // value 改變時清除上一個計時器，重新計時
+    return () => clearTimeout(timer);
+  }, [value, delay]);
+
+  return debounced;
+}
+
+export default useDebounce;
+```
+
+```jsx
+// 使用範例：搜尋框
+function SearchBox() {
+  const [keyword, setKeyword] = useState('');
+  const debouncedKeyword = useDebounce(keyword, 500);
+
+  // 只有「停止輸入 500ms 後」才呼叫 API
+  useEffect(() => {
+    if (!debouncedKeyword) return;
+    searchApi(debouncedKeyword);
+  }, [debouncedKeyword]);
+
+  return <input value={keyword} onChange={e => setKeyword(e.target.value)} />;
+}
+```
+
+</details>
 
 ---
 

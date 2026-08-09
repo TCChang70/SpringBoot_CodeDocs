@@ -6,6 +6,20 @@
 
 ---
 
+## 本單元學習地圖
+
+| 主題 | 學習內容 | 對應章節 |
+|------|---------|---------|
+| ES6+ 基礎語法 | 箭頭函式、解構賦值、展開運算子 | 1.1 |
+| 模組系統 | `import` / `export`、預設與具名匯出 | 1.1 |
+| 非同步處理 | Promise、async / await | 1.1 |
+| 開發環境 | Node.js、VS Code 擴充套件 | 1.2 |
+| 第一個 React 專案 | Vite 建置、專案結構、`main.jsx`、HMR | 1.2 |
+
+> 💡 **學習心法**：1.1 的語法不用「背」，只要「看得懂」即可。本單元最後的互動式練習題會引導你實際動手確認每個概念。
+
+---
+
 ## 1.1 必備基礎知識 — JavaScript ES6+ 語法
 
 React 大量使用現代 JavaScript 語法。以下是開始學 React 之前必須掌握的概念。
@@ -326,6 +340,173 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   </React.StrictMode>,
 )
 ```
+
+---
+
+## 重點整理（Key Takeaways）
+
+### 快速複習表
+
+| 主題 | 一句話重點 |
+|------|-----------|
+| 箭頭函式 | 簡化 `function` 寫法；單行可省略 `return`；回傳物件要包 `()`；一個參數可省略括號 |
+| 解構賦值 | 從物件 `{ }` / 陣列 `[ ]` 拆值；用 `:` 改名、用 `=` 設預設值 |
+| 展開運算子 | `...` 展開陣列 / 物件；是「淺拷貝」；React 更新 state 最常用 |
+| 模組系統 | `export default`（每檔一個，引入名稱隨意）；`export const`（可多個，引入名稱須對應） |
+| Promise / async-await | 非同步的兩種寫法；`await` 只能在 `async` 函式內使用 |
+
+### 難點詳解（Confusing Points）
+
+#### 1. 箭頭函式的 `this` 到底差在哪？
+
+一般函式的 `this` 由「呼叫方式」決定；箭頭函式**沒有自己的 `this`**，會繼承「定義位置」外層的 `this`。
+
+```javascript
+// 傳統函式：this 依呼叫者而定
+const user = {
+  name: "Alice",
+  greet: function () {
+    console.log(this.name); // this 是 user
+  },
+};
+
+// 箭頭函式：this 繼承外層作用域
+const greet = () => {
+  console.log(this.name); // this 不是 user（依外層而定）
+};
+```
+
+在 React 的事件處理中，常搭配箭頭函式來避免 `this` 遺失的困擾。
+
+#### 2. 展開運算子為什麼是「淺拷貝」？
+
+`...` 只複製「第一層」。物件內的巢狀物件仍是**同一個參考**，改其中一個，另一個也會變。
+
+```javascript
+const original = { a: 1, nested: { b: 2 } };
+const copy = { ...original };
+copy.nested.b = 99;
+console.log(original.nested.b); // 99（被改到了！）
+```
+
+> 若需要「深拷貝」，可用 `structuredClone(obj)` 或 JSON 方式（注意 JSON 無法處理函式）。
+
+#### 3. `await` 忘了寫，會發生什麼事？
+
+`fetch()` 回傳的是 **Promise 物件**，不是資料。少了 `await`，你拿到的會是「尚未解析的 Promise」，不是實際資料。
+
+```javascript
+const response = fetch(url);          // ❌ 少了 await → Promise 物件
+const data = await response.json();   // ❌ 這裡會出錯（Promise 沒有 .json()）
+```
+
+---
+
+## 互動式練習題（Hands-On Practice）
+
+> 每題都有「提示」與「參考實作」。請**先自己動手做**，卡住再看提示，最後才對答案。
+
+### 練習 1：箭頭函式轉換（⭐⭐ 基礎）
+
+**目標**：把以下傳統函式改寫成單行箭頭函式。
+
+```javascript
+function isAdult(age) {
+  if (age >= 18) {
+    return "成年人";
+  } else {
+    return "未成年";
+  }
+}
+```
+
+**提示**：
+- 單行箭頭函式可以直接回傳三元運算子的結果：`條件 ? A : B`
+- 答案格式是 `const 名稱 = (...) => ...;`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```javascript
+const isAdult = (age) => (age >= 18 ? "成年人" : "未成年");
+
+console.log(isAdult(20)); // 成年人
+console.log(isAdult(15)); // 未成年
+```
+
+</details>
+
+### 練習 2：解構 + 展開更新購物車（⭐⭐⭐ 中階）
+
+**目標**：從購物車物件中取出 `owner`，用展開運算子新增一件商品，並計算總價。
+
+```javascript
+const cart = {
+  owner: { name: "Alice", level: "VIP" },
+  items: [{ id: 1, title: "iPhone", price: 999 }],
+};
+```
+
+**提示**：
+- 用物件解構取出 `owner`
+- 用 `{ ...cart, items: [...] }` 複製並更新 items
+- 用 `items.reduce((sum, i) => sum + i.price, 0)` 計算總價
+
+<details>
+<summary>點我看參考實作</summary>
+
+```javascript
+const { owner } = cart; // 解構 owner
+
+const updatedCart = {
+  ...cart,
+  items: [...cart.items, { id: 2, title: "AirPods", price: 249 }],
+};
+
+const total = updatedCart.items.reduce((sum, i) => sum + i.price, 0);
+
+console.log(owner.name);              // Alice
+console.log(updatedCart.items.length);// 2
+console.log(total);                   // 1248
+```
+
+</details>
+
+### 練習 3：async/await + 模組綜合應用（⭐⭐⭐⭐ 綜合）
+
+**目標**：建立一個 `fetchUser` 模組，用 `async/await` 抓取使用者資料並處理錯誤，再用 `import/export` 在另一個檔案中使用。
+
+**提示**：
+- 用 `export default` 匯出主函式
+- 記得檢查 `response.ok`，並用 `try/catch` 包住
+- 呼叫端用 `import` 引入
+
+<details>
+<summary>點我看參考實作</summary>
+
+```javascript
+// services/userService.js
+export async function fetchUser(id) {
+  try {
+    const response = await fetch(
+      `https://jsonplaceholder.typicode.com/users/${id}`
+    );
+    if (!response.ok) throw new Error(`HTTP 錯誤：${response.status}`);
+    return await response.json();
+  } catch (error) {
+    console.error("發生錯誤：", error.message);
+    return null;
+  }
+}
+
+// App.js
+import { fetchUser } from "./services/userService";
+
+const user = await fetchUser(1);
+console.log(user?.name); // Leanne Graham（失敗時為 null）
+```
+
+</details>
 
 ---
 

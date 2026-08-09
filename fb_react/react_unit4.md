@@ -6,6 +6,20 @@
 
 ---
 
+## 本單元學習地圖
+
+| 主題 | 學習內容 | 對應章節 |
+|------|---------|---------|
+| Router 基礎 | `BrowserRouter`、`Routes`、`Route`、`Link` / `NavLink` | 4.1 |
+| 動態路由 | `:id` 段落、`useParams`、多個動態參數 | 4.1 |
+| 程式化導航 | `useNavigate`、`useLocation`、`useSearchParams` | 4.1 |
+| 巢狀路由 | 父路由 + `<Outlet>`、index 子路由 | 4.1 |
+| 進階模式 | 受保護路由、404 頁面 | 4.1 |
+
+> 💡 **學習心法**：路由的核心只有一句話——「URL 長什麼樣，就渲染哪個元件」。其他都是圍繞這句話的工具。
+
+---
+
 ## 4.1 React Router v6 基礎
 
 ### 概念說明
@@ -353,7 +367,9 @@ function LoginForm() {
   );
 }
 export default LoginForm;
-
+```
+```jsx
+// pages/HomePage.jsx — 登入成功後的首頁
 import { useNavigate } from 'react-router-dom';
 
 function HomePage() {
@@ -404,8 +420,9 @@ function CurrentPage() {
     </div>
   );
 }
-
-// 常見用途：取得查詢字串參數 必須加入 Components.css 才能正常顯示
+```
+```jsx
+// 常見用途：取得查詢字串參數（需加入 Components.css 才能正常顯示）
 import { useSearchParams } from 'react-router-dom';
 import './Components.css';
 
@@ -789,6 +806,181 @@ function App() {
   );
 }
 ```
+
+---
+
+## 重點整理（Key Takeaways）
+
+### 快速複習表
+
+| 主題 | 一句話重點 |
+|------|-----------|
+| `BrowserRouter` | 包在 App 最外層，讓路由生效 |
+| `<Routes>` / `<Route>` | 定義「URL → 元件」的對應關係；`path="*"` 做 404 |
+| `<Link>` / `<NavLink>` | 頁面切換連結（不用 `<a href>`）；`NavLink` 自動加 active 樣式 |
+| 動態路由 | `path="/products/:id"`；元件內用 `useParams()` 取 `{ id }` |
+| `useNavigate` | 程式化跳轉：`navigate('/path')`、`navigate(-1)` 回上一頁 |
+| `useSearchParams` | 讀寫 URL 查詢字串（`?sort=price`） |
+| 巢狀路由 | 父路由用 `<Outlet />` 放子路由；`index` 是預設子路由 |
+| 受保護路由 | 未登入時 `<Navigate to="/login" state={{ from }} replace />` |
+
+### 難點詳解（Confusing Points）
+
+#### 1. 為什麼 SPA 裡不能用 `<a href>`？
+
+`<a href="/about">` 會觸發**整頁重新載入**：瀏覽器重新向伺服器請求 `/about`，頁面上所有 React state 全部清空。SPA 的特色就是「不重整頁面」地切換內容，所以要用 `<Link>` 攔截點擊、只改 URL 並切換元件。
+
+#### 2. 動態路由的 `:id` 怎麼定義、怎麼讀？
+
+- 定義：`<Route path="/products/:id" element={<ProductDetail />} />`（`:id` 是「動態段落」）
+- 讀取：`const { id } = useParams();`（回傳**字串**）
+- 注意：想再「觸發載入」時，把 `id` 放進 `useEffect` 的依賴陣列，`id` 改變就會重新請求。
+
+#### 3. 受保護路由的「登入後跳回原本頁面」怎麼運作？
+
+```jsx
+// 1. 未登入時，把「想去哪裡」記錄在 state，並導向登入頁
+<Navigate to="/login" state={{ from: location }} replace />
+
+// 2. 登入成功後，讀取原本的目的地再跳回去
+const { state } = useLocation();
+navigate(state?.from?.pathname ?? '/');
+```
+
+先記錄（`state.from`）→ 登入 → 回跳。這樣使用者不會被丟回首頁，體驗更流暢。
+
+---
+
+## 互動式練習題（Hands-On Practice）
+
+> 每題都有「提示」與「參考實作」。請**先自己動手做**，卡住再看提示，最後才對答案。
+
+### 練習 1：用 `NavLink` 建立導覽列（⭐⭐ 基礎）
+
+**目標**：建立一個含「首頁 / 關於 / 商品」的 Navbar，目前所在頁面顯示藍色粗體。
+
+**提示**：
+- `NavLink` 的 `className` 或 `style` 會收到 `{ isActive }`
+- 用三元運算子切換樣式
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { NavLink } from 'react-router-dom';
+
+function Navbar() {
+  return (
+    <nav>
+      <NavLink
+        to="/"
+        style={({ isActive }) => ({
+          color: isActive ? 'blue' : 'black',
+          fontWeight: isActive ? 'bold' : 'normal',
+        })}
+      >
+        首頁
+      </NavLink>
+      <NavLink to="/about" className={({ isActive }) => (isActive ? 'active' : '')}>
+        關於
+      </NavLink>
+      <NavLink to="/products">商品</NavLink>
+    </nav>
+  );
+}
+```
+
+</details>
+
+### 練習 2：動態路由 + `useParams` 商品詳情（⭐⭐⭐ 中階）
+
+**目標**：定義 `/products/:id` 路由，建立 `ProductDetail` 元件用 `useParams` 取得 id，呼叫 API 顯示商品資料。
+
+**提示**：
+- `fetch(`https://fakestoreapi.com/products/${id}`)`
+- `useParams()` 解構出 `{ id }`，`id` 放進 `useEffect` 依賴陣列
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { useParams } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+
+function ProductDetail() {
+  const { id } = useParams();
+  const [product, setProduct] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch(`https://fakestoreapi.com/products/${id}`)
+      .then(res => res.json())
+      .then(data => {
+        setProduct(data);
+        setLoading(false);
+      });
+  }, [id]);
+
+  if (loading) return <p>載入中...</p>;
+
+  return (
+    <div>
+      <h1>{product.title}</h1>
+      <p>${product.price}</p>
+      <p>{product.description}</p>
+    </div>
+  );
+}
+
+export default ProductDetail;
+```
+
+</details>
+
+### 練習 3：受保護路由 + 登入後跳回原頁（⭐⭐⭐⭐ 進階）
+
+**目標**：建立 `ProtectedRoute`，未登入導向 `/login`；登入成功後跳回**原本想去的頁面**。
+
+**提示**：
+- `ProtectedRoute` 用 `localStorage.getItem('token')` 判斷是否登入
+- 未登入：`<Navigate to="/login" state={{ from: location }} replace />`
+- 登入頁成功後：`navigate(state?.from?.pathname ?? '/')`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+// components/ProtectedRoute.jsx
+import { Navigate, useLocation } from 'react-router-dom';
+
+function ProtectedRoute({ children }) {
+  const isLoggedIn = !!localStorage.getItem('token');
+  const location = useLocation();
+
+  if (!isLoggedIn) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  return children;
+}
+
+// pages/Login.jsx — 登入成功後回跳
+import { useNavigate, useLocation } from 'react-router-dom';
+
+function Login() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const handleLogin = async () => {
+    localStorage.setItem('token', 'fake-token');
+    // 登入後跳回原本要去的頁面，找不到就回首頁
+    navigate(location.state?.from?.pathname ?? '/', { replace: true });
+  };
+
+  return <button onClick={handleLogin}>登入</button>;
+}
+```
+
+</details>
 
 ---
 

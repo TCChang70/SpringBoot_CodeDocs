@@ -6,6 +6,18 @@
 
 ---
 
+## 本單元學習地圖
+
+| 主題 | 學習內容 | 對應章節 |
+|------|---------|---------|
+| CSS Modules | Scoped CSS、`styles.` 存取、`clsx` 組合 class | 7.1 |
+| Tailwind CSS | Utility-first、響應式前綴、`cn()` 工具函式 | 7.2 |
+| UI 元件庫 | MUI、Ant Design、shadcn/ui 的選擇與使用 | 7.3 |
+
+> 💡 **學習心法**：三種方案沒有絕對優劣——小型專案用 CSS Modules，快速原型用 Tailwind，企業後台用元件庫。先各做一個小元件感受差異。
+
+---
+
 ## 三種方案比較
 
 | 方案 | 定位 | 適用情境 |
@@ -648,6 +660,204 @@ function LoginCard() {
 5. 表單有名稱、價格、描述三個欄位
 
 **延伸挑戰**：加入暗黑模式（Dark Mode）切換按鈕。
+
+---
+
+## 重點整理（Key Takeaways）
+
+### 快速複習表
+
+| 主題 | 一句話重點 |
+|------|-----------|
+| CSS Modules | 檔名加 `.module.css`；用 `styles.類名` 存取，class 自動加雜湊避免衝突 |
+| `clsx` | 條件式組合 class：`clsx(styles.base, variant && styles[variant])` |
+| Tailwind | Utility-first；間距是 4px 倍數；`hover:` / `md:` 等前綴 |
+| 響應式 | Mobile First：無前綴 = 手機，`sm:` `md:` `lg:` `xl:` 依序往上 |
+| `cn()` | `twMerge(clsx(...))`，讓後面的 class 可以覆蓋前面的 |
+| 元件庫 | MUI 完整、antd 中文文件好、shadcn 可完全自訂 |
+
+### 難點詳解（Confusing Points）
+
+#### 1. Tailwind 為什麼不能用字串插值組 class？
+
+```jsx
+const color = 'blue';
+<div className={`bg-${color}-500`}>  // ❌ 無效！
+```
+
+Tailwind 在建構時是「掃描原始程式碼」找完整 class 名稱。`bg-${color}-500` 在編譯當下並不存在完整的 `bg-blue-500` 字串，所以不會產生對應 CSS。
+
+解法：**寫出完整的 class 名稱對應表**。
+
+```jsx
+const colorClass = { blue: 'bg-blue-500', red: 'bg-red-500' };
+<div className={colorClass[color]}>  // ✅ 有效
+```
+
+#### 2. CSS Modules 為什麼一定要寫 `styles.`？
+
+`.module.css` 的 class 在編譯後會被改名（如 `.button → .Button_button__x3k2a`）。只有透過 `styles` 物件取用，才能拿到「改名後」的類名；直接寫 `className="button"` 用的是**全域**的 `button`，不會套用模組樣式。
+
+#### 3. Mobile First 到底怎麼看？
+
+沒有前綴的樣式 = 手機版（所有尺寸都套用）；加上 `md:` 後是「≥768px 時覆蓋」。所以**先寫手機版，再用前綴逐步升級**：
+
+```jsx
+<div className="grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+{/*  手機 1 欄     平板 2 欄     桌機 3 欄 */}
+</div>
+```
+
+---
+
+## 互動式練習題（Hands-On Practice）
+
+> 每題都有「提示」與「參考實作」。請**先自己動手做**，卡住再看提示，最後才對答案。
+
+### 練習 1：CSS Modules 卡片元件 + `clsx` 變體（⭐⭐ 基礎）
+
+**目標**：建立 `Card.module.css`（`.card`、`.elevated`、`.flat`），用 `clsx` 實作 `elevated`（陰影）與 `flat`（無陰影）兩種變體。
+
+**提示**：
+- `styles[variant]` 動態取用 class
+- `clsx(styles.card, variant === 'elevated' ? styles.elevated : styles.flat)`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```css
+/* components/Card/Card.module.css */
+.card {
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+.elevated {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+.flat {
+  box-shadow: none;
+}
+```
+
+```jsx
+// components/Card/Card.jsx
+import styles from './Card.module.css';
+import clsx from 'clsx';
+
+function Card({ variant = 'flat', children }) {
+  return (
+    <div className={clsx(styles.card, styles[variant])}>
+      {children}
+    </div>
+  );
+}
+
+export default Card;
+```
+
+```jsx
+// 使用
+<Card variant="elevated">這張有陰影</Card>
+<Card variant="flat">這張沒有</Card>
+```
+
+</details>
+
+### 練習 2：Tailwind 響應式登入表單（⭐⭐⭐ 中階）
+
+**目標**：用 Tailwind 建立登入表單：手機版全寬，桌機版置中、最大寬度 400px，包含 Email、密碼、登入按鈕。
+
+**提示**：
+- 外層容器：`w-full max-w-sm mx-auto mt-16`
+- 輸入框：`w-full border border-gray-300 rounded-lg p-3`
+- 按鈕：`w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+function LoginForm() {
+  return (
+    <form className="w-full max-w-sm mx-auto mt-16 p-6 space-y-4">
+      <h1 className="text-2xl font-bold text-center">登入</h1>
+
+      <div>
+        <label htmlFor="email" className="block text-sm font-medium mb-1">
+          Email
+        </label>
+        <input
+          id="email"
+          type="email"
+          className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          placeholder="you@example.com"
+        />
+      </div>
+
+      <div>
+        <label htmlFor="password" className="block text-sm font-medium mb-1">
+          密碼
+        </label>
+        <input
+          id="password"
+          type="password"
+          className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-blue-500"
+        />
+      </div>
+
+      <button
+        type="submit"
+        className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 rounded-lg transition-colors"
+      >
+        登入
+      </button>
+    </form>
+  );
+}
+```
+
+</details>
+
+### 練習 3：整合 MUI 元件 + Dark Mode 切換（⭐⭐⭐⭐ 進階）
+
+**目標**：用 MUI 的 `Card`、`TextField`、`Button` 建立使用者卡片，並用 MUI 的 `ThemeProvider` 實作淺色 / 深色切換。
+
+**提示**：
+- 用 `createTheme({ palette: { mode } })` 產生主題
+- `<ThemeProvider theme={theme}>` 包住內容
+- 深色模式開關：`theme.palette.mode === 'dark' ? '淺色' : '深色'`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { useState } from 'react';
+import {
+  ThemeProvider, createTheme, Card, CardContent, TextField, Button,
+} from '@mui/material';
+
+function MuiDemo() {
+  const [dark, setDark] = useState(false);
+  const theme = createTheme({ palette: { mode: dark ? 'dark' : 'light' } });
+
+  return (
+    <ThemeProvider theme={theme}>
+      <Card sx={{ maxWidth: 400, mx: 'auto', mt: 8, p: 3 }}>
+        <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Button variant="outlined" onClick={() => setDark(v => !v)}>
+            切換為 {dark ? '淺色' : '深色'} 模式
+          </Button>
+          <TextField label="Email" type="email" fullWidth size="small" />
+          <TextField label="密碼" type="password" fullWidth size="small" />
+          <Button variant="contained" fullWidth>登入</Button>
+        </CardContent>
+      </Card>
+    </ThemeProvider>
+  );
+}
+```
+
+</details>
 
 ---
 

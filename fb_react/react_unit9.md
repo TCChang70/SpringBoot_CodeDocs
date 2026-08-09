@@ -6,6 +6,21 @@
 
 ---
 
+## 本單元學習地圖
+
+| 主題 | 學習內容 | 對應章節 |
+|------|---------|---------|
+| 渲染機制 | React 何時重新渲染、常見誤解 | 開頭 |
+| 避免重渲染 | `React.memo`、`useMemo`、`useCallback` | 9.1、9.2 |
+| 懶載入 | `React.lazy` + `Suspense`、骨架屏 | 9.3 |
+| 程式碼分割 | 動態 import、預載入 | 9.4 |
+| 長列表 | `react-window` 虛擬化 | 9.5 |
+| 量測 | React DevTools Profiler | 9.5 |
+
+> 💡 **學習心法**：最佳化鐵則——**「先量測，再最佳化」**。不要為了用 memo 而用 memo，過度最佳化反而更慢。
+
+---
+
 ## React 渲染機制概覽
 
 在學習最佳化前，先了解 React 何時重新渲染：
@@ -559,6 +574,219 @@ function ProductGrid({ products }) {
    - 用 `react-window` 的 `FixedSizeList` 替換原始 `<ul>` 渲染
 3. **懶載入**：將「商品詳情頁」改為懶載入，並實作 Skeleton Loading UI
 4. **量測**：用 React DevTools Profiler 比較最佳化前後的渲染時間
+
+---
+
+## 重點整理（Key Takeaways）
+
+### 快速複習表
+
+| 工具 | 一句話重點 | 使用時機 |
+|------|-----------|---------|
+| `React.memo` | 淺比較 props，沒變就跳過子元件重渲染 | 渲染成本高的純展示元件 |
+| `useCallback` | 記憶函式參考 | 搭配 `memo` 穩定函式 prop、`useEffect` 依賴 |
+| `useMemo` | 記憶計算結果 / 物件參考 | 大量資料過濾排序、穩定物件 prop |
+| `React.lazy` + `Suspense` | 需要時才下載程式碼 | 路由級 / 大型元件 |
+| 動態 `import()` | 按需載入套件 | 大型函式庫（PDF、圖表） |
+| `react-window` | 只渲染可見項目 | 數百筆以上的長列表 |
+
+### 難點詳解（Confusing Points）
+
+#### 1. 為什麼 `React.memo` 單獨使用有時「沒有效果」？
+
+`memo` 只比較 props。如果父元件每次都傳「新函式」或「新物件」，比較永遠不等，memo 形同虛設。所以 **memo 幾乎都要搭配 `useCallback` / `useMemo` 穩定參考**：
+
+```jsx
+const ProductCard = memo(({ product, onAdd }) => { /* ... */ });
+
+// ❌ onAdd 每次都是新函式 → memo 失效
+<button onClick={() => setCart([...cart, id])}>加入</button>
+
+// ✅ useCallback 讓 onAdd 參考穩定 → memo 生效
+const onAdd = useCallback((id) => setCart(prev => [...prev, id]), []);
+```
+
+#### 2. `React.lazy` 為什麼一定要搭配 `Suspense`？
+
+`lazy` 回傳的元件在「下載完成前」需要一個 fallback 給 React 顯示。沒有 `Suspense` 包住，React 不知道要顯示什麼，會直接拋錯。**用哪個 fallback？用哪層包？** 就是 `Suspense` 的 `fallback` prop 與放置位置決定的。
+
+#### 3. 為什麼「先量測再最佳化」？
+
+`memo` / `useCallback` 本身也有「比較成本」。如果元件渲染很快、重渲染也不頻繁，套上去只會更慢。先用 **React DevTools Profiler** 錄製操作，確認「哪個元件、哪個步驟」真的花時間，再針對它下手。
+
+---
+
+## 互動式練習題（Hands-On Practice）
+
+> 每題都有「提示」與「參考實作」。請**先自己動手做**，卡住再看提示，最後才對答案。
+
+### 練習 1：修復 `memo` 失效問題（⭐⭐ 基礎）
+
+**目標**：下方 `ExpensiveRow` 已用 `memo`，但父元件每次重渲染都會重繪整排。找出問題並修復。
+
+```jsx
+import { memo, useState } from 'react';
+
+const ExpensiveRow = memo(function ExpensiveRow({ item, onToggle }) {
+  console.log('渲染：', item.id);
+  return <li onClick={() => onToggle(item.id)}>{item.name}</li>;
+});
+
+function List() {
+  const [count, setCount] = useState(0);
+  const [items] = useState([{ id: 1, name: 'A' }, { id: 2, name: 'B' }]);
+
+  return (
+    <div>
+      <button onClick={() => setCount(c => c + 1)}>+1</button>
+      <span>{count}</span>
+      <ul>
+        {items.map(item => (
+          <ExpensiveRow key={item.id} item={item} onToggle={(id) => console.log(id)} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+**提示**：
+- 問題在 `onToggle` 每次都是「新箭頭函式」
+- 用 `useCallback` 包住，依賴陣列給 `[]`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { memo, useState, useCallback } from 'react';
+
+const ExpensiveRow = memo(function ExpensiveRow({ item, onToggle }) {
+  console.log('渲染：', item.id);
+  return <li onClick={() => onToggle(item.id)}>{item.name}</li>;
+});
+
+function List() {
+  const [count, setCount] = useState(0);
+  const [items] = useState([{ id: 1, name: 'A' }, { id: 2, name: 'B' }]);
+
+  // ✅ 函式參考穩定 → 點 +1 時 ExpensiveRow 不會重渲染
+  const handleToggle = useCallback((id) => {
+    console.log('切換：', id);
+  }, []);
+
+  return (
+    <div>
+      <button onClick={() => setCount(c => c + 1)}>+1</button>
+      <span>{count}</span>
+      <ul>
+        {items.map(item => (
+          <ExpensiveRow key={item.id} item={item} onToggle={handleToggle} />
+        ))}
+      </ul>
+    </div>
+  );
+}
+```
+
+> 觀察 console：點「+1」時若不再印「渲染：」，代表修復成功。
+
+</details>
+
+### 練習 2：`useMemo` 即時搜尋過濾（⭐⭐⭐ 中階）
+
+**目標**：建立一個大型商品清單（1000 筆），用 `useMemo` 快取「關鍵字過濾」結果，確認輸入時只有 `searchTerm` 改變才重新計算。
+
+**提示**：
+- `useMemo(() => items.filter(...), [items, searchTerm])`
+- 可以在 filter 內 `console.log` 觀察重算次數
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { useState, useMemo } from 'react';
+
+// 產生 1000 筆資料
+const ITEMS = Array.from({ length: 1000 }, (_, i) => ({
+  id: i,
+  name: `商品 ${i}`,
+}));
+
+function SearchList() {
+  const [searchTerm, setSearchTerm] = useState('');
+
+  const filtered = useMemo(() => {
+    console.log('重新過濾！'); // 只有 searchTerm 改變才印出
+    return ITEMS.filter(item =>
+      item.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [searchTerm]); // ITEMS 是常數，不變，不用放進依賴
+
+  return (
+    <div>
+      <input
+        value={searchTerm}
+        onChange={e => setSearchTerm(e.target.value)}
+        placeholder="搜尋商品..."
+      />
+      <p>找到 {filtered.length} 筆</p>
+      <ul>
+        {filtered.slice(0, 20).map(item => <li key={item.id}>{item.name}</li>)}
+      </ul>
+    </div>
+  );
+}
+```
+
+</details>
+
+### 練習 3：路由級懶載入 + 骨架屏（⭐⭐⭐⭐ 進階）
+
+**目標**：把三個頁面改為 `React.lazy` 懶載入，用 `Suspense` 顯示骨架屏 fallback。
+
+**提示**：
+- `const Home = lazy(() => import('./pages/Home'))`
+- `<Suspense fallback={<PageSkeleton />}>` 包住 `<Routes>`
+- `PageSkeleton` 用幾個灰色方塊模擬載入
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+// App.jsx
+import { lazy, Suspense } from 'react';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
+
+const Home = lazy(() => import('./pages/Home'));
+const Products = lazy(() => import('./pages/Products'));
+const Checkout = lazy(() => import('./pages/Checkout'));
+
+function PageSkeleton() {
+  return (
+    <div style={{ padding: 24 }}>
+      <div style={{ height: 32, width: '40%', background: '#e2e8f0', borderRadius: 4 }} />
+      <div style={{ height: 16, marginTop: 12, background: '#e2e8f0', borderRadius: 4 }} />
+      <div style={{ height: 16, marginTop: 8, width: '80%', background: '#e2e8f0', borderRadius: 4 }} />
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Suspense fallback={<PageSkeleton />}>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/products" element={<Products />} />
+          <Route path="/checkout" element={<Checkout />} />
+        </Routes>
+      </Suspense>
+    </BrowserRouter>
+  );
+}
+```
+
+</details>
 
 ---
 

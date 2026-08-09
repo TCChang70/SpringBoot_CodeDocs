@@ -1,8 +1,21 @@
 # Unit 10 — 測試（Testing）
 
-> **學習目標**：完成本單元後，你能用 Jest + React Testing Library 撰寫元件單元測試，涵蓋渲染驗證、使用者事件、非同步操作，並能用 Playwright 進行端對端測試（E2E）。  
+> **學習目標**：完成本單元後，你能用 Vitest + React Testing Library 撰寫元件單元測試，涵蓋渲染驗證、使用者事件、非同步操作，並能用 Playwright 進行端對端測試（E2E）。  
 > **預估時間**：6–8 小時  
 > **程度**：有基礎（需完成 Unit 1–6）
+
+---
+
+## 本單元學習地圖
+
+| 主題 | 學習內容 | 對應章節 |
+|------|---------|---------|
+| 測試概念 | 為什麼寫測試、測試金字塔 | 開頭 |
+| 單元測試 | Vitest + RTL、純函式測試、元件渲染測試 | 10.1 |
+| 互動測試 | `userEvent`、表單測試、非同步 API Mock、Context | 10.1 |
+| E2E 測試 | Playwright、Page Object Model、選擇器慣例 | 10.2 |
+
+> 💡 **學習心法**：測試不是「多做的功」，而是「把預期行為寫下來」。先從純函式測試開始建立信心，再進到元件與 E2E。
 
 ---
 
@@ -43,7 +56,7 @@
 
 ---
 
-## 10.1 單元測試：Jest + React Testing Library
+## 10.1 單元測試：Vitest + React Testing Library
 
 ### 安裝（Vite 專案）
 
@@ -673,6 +686,213 @@ function SearchBar({ onSearch }) {
 1. 測試完整的「新增使用者」流程
 2. 測試「編輯使用者」流程（點擊編輯 → 修改 → 確認更新）
 3. 測試刪除使用者後列表減少一筆
+
+---
+
+## 重點整理（Key Takeaways）
+
+### 快速複習表
+
+| 主題 | 一句話重點 |
+|------|-----------|
+| 測試金字塔 | 單元測試（多、快）→ 整合測試（中）→ E2E 測試（少、慢） |
+| `render` + `screen` | 渲染元件 + 查詢元素：`getByText`、`getByRole`、`getByLabelText` |
+| 查詢差異 | `getBy`（找不到就拋錯）、`queryBy`（找不到回 null）、`findBy`（等待非同步） |
+| `userEvent` | 模擬真實使用者互動（click / type / tab） |
+| `vi.fn()` | 建立 Mock 函式，用 `toHaveBeenCalledWith` 驗證參數 |
+| `vi.mock` | Mock 整個模組，測試 loading / success / error |
+| Playwright | 真實瀏覽器 E2E；選擇器優先：role > label > text > testid |
+
+### 難點詳解（Confusing Points）
+
+#### 1. `getBy`、`queryBy`、`findBy` 到底怎麼選？
+
+| API | 找不到元素時 | 非同步時 | 適用情境 |
+|-----|-------------|---------|---------|
+| `getByText` | 拋錯、測試失敗 | 不等待 | 驗證「一定存在」的元素 |
+| `queryByText` | 回傳 `null` | 不等待 | 驗證「一定不存在」的元素 |
+| `findByText` | 拋錯 | 自動等待（內部用 `waitFor`） | 非同步載入後的元素 |
+
+```jsx
+expect(screen.getByText('確認'))    .toBeInTheDocument();   // 一定在
+expect(screen.queryByText('載入中')).not.toBeInTheDocument(); // 一定不在
+await screen.findByText('Alice');                            // 等它出現
+```
+
+#### 2. `userEvent` 和 `fireEvent` 差在哪？
+
+`fireEvent` 只「觸發事件」，較底層；`userEvent` 會模擬「真實使用者行為」——例如 `user.type` 會依序觸發 keydown / keypress / input，`user.click` 會檢查元素是否可點擊。**官方建議一律用 `userEvent`**，測試才更接近真實。
+
+#### 3. E2E 和單元測試何時選哪個？
+
+- 驗證「單一函式 / 元件的行為」→ 單元測試（快、便宜、可大量寫）
+- 驗證「登入 → 購物 → 結帳」這類**完整使用者流程**→ E2E（慢、容易受環境影響）
+- 實務上：E2E 只要「幾條關鍵路徑」就好，其餘邏輯交給單元測試。
+
+---
+
+## 互動式練習題（Hands-On Practice）
+
+> 每題都有「提示」與「參考實作」。請**先自己動手做**，卡住再看提示，最後才對答案。
+
+### 練習 1：測試純函式（⭐⭐ 基礎）
+
+**目標**：為以下 `calculateTax` 函式撰寫單元測試，涵蓋正常、邊界、例外三種情況。
+
+```js
+// utils/tax.js
+export function calculateTax(price, taxRate = 0.05) {
+  if (price < 0) throw new Error('價格不能為負數');
+  if (taxRate < 0 || taxRate > 1) throw new Error('稅率必須介於 0 到 1');
+  return price * taxRate;
+}
+```
+
+**提示**：
+- 正常：`calculateTax(1000)` → 50
+- 邊界：`calculateTax(0)` → 0
+- 例外：`expect(() => calculateTax(-1)).toThrow(...)`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```js
+// utils/tax.test.js
+import { describe, it, expect } from 'vitest';
+import { calculateTax } from './tax';
+
+describe('calculateTax', () => {
+  it('計算 5% 稅額', () => {
+    expect(calculateTax(1000)).toBe(50);
+  });
+
+  it('支援自訂稅率', () => {
+    expect(calculateTax(1000, 0.1)).toBe(100);
+  });
+
+  it('價格為 0 時稅額為 0', () => {
+    expect(calculateTax(0)).toBe(0);
+  });
+
+  it('負價格拋出錯誤', () => {
+    expect(() => calculateTax(-1)).toThrow('價格不能為負數');
+  });
+
+  it('無效稅率拋出錯誤', () => {
+    expect(() => calculateTax(100, 1.5)).toThrow('稅率必須介於 0 到 1');
+  });
+});
+```
+
+</details>
+
+### 練習 2：測試元件互動（⭐⭐⭐ 中階）
+
+**目標**：為「輸入名字 + 顯示問候」元件撰寫測試：初始狀態、輸入後更新、空字串的預設文字。
+
+```jsx
+// components/Greeting/Greeting.jsx
+import { useState } from 'react';
+
+function Greeting() {
+  const [name, setName] = useState('');
+  return (
+    <div>
+      <input
+        aria-label="名字"
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+      />
+      <p>你好，{name || '陌生人'}！</p>
+    </div>
+  );
+}
+
+export default Greeting;
+```
+
+**提示**：
+- `getByLabelText('名字')` 找到 input，用 `user.type` 輸入
+- 用 `toHaveTextContent` 驗證問候文字
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+// components/Greeting/Greeting.test.jsx
+import { render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import Greeting from './Greeting';
+
+describe('Greeting 元件', () => {
+  it('初始顯示陌生人問候', () => {
+    render(<Greeting />);
+    expect(screen.getByText('你好，陌生人！')).toBeInTheDocument();
+  });
+
+  it('輸入名字後顯示問候', async () => {
+    const user = userEvent.setup();
+    render(<Greeting />);
+
+    await user.type(screen.getByLabelText('名字'), 'Alice');
+
+    expect(screen.getByText('你好，Alice！')).toBeInTheDocument();
+  });
+});
+```
+
+</details>
+
+### 練習 3：Mock API 的非同步元件測試（⭐⭐⭐⭐ 進階）
+
+**目標**：測試會呼叫 `userService.getAll` 的 `UserList` 元件：載入中、成功、失敗三種狀態。
+
+**提示**：
+- `vi.mock('../../services/userService')`
+- `mockResolvedValue`（成功）/ `mockRejectedValue`（失敗）
+- 成功案例用 `await screen.findByText('Alice')` 等待
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+// components/UserList/UserList.test.jsx
+import { render, screen } from '@testing-library/react';
+import { vi } from 'vitest';
+import UserList from './UserList';
+import * as userService from '../../services/userService';
+
+vi.mock('../../services/userService');
+
+describe('UserList', () => {
+  afterEach(() => vi.clearAllMocks());
+
+  it('載入中顯示提示', () => {
+    userService.getAll.mockReturnValue(new Promise(() => {}));
+    render(<UserList />);
+    expect(screen.getByText('載入中...')).toBeInTheDocument();
+  });
+
+  it('成功載入顯示使用者列表', async () => {
+    userService.getAll.mockResolvedValue([
+      { id: 1, name: 'Alice', email: 'alice@example.com' },
+    ]);
+
+    render(<UserList />);
+    expect(await screen.findByText('Alice')).toBeInTheDocument();
+    expect(screen.queryByText('載入中...')).not.toBeInTheDocument();
+  });
+
+  it('失敗顯示錯誤訊息', async () => {
+    userService.getAll.mockRejectedValue(new Error('網路錯誤'));
+
+    render(<UserList />);
+    expect(await screen.findByText(/網路錯誤/)).toBeInTheDocument();
+  });
+});
+```
+
+</details>
 
 ---
 

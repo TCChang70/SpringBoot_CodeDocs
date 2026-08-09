@@ -6,6 +6,19 @@
 
 ---
 
+## 本單元學習地圖
+
+| 主題 | 學習內容 | 對應章節 |
+|------|---------|---------|
+| JSX 語法 | 與 HTML 的差異、`{}` 嵌入表達式、條件 / 列表渲染 | 2.1 |
+| 元件（Component） | 函式元件、Props、Children、PropTypes | 2.2 |
+| 狀態管理 | `useState`、陣列 / 物件更新、受控元件 | 2.3 |
+| 副作用 | `useEffect`、依賴陣列、API 資料擷取、Cleanup | 2.4 |
+
+> 💡 **學習心法**：本單元是 React 的「心臟」。先求看懂 JSX 長什麼樣，再動手做元件，最後把 state 與 effect 串起來。
+
+---
+
 ## 2.1 JSX 語法（JavaScript XML）
 
 ### 概念說明
@@ -664,6 +677,198 @@ function UserSearch() {
 
 export default UserSearch;
 ```
+
+---
+
+## 重點整理（Key Takeaways）
+
+### 快速複習表
+
+| 主題 | 一句話重點 |
+|------|-----------|
+| JSX | 類似 HTML 的 JS 語法；`class`→`className`、`for`→`htmlFor`、事件名 camelCase、標籤必須關閉 |
+| `{}` | 只能放「表達式」（有回傳值的程式碼），不能放 `if` / `for` 等陳述式 |
+| 條件渲染 | 三元運算子（有 else）；`&&` 短路（只有 if）；提前 `return`（複雜情況） |
+| 列表渲染 | `.map()` 產生 JSX；`key` 要唯一且穩定（用 id，別用 index） |
+| Props | 父傳子的唯讀資料，單向流動；可傳字串 / 數字 / 物件 / 函式 / children |
+| `useState` | `[值, setter]`；用 setter 更新，不能直接改 state 變數 |
+| `useEffect` | 渲染後執行副作用；依賴陣列 `[]` = 只執行一次；要寫 cleanup |
+
+### 難點詳解（Confusing Points）
+
+#### 1. 為什麼列表的 `key` 不建議用 index？
+
+React 靠 `key` 判斷「哪些項目是同一個」。用 index 當 key 時，如果陣列中間插入或刪除項目，React 會**認錯項目**，導致狀態或畫面錯亂。
+
+```jsx
+// 原本：["A", "B", "C"]，key = index 0,1,2
+// 刪除 "A" 之後 → ["B", "C"]，B 現在 index 0
+// React 以為「index 0」還是同一個元素 → 錯誤地保留 A 的狀態
+```
+
+實務上用資料自己的唯一欄位（如 `id`、`uuid`）最保險。
+
+#### 2. 為什麼更新 state 一定要「產生新物件」？
+
+React 用「參考是否改變」判斷是否重新渲染。直接改原物件（`obj.x = 1`）參考沒變，React 不會偵測到更新，畫面就不會變。
+
+```jsx
+// ❌ 直接改：參考沒變，不觸發重新渲染
+user.name = "Bob";
+setUser(user);
+
+// ✅ 產生新物件：參考變了，React 偵測到並重新渲染
+setUser({ ...user, name: "Bob" });
+```
+
+> 陣列同理：用 `[...arr]`、`.filter()`、`.map()` 產生新陣列，不要用 `push()` / `splice()` 改原陣列。
+
+#### 3. `useEffect` 依賴陣列到底怎麼運作？
+
+| 依賴陣列 | 執行時機 |
+|---------|---------|
+| 無 | 每次渲染後都執行 |
+| `[]` | 只在「掛載」時執行一次（初始化 API 呼叫） |
+| `[dep]` | `dep` 改變時才執行 |
+| 回傳 cleanup | 元件卸載、或依賴值改變再次執行「前」呼叫 |
+
+> ⚠️ 依賴陣列中「使用了但漏寫」的變數，是 ESLint 最常見的警告來源。
+
+---
+
+## 互動式練習題（Hands-On Practice）
+
+> 每題都有「提示」與「參考實作」。請**先自己動手做**，卡住再看提示，最後才對答案。
+
+### 練習 1：把 HTML 改成 JSX（⭐⭐ 基礎）
+
+**目標**：以下程式碼在 JSX 中全是錯誤的，請改成正確的 JSX。
+
+```jsx
+<div class="card" onclick="handleClick()">
+  <label for="email">Email</label>
+  <input type="text">
+  <input type="checkbox" checked>
+</div>
+```
+
+**提示**：
+- `class` → `className`、`for` → `htmlFor`
+- `onclick="..."` 字串 → `onClick={函式}`
+- 單標籤 `<input>` 要自閉合 `<input />`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+<div className="card" onClick={handleClick}>
+  <label htmlFor="email">Email</label>
+  <input type="text" />
+  <input type="checkbox" checked />
+</div>
+```
+
+</details>
+
+### 練習 2：Props + 列表渲染建立商品卡（⭐⭐⭐ 中階）
+
+**目標**：建立一個 `ProductCard` 元件，接收 `product` prop，並在 `ProductList` 中用 `.map()` 渲染商品清單（注意 `key`）。
+
+**提示**：
+- `ProductCard` 用 `{ product }` 解構接收
+- `ProductList` 內用 `products.map(p => <ProductCard key={p.id} product={p} />)`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+function ProductCard({ product }) {
+  return (
+    <div className="card">
+      <h3>{product.name}</h3>
+      <p>${product.price}</p>
+      {product.inStock ? <span>有庫存</span> : <span>缺貨中</span>}
+    </div>
+  );
+}
+
+function ProductList() {
+  const products = [
+    { id: 1, name: "iPhone", price: 999, inStock: true },
+    { id: 2, name: "AirPods", price: 249, inStock: false },
+  ];
+
+  return (
+    <div>
+      {products.map(product => (
+        <ProductCard key={product.id} product={product} />
+      ))}
+    </div>
+  );
+}
+```
+
+</details>
+
+### 練習 3：`useState` + `useEffect` 建立文章詳情頁（⭐⭐⭐⭐ 進階）
+
+**目標**：建立 `PostDetail` 元件，接收 `postId` prop，掛載時呼叫 API 取得文章，並在 `postId` 改變時重新載入。
+
+```jsx
+// API：https://jsonplaceholder.typicode.com/posts/{postId}
+```
+
+**提示**：
+- `useState` 管理 `post`、`loading`
+- `useEffect` 依賴 `[postId]`，內部用 `async function` + `fetch`
+- 載入中顯示「載入中...」，失敗顯示錯誤
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { useState, useEffect } from 'react';
+
+function PostDetail({ postId }) {
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    async function fetchPost() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(
+          `https://jsonplaceholder.typicode.com/posts/${postId}`
+        );
+        if (!res.ok) throw new Error(`HTTP 錯誤：${res.status}`);
+        const data = await res.json();
+        setPost(data);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchPost();
+  }, [postId]); // postId 改變時重新載入
+
+  if (loading) return <p>載入中...</p>;
+  if (error) return <p>錯誤：{error}</p>;
+
+  return (
+    <div>
+      <h1>{post.title}</h1>
+      <p>{post.body}</p>
+    </div>
+  );
+}
+
+export default PostDetail;
+```
+
+</details>
 
 ---
 

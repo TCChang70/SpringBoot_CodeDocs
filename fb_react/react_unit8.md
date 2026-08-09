@@ -6,6 +6,18 @@
 
 ---
 
+## 本單元學習地圖
+
+| 主題 | 學習內容 | 對應章節 |
+|------|---------|---------|
+| 受控表單 | state 控制輸入、多欄位管理、手動驗證 | 8.1 |
+| React Hook Form | `register` / `handleSubmit`、`watch`、`useFieldArray` | 8.2 |
+| Zod 驗證 | Schema 定義、`zodResolver` 整合、跨欄位驗證 | 8.3 |
+
+> 💡 **學習心法**：先熟悉受控表單理解「React 如何掌控輸入」，再跳到 RHF + Zod 體驗「省力又型別安全」的進階組合。
+
+---
+
 ## 三種表單方案比較
 
 | 方案 | 適用情境 | 優點 | 缺點 |
@@ -622,6 +634,238 @@ function FormField({ label, name, register, error, type = 'text', ...rest }) {
    - 顯示「剩餘字數」計數器（個人簡介欄位）
    - 送出中顯示 loading 狀態
 4. **初始值**：從 API 載入用戶資料後，用 `reset()` 或 `defaultValues` 填入表單
+
+---
+
+## 重點整理（Key Takeaways）
+
+### 快速複習表
+
+| 主題 | 一句話重點 |
+|------|-----------|
+| 受控表單 | `value` + `onChange` 由 state 控制；適合 1–3 個欄位 |
+| React Hook Form | 非受控策略，效能好；`register` 連結欄位、`handleSubmit` 自動驗證 |
+| `watch` | 即時監聽某欄位值（跨欄位驗證如確認密碼） |
+| `useFieldArray` | 動態新增 / 移除一組欄位 |
+| Zod | 用 Schema 描述資料規則；`.refine()` 做跨欄位驗證 |
+| `zodResolver` | 把 Zod Schema 接到 RHF，錯誤訊息自動對應欄位 |
+
+### 難點詳解（Confusing Points）
+
+#### 1. 受控與非受控，渲染成本差在哪？
+
+- **受控**：每敲一個字 → `onChange` → `setState` → 整個表單元件重渲染。
+- **非受控（RHF）**：輸入值直接存在 DOM，只有送出或特定事件才觸發渲染。
+
+所以欄位越多、頁面越複雜，RHF 的效能優勢越明顯。
+
+#### 2. `watch` 和 `getValues` 有何不同？
+
+| API | 觸發重渲染 | 用途 |
+|-----|-----------|------|
+| `watch('field')` | 會（監聽值變化） | 需要即時反應的 UI（確認密碼比對、字數統計） |
+| `getValues('field')` | 不會（讀一次） | 事件當下讀取即可（如送出前快取） |
+
+> 判斷口訣：**「畫面要跟著變」用 watch；「只是讀一下」用 getValues。**
+
+#### 3. Zod 的 `.refine()` 錯誤要怎麼顯示在正確欄位？
+
+跨欄位驗證（如「兩次密碼不一致」）的錯誤不屬於任何單一欄位，要用 `path` 指定要顯示在哪個欄位：
+
+```js
+.refine((data) => data.password === data.confirmPassword, {
+  message: '兩次密碼不一致',
+  path: ['confirmPassword'],  // 錯誤會掛在 confirmPassword 欄位上
+});
+```
+
+搭配 `zodResolver` 後，`errors.confirmPassword.message` 就會顯示這段訊息。
+
+---
+
+## 互動式練習題（Hands-On Practice）
+
+> 每題都有「提示」與「參考實作」。請**先自己動手做**，卡住再看提示，最後才對答案。
+
+### 練習 1：受控表單加入顯示/隱藏密碼（⭐⭐ 基礎）
+
+**目標**：在 RegisterForm 中加入「顯示 / 隱藏密碼」切換按鈕，並在送出時顯示「送出中...」狀態。
+
+**提示**：
+- 新增 `showPassword` state，`type={showPassword ? 'text' : 'password'}`
+- 送出時用 `setTimeout` 模擬送出中，再把按鈕文字切換
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { useState } from 'react';
+
+function LoginForm() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitting(true);
+    await new Promise(resolve => setTimeout(resolve, 1500)); // 模擬 API
+    setSubmitting(false);
+    alert(`送出成功：${email}`);
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input
+        type="email"
+        value={email}
+        onChange={e => setEmail(e.target.value)}
+        placeholder="Email"
+      />
+      <input
+        type={showPassword ? 'text' : 'password'}
+        value={password}
+        onChange={e => setPassword(e.target.value)}
+        placeholder="密碼"
+      />
+      <button type="button" onClick={() => setShowPassword(v => !v)}>
+        {showPassword ? '隱藏' : '顯示'}密碼
+      </button>
+      <button type="submit" disabled={submitting}>
+        {submitting ? '送出中...' : '登入'}
+      </button>
+    </form>
+  );
+}
+```
+
+</details>
+
+### 練習 2：RHF 登入表單 + 跨欄位驗證（⭐⭐⭐ 中階）
+
+**目標**：用 React Hook Form 建立登入表單，並用 `watch` 實作「確認密碼」的跨欄位驗證。
+
+**提示**：
+- `useForm()` 解構 `register`、`handleSubmit`、`watch`、`formState`
+- 確認密碼欄位：`validate: (value) => value === password || '兩次密碼不一致'`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+import { useForm } from 'react-hook-form';
+
+function RegisterForm() {
+  const { register, handleSubmit, watch, formState: { errors } } = useForm();
+  const password = watch('password');
+
+  const onSubmit = (data) => console.log('送出：', data);
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input
+        type="email"
+        placeholder="Email"
+        {...register('email', {
+          required: 'Email 不能為空',
+          pattern: { value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: 'Email 格式不正確' },
+        })}
+      />
+      {errors.email && <p>{errors.email.message}</p>}
+
+      <input
+        type="password"
+        placeholder="密碼"
+        {...register('password', {
+          required: '密碼不能為空',
+          minLength: { value: 8, message: '密碼至少 8 個字元' },
+        })}
+      />
+      {errors.password && <p>{errors.password.message}</p>}
+
+      <input
+        type="password"
+        placeholder="確認密碼"
+        {...register('confirmPassword', {
+          required: '請確認密碼',
+          validate: (value) => value === password || '兩次密碼不一致',
+        })}
+      />
+      {errors.confirmPassword && <p>{errors.confirmPassword.message}</p>}
+
+      <button type="submit">註冊</button>
+    </form>
+  );
+}
+```
+
+</details>
+
+### 練習 3：RHF + Zod 完整註冊表單（⭐⭐⭐⭐ 進階）
+
+**目標**：用 Zod 定義 `registerSchema`（username、email、password、confirmPassword），並透過 `zodResolver` 整合到 RHF。
+
+**提示**：
+- `z.object({...}).refine(data => data.password === data.confirmPassword, { message, path: ['confirmPassword'] })`
+- `useForm({ resolver: zodResolver(registerSchema) })`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```js
+// schemas/registerSchema.js
+import { z } from 'zod';
+
+export const registerSchema = z.object({
+  username: z.string()
+    .min(3, '至少 3 個字元')
+    .max(20, '最多 20 個字元')
+    .regex(/^[a-zA-Z0-9_]+$/, '只能包含英文、數字、底線'),
+  email: z.string().min(1, 'Email 不能為空').email('Email 格式不正確'),
+  password: z.string().min(8, '密碼至少 8 個字元'),
+  confirmPassword: z.string().min(1, '請確認密碼'),
+}).refine(data => data.password === data.confirmPassword, {
+  message: '兩次密碼不一致',
+  path: ['confirmPassword'],
+});
+```
+
+```jsx
+// forms/RegisterForm.jsx
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { registerSchema } from '../schemas/registerSchema';
+
+function RegisterForm() {
+  const { register, handleSubmit, formState: { errors, isSubmitting } } =
+    useForm({ resolver: zodResolver(registerSchema) });
+
+  const onSubmit = (data) => console.log('註冊成功：', data);
+
+  return (
+    <form onSubmit={handleSubmit(onSubmit)}>
+      <input placeholder="使用者名稱" {...register('username')} />
+      {errors.username && <p>{errors.username.message}</p>}
+
+      <input placeholder="Email" type="email" {...register('email')} />
+      {errors.email && <p>{errors.email.message}</p>}
+
+      <input placeholder="密碼" type="password" {...register('password')} />
+      {errors.password && <p>{errors.password.message}</p>}
+
+      <input placeholder="確認密碼" type="password" {...register('confirmPassword')} />
+      {errors.confirmPassword && <p>{errors.confirmPassword.message}</p>}
+
+      <button type="submit" disabled={isSubmitting}>
+        {isSubmitting ? '註冊中...' : '註冊'}
+      </button>
+    </form>
+  );
+}
+```
+
+</details>
 
 ---
 

@@ -6,6 +6,19 @@
 
 ---
 
+## 本單元學習地圖
+
+| 主題 | 學習內容 | 對應章節 |
+|------|---------|---------|
+| 方案選擇 | 何時用 useState / Context / Zustand / Redux | 開頭 |
+| Context API | 結合 `useReducer` 打造全域購物車 | 5.1 |
+| Zustand | 極簡 Store、Selector、`persist` 持久化 | 5.2 |
+| Redux Toolkit | Slice、Store、`useSelector` / `useDispatch`、`createAsyncThunk` | 5.3 |
+
+> 💡 **學習心法**：三種方案解決同一件事——「跨元件共享狀態」。先理解差異，再選一種熟練即可。
+
+---
+
 ## 選擇狀態管理方案
 
 在學習各方案之前，先了解何時用哪種：
@@ -634,6 +647,246 @@ Redux Toolkit：
   ⚠️  學習曲線較陡，檔案較多
   ⚠️  小型應用過度設計
 ```
+
+---
+
+## 重點整理（Key Takeaways）
+
+### 快速複習表
+
+| 方案 | 一句話重點 | 適用情境 |
+|------|-----------|---------|
+| Context + `useReducer` | 免套件；Provider 包一層，全 App 共享 | 中小型應用 |
+| Zustand | 一個檔案建 Store，免 Provider，選擇性重渲染 | 中大型、追求簡潔 |
+| Redux Toolkit | Slice 自動產生 action；immer 可「直接改」state | 大型企業專案 |
+
+### 難點詳解（Confusing Points）
+
+#### 1. 為什麼 Context 一改值，所有子元件都重渲染？
+
+Context value 只要產生「新物件」，所有 `useContext` 消費元件就會重新渲染——**即使它們只用到其中一部分**。解法：
+
+- **拆分 Context**：把「會頻繁變動的資料」與「很少變動的 actions」分開。
+- **用 `useMemo` 穩定 value**：只有資料真正改變才產生新 value。
+
+```jsx
+const value = useMemo(() => ({ items, total }), [items, total]);
+```
+
+#### 2. Zustand 為什麼效能好？「Selector」是什麼？
+
+Zustand 讓每個元件**只訂閱它選取的部分**，其他部分改變不會觸發該元件重渲染。
+
+```js
+// ✅ 只訂閱 addItem（其他欄位改變不會重渲染這個元件）
+const addItem = useCartStore(state => state.addItem);
+
+// ⚠️ 小心：回傳整個新物件，每次呼叫都可能造成重渲染
+const all = useCartStore(state => ({ ...state }));
+```
+
+> 回傳「新物件」時要搭配淺比較（`useShallow`），否則效能優勢會消失。
+
+#### 3. RTK 裡「直接修改 state」為什麼合法？
+
+`createSlice` 的 reducer 底層使用 **immer**：你寫的 `state.items.push(...)` 只是「草稿」，immer 會自動產生「不可變的新 state」再交給 React。所以寫起來像直接改，實際仍然遵守不可變原則。
+
+---
+
+## 互動式練習題（Hands-On Practice）
+
+> 每題都有「提示」與「參考實作」。請**先自己動手做**，卡住再看提示，最後才對答案。
+
+### 練習 1：Context + `useReducer` 登入狀態（⭐⭐ 基礎）
+
+**目標**：建立 `AuthContext`，管理 `user` 與 `isLoggedIn`，提供 `login` / `logout`，讓 Navbar 顯示使用者名稱。
+
+**提示**：
+- `createContext(null)` + `useReducer` 管理狀態
+- 用自訂 Hook `useAuth()` 消費，未包 Provider 時丟出錯誤
+- 子元件用 `useAuth()` 讀取，不需 props 傳遞
+
+<details>
+<summary>點我看參考實作</summary>
+
+```jsx
+// contexts/AuthContext.jsx
+import { createContext, useContext, useReducer } from 'react';
+
+const AuthContext = createContext(null);
+
+function authReducer(state, action) {
+  switch (action.type) {
+    case 'LOGIN':
+      return { user: action.payload, isLoggedIn: true };
+    case 'LOGOUT':
+      return { user: null, isLoggedIn: false };
+    default:
+      return state;
+  }
+}
+
+export function AuthProvider({ children }) {
+  const [state, dispatch] = useReducer(authReducer, { user: null, isLoggedIn: false });
+
+  const login = (user) => dispatch({ type: 'LOGIN', payload: user });
+  const logout = () => dispatch({ type: 'LOGOUT' });
+
+  return (
+    <AuthContext.Provider value={{ ...state, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+  if (!context) throw new Error('useAuth 必須在 AuthProvider 內使用');
+  return context;
+}
+```
+
+```jsx
+// components/Navbar.jsx — 直接消費
+import { useAuth } from '../contexts/AuthContext';
+
+function Navbar() {
+  const { user, logout } = useAuth();
+  return (
+    <nav>
+      {user ? (
+        <>
+          <span>你好，{user.name}</span>
+          <button onClick={logout}>登出</button>
+        </>
+      ) : (
+        <span>未登入</span>
+      )}
+    </nav>
+  );
+}
+```
+
+</details>
+
+### 練習 2：Zustand 計數器 + `persist`（⭐⭐⭐ 中階）
+
+**目標**：用 Zustand 建立一個帶 `persist` 的計數器 Store（重整後數字不消失），並在元件中使用。
+
+**提示**：
+- `create(persist((set) => ({...}), { name: 'counter' }))`
+- 使用時 `const count = useCounterStore(s => s.count)`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```js
+// stores/useCounterStore.js
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+const useCounterStore = create(
+  persist(
+    (set) => ({
+      count: 0,
+      increment: () => set(state => ({ count: state.count + 1 })),
+      decrement: () => set(state => ({ count: state.count - 1 })),
+      reset: () => set({ count: 0 }),
+    }),
+    { name: 'counter-storage' } // localStorage key
+  )
+);
+
+export default useCounterStore;
+```
+
+```jsx
+// App.jsx — 免 Provider，直接使用
+import useCounterStore from './stores/useCounterStore';
+
+function Counter() {
+  const { count, increment, decrement, reset } = useCounterStore();
+
+  return (
+    <div>
+      <p>計數：{count}</p>
+      <button onClick={increment}>+1</button>
+      <button onClick={decrement}>-1</button>
+      <button onClick={reset}>重置</button>
+      <p>重整頁面數字仍會保留</p>
+    </div>
+  );
+}
+```
+
+</details>
+
+### 練習 3：Redux Toolkit 建立 `userSlice`（⭐⭐⭐⭐ 進階）
+
+**目標**：用 `createSlice` 建立 `userSlice`（`name` / `email` 欄位），設定 Store，並在元件中用 `useSelector` / `useDispatch` 讀寫。
+
+**提示**：
+- `createSlice({ name, initialState, reducers })`
+- `configureStore({ reducer: { user: userReducer } })` + `<Provider store={store}>`
+- 讀：`useSelector(state => state.user)`；寫：`dispatch(updateName('Alice'))`
+
+<details>
+<summary>點我看參考實作</summary>
+
+```js
+// store/userSlice.js
+import { createSlice } from '@reduxjs/toolkit';
+
+const userSlice = createSlice({
+  name: 'user',
+  initialState: { name: '', email: '' },
+  reducers: {
+    updateName(state, action) {
+      state.name = action.payload;
+    },
+    updateEmail(state, action) {
+      state.email = action.payload;
+    },
+  },
+});
+
+export const { updateName, updateEmail } = userSlice.actions;
+export const selectUser = (state) => state.user;
+export default userSlice.reducer;
+```
+
+```js
+// store/index.js
+import { configureStore } from '@reduxjs/toolkit';
+import userReducer from './userSlice';
+
+export const store = configureStore({
+  reducer: { user: userReducer },
+});
+```
+
+```jsx
+// components/Profile.jsx
+import { useDispatch, useSelector } from 'react-redux';
+import { updateName, selectUser } from '../store/userSlice';
+
+function Profile() {
+  const user = useSelector(selectUser);
+  const dispatch = useDispatch();
+
+  return (
+    <div>
+      <p>名稱：{user.name}</p>
+      <input
+        placeholder="輸入新名稱"
+        onChange={(e) => dispatch(updateName(e.target.value))}
+      />
+    </div>
+  );
+}
+```
+
+</details>
 
 ---
 
