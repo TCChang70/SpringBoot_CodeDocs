@@ -57,6 +57,18 @@
   background: var(--primary);
 }
 
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #fff;
+}
+
+.nav-user {
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 @media (max-width: 640px) {
   .layout-inner {
     flex-direction: column;

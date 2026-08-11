@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { productApi } from '../api/productApi';
+import { useAuth } from '../context/AuthContext';
 import { formatMoney } from '../utils/format';
 
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState(null);
@@ -93,9 +95,11 @@ export default function ProductDetail() {
             <span className="badge gray">{product.brand}</span>
           </div>
         </div>
-        <button className="btn danger" onClick={handleDelete}>
-          刪除商品
-        </button>
+        {isAdmin && (
+          <button className="btn danger" onClick={handleDelete}>
+            刪除商品
+          </button>
+        )}
       </div>
 
       {message && <div className={`message ${message.type}`}>{message.text}</div>}

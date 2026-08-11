@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import { productApi } from '../api/productApi';
 import { categoryApi } from '../api/categoryApi';
 import ProductFormModal from '../components/ProductFormModal';
+import { useAuth } from '../context/AuthContext';
 import { formatMoney } from '../utils/format';
 
 const emptyFilter = { keyword: '', native: '', brand: '', maxPrice: '' };
 
 export default function Products() {
+  const { isAdmin } = useAuth();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [page, setPage] = useState(0);
@@ -173,9 +175,11 @@ export default function Products() {
           <h1>商品管理</h1>
           <div className="subtitle">CRUD、搜尋、分頁與交易示範</div>
         </div>
-        <button className="btn" onClick={openCreate}>
-          ＋ 新增商品
-        </button>
+        {isAdmin && (
+          <button className="btn" onClick={openCreate}>
+            ＋ 新增商品
+          </button>
+        )}
       </div>
 
       {message && <div className={`message ${message.type}`}>{message.text}</div>}
@@ -282,12 +286,16 @@ export default function Products() {
                       <Link to={`/products/${p.id}`} className="btn secondary small">
                         查看
                       </Link>
-                      <button className="btn secondary small" onClick={() => openEdit(p)}>
-                        編輯
-                      </button>
-                      <button className="btn danger small" onClick={() => handleDelete(p)}>
-                        刪除
-                      </button>
+                      {isAdmin && (
+                        <>
+                          <button className="btn secondary small" onClick={() => openEdit(p)}>
+                            編輯
+                          </button>
+                          <button className="btn danger small" onClick={() => handleDelete(p)}>
+                            刪除
+                          </button>
+                        </>
+                      )}
                       <button className="btn success small" onClick={() => handlePlaceOrder(p)}>
                         下單
                       </button>

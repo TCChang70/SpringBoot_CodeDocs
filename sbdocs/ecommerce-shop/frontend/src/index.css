@@ -367,3 +367,76 @@ select:focus {
   text-align: center;
   min-width: 0;
 }
+
+.auth-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #1e3a8a, #111827);
+  padding: 24px;
+}
+
+.auth-card {
+  background: var(--card);
+  border-radius: var(--radius);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+  padding: 32px;
+  width: 400px;
+  max-width: 100%;
+}
+
+.auth-brand {
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+}
+
+.auth-tabs {
+  display: flex;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+
+.auth-tab {
+  flex: 1;
+  border: none;
+  background: #f9fafb;
+  padding: 10px;
+  font-size: 0.95rem;
+  cursor: pointer;
+  color: var(--text-light);
+}
+
+.auth-tab.active {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+.auth-card form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-card .field input,
+.auth-card .field select {
+  width: 100%;
+}
+
+.auth-submit {
+  justify-content: center;
+  padding: 10px;
+  font-size: 1rem;
+}
+
+.auth-hint {
+  margin-top: 16px;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.8rem;
+}

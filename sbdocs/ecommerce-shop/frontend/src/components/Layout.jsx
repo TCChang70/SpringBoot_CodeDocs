@@ -1,4 +1,5 @@
 import { NavLink, Outlet, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const navItems = [
   { to: '/', label: '儀表板', end: true },
@@ -9,6 +10,8 @@ const navItems = [
 ];
 
 export default function Layout() {
+  const { user, isAdmin, logout } = useAuth();
+
   return (
     <div className="layout">
       <header className="layout-header">
@@ -29,6 +32,15 @@ export default function Layout() {
               </NavLink>
             ))}
           </nav>
+          <div className="nav-right">
+            <span className={`badge ${isAdmin ? 'yellow' : 'gray'}`}>
+              {isAdmin ? 'ADMIN' : 'USER'}
+            </span>
+            <span className="nav-user">{user?.username}</span>
+            <button className="btn secondary small" onClick={logout}>
+              登出
+            </button>
+          </div>
         </div>
       </header>
       <main>

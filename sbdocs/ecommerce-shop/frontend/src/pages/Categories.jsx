@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { categoryApi } from '../api/categoryApi';
 import { productApi } from '../api/productApi';
+import { useAuth } from '../context/AuthContext';
 import { formatMoney } from '../utils/format';
 
 export default function Categories() {
+  const { isAdmin } = useAuth();
   const [categories, setCategories] = useState([]);
   const [name, setName] = useState('');
   const [message, setMessage] = useState(null);
@@ -81,9 +83,11 @@ export default function Categories() {
             <label>新增分類名稱</label>
             <input value={name} onChange={(e) => setName(e.target.value)} placeholder="例如 平板電腦" />
           </div>
-          <button className="btn" type="submit" disabled={busy === 'create'}>
-            新增分類
-          </button>
+          {isAdmin && (
+            <button className="btn" type="submit" disabled={busy === 'create'}>
+              新增分類
+            </button>
+          )}
         </form>
       </div>
 
@@ -109,6 +113,7 @@ export default function Categories() {
               <CatRow
                 key={cat.id}
                 cat={cat}
+                isAdmin={isAdmin}
                 expanded={expanded[cat.id]}
                 products={expandedProducts(cat)}
                 busy={busy}
@@ -135,7 +140,7 @@ export default function Categories() {
   );
 }
 
-function CatRow({ cat, expanded, products, busy, onExpand, onAvg, onClear }) {
+function CatRow({ cat, isAdmin, expanded, products, busy, onExpand, onAvg, onClear }) {
   return (
     <>
       <tr>
@@ -152,9 +157,11 @@ function CatRow({ cat, expanded, products, busy, onExpand, onAvg, onClear }) {
             <button className="btn secondary small" disabled={busy === `avg-${cat.id}`} onClick={onAvg}>
               平均價格
             </button>
-            <button className="btn warning small" disabled={busy === `clear-${cat.id}`} onClick={onClear}>
-              庫存歸零
-            </button>
+            {isAdmin && (
+              <button className="btn warning small" disabled={busy === `clear-${cat.id}`} onClick={onClear}>
+                庫存歸零
+              </button>
+            )}
           </div>
         </td>
       </tr>
