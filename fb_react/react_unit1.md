@@ -278,7 +278,9 @@ node -v   # 應顯示 v18.x.x 或更高版本
 npm -v    # 應顯示 9.x.x 或更高版本
 ```
 ### 若是 npm -v 發生錯誤請執行以下開啟權限程式
+```powershell
 Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
 ---
 
 ### VS Code 推薦擴充套件
