@@ -436,9 +436,32 @@ public class Category {
 import jakarta.persistence.Table;
 
 @Entity
-@Table(name = "products")   // ← 新增：明確指定表名為 products（不加此行 Hibernate 預設用 product）
+@Table(name = "products")       // 對應資料庫中的 products 表
 public class Product {
-    // ...其餘欄位不變...
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)  // MySQL AUTO_INCREMENT
+    private Long id;
+
+    @Column(nullable = false)   // NOT NULL：商品名稱必填
+    private String name;
+
+    @Column(nullable = false)   // NOT NULL：價格必填
+    private Double price;
+
+    private Integer stock;      // 允許 null：庫存可以不設定
+    private String category;    // 允許 null：類別可以不設定
+
+    // ★ JPA 必須有無參數建構子（JPA 反射建立物件時使用）
+    public Product() {}
+
+    // 帶參數建構子，方便在測試或 Service 中快速建立物件
+    public Product(String name, Double price, Integer stock, String category) {
+        this.name = name;
+        this.price = price;
+        this.stock = stock;
+        this.category = category;
+    }
+}
 
 // ─── 新增欄位（替換原本的 private String category）────────────────────
 import com.fasterxml.jackson.annotation.JsonBackReference;
