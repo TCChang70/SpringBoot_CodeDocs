@@ -1031,27 +1031,18 @@ public class CategoryController {
 > 先建立類別骨架（不含任何 @Test 方法），確認 `@WebMvcTest` + `@MockBean` 設定正確。
 
 ```java
-package com.example.shop.controller;
-
-import com.example.shop.model.Product;
-import com.example.shop.service.ProductService;
+import com.example.demo.service.ProductService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.mock.bean.MockBean;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.http.MediaType;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.hamcrest.Matchers.*;
-import static org.mockito.ArgumentMatchers.*;
+import static org.hamcrest.Matchers.is;
 import static org.mockito.BDDMockito.given;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(ProductController.class)   // 只載入 ProductController，不啟動資料庫
 class ProductControllerTest {
@@ -1059,10 +1050,19 @@ class ProductControllerTest {
     @Autowired
     private MockMvc mockMvc;            // 模擬 HTTP 請求
 
-    @MockBean
+    @MockitoBean
     private ProductService productService;  // 模擬 Service 層（不連 DB）
 
     // 接下來的 @Test 方法會逐個加入以下位置
+
+    @Test
+    void clearStock_shouldReturnClearedCount() throws Exception {
+        given(productService.clearStock("drink")).willReturn(4);
+
+        mockMvc.perform(get("/api/products/drink"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$['clear drink']", is(5)));
+    }
 }
 ```
 
