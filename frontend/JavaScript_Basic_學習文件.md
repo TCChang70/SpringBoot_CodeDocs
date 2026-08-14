@@ -1,8 +1,8 @@
-# JavaScript 2025 課程學習文件
+# JavaScript 課程學習文件
 
-> 課程來源：`JS -2025.pdf`（張庭禎 老師）
-> 學習方式：概念定義（生活比喻）→ 語法結構 → 最小範例 → 進階用法 → 常見錯誤 → 動手練習
+>> 學習方式：概念定義（生活比喻）→ 語法結構 → 最小範例 → 進階用法 → 常見錯誤 → 動手練習
 > 適用對象：程式設計初學者，會一點 HTML 最好，不會也沒關係
+> 📝 **每個單元都附「✏️ 練習範例」**（共 64 題）：先自己動手寫，再展開答案對照，比光看更有效。
 
 ---
 
@@ -19,7 +19,7 @@
 - [Ch 8｜AJAX 存取遠端資料](#ch-8ajax-存取遠端資料)
 - [Ch 9｜jQuery 前端程式庫](#ch-9jquery-前端程式庫)
 - [Ch 10｜ES6+ 現代 JavaScript](#ch-10es6-現代-javascript)
-- [附錄 A｜練習題](#附錄-a練習題)
+- [附錄 A｜綜合練習題](#附錄-a綜合練習題)
 - [附錄 B｜常見錯誤速查表](#附錄-b常見錯誤速查表)
 
 ---
@@ -44,18 +44,18 @@ jQuery             更快地完成上面所有事（工具包）
 ES6+               現代語法讓程式碼更簡潔（升級工具包）
 ```
 
-| 章節 | 主題 | 學會之後你能做到 | 預估時間 |
-|------|------|----------------|---------|
-| Ch1 | HTML / CSS | 寫出結構化網頁並設定樣式 | 2 小時 |
-| Ch2 | JS 基本語法 | 寫變數、判斷、迴圈、函式 | 3 小時 |
-| Ch3 | 陣列 | 儲存與操作多筆資料 | 1.5 小時 |
-| Ch4 | 物件 / JSON | 用名稱/值整理複雜資料 | 1.5 小時 |
-| Ch5 | BOM | 控制視窗、網址、計時器、Cookie | 1.5 小時 |
-| Ch6 | DOM | 動態新增/刪除/修改網頁元素 | 4 小時（最核心）|
-| Ch7 | HTML5 表單 | 表單驗證輸入資料 | 1 小時 |
-| Ch8 | AJAX | 非同步向伺服器取得資料 | 2 小時 |
-| Ch9 | jQuery | 用簡短語法做 DOM 與 AJAX | 3 小時 |
-| Ch10 | ES6+ 現代 JS | 箭頭函式、解構、Promise、class 等現代語法 | 3 小時 |
+| 章節 | 主題 | 學會之後你能做到 | 單元練習 | 預估時間 |
+|------|------|----------------|---------|---------|
+| Ch1 | HTML / CSS | 寫出結構化網頁並設定樣式 | 4 題 | 2 小時 |
+| Ch2 | JS 基本語法 | 寫變數、判斷、迴圈、函式 | 8 題 | 3 小時 |
+| Ch3 | 陣列 | 儲存與操作多筆資料 | 6 題 | 1.5 小時 |
+| Ch4 | 物件 / JSON | 用名稱/值整理複雜資料 | 3 題 | 1.5 小時 |
+| Ch5 | BOM | 控制視窗、網址、計時器、Cookie | 5 題 | 1.5 小時 |
+| Ch6 | DOM | 動態新增/刪除/修改網頁元素 | 9 題 | 4 小時（最核心）|
+| Ch7 | HTML5 表單 | 表單驗證輸入資料 | 3 題 | 1 小時 |
+| Ch8 | AJAX | 非同步向伺服器取得資料 | 6 題 | 2 小時 |
+| Ch9 | jQuery | 用簡短語法做 DOM 與 AJAX | 10 題 | 3 小時 |
+| Ch10 | ES6+ 現代 JS | 箭頭函式、解構、Promise、class 等現代語法 | 10 題 | 3 小時 |
 
 > 💡 **里程碑 1**：學完 Ch 2，做一個「猜數字遊戲」。
 > **里程碑 2**：學完 Ch 6，做一個「待辦清單」。
@@ -89,6 +89,28 @@ ES6+               現代語法讓程式碼更簡潔（升級工具包）
 | `<!DOCTYPE html>` | 告訴瀏覽器這是 HTML5 文件 |
 | `<head>` | 放設定資訊（編碼、標題、樣式） |
 | `<body>` | 放真正顯示在頁面的內容 |
+
+#### ✏️ 練習範例
+
+**任務：** 建立一個完整 HTML 頁面，標題為「我的第一個頁面」，內容放一個段落 `<p>Hello JavaScript!</p>`，存成 `test.html` 用瀏覽器開啟。
+
+<details>
+<summary>顯示解答</summary>
+
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <title>我的第一個頁面</title>
+</head>
+<body>
+  <p>Hello JavaScript!</p>
+</body>
+</html>
+```
+
+</details>
 
 ### 1-2 CSS 是什麼？
 
@@ -126,6 +148,32 @@ p {
 @import url(basis.css);
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用三種方式（① 行內、② 內嵌、③ 外部）把一個 `<p>` 的文字顏色設成紅色。
+
+<details>
+<summary>顯示解答</summary>
+
+```html
+<!-- ① 行內 -->
+<p style="color:red;">第一段</p>
+
+<!-- ② 內嵌 -->
+<head>
+  <style>
+    p { color: red; }
+  </style>
+</head>
+
+<!-- ③ 外部（假設 basis.css 內有 p { color: red; }） -->
+<head>
+  <link href="basis.css" rel="stylesheet"/>
+</head>
+```
+
+</details>
+
 ### 1-3 選擇器 Selector
 
 **概念：** 選擇器就是「你要打扮誰」。指名道姓、貼名牌（class）、還是給身分證（id）。
@@ -146,6 +194,23 @@ p {
 ```
 
 > ⚠️ **ID 唯一、class 可重複。** 一個頁面裡 id 只能出現一次，class 可以很多人共用。就像身分證號碼 vs 班級座號。
+
+#### ✏️ 練習範例
+
+**任務：** 寫 CSS 讓 `id="title"` 的文字變藍色、所有 `class="item"` 的段落變綠色、所有 `h2` 和 `p` 加上底線。
+
+<details>
+<summary>顯示解答</summary>
+
+```html
+<style>
+  #title { color: blue; }
+  .item  { color: green; }
+  h2, p  { text-decoration: underline; }
+</style>
+```
+
+</details>
 
 ### 1-4 常用 CSS 屬性
 
@@ -168,6 +233,20 @@ color: red;                        /* 字體顏色 */
 text-decoration: underline;        /* 底線 */
 text-shadow: 2px 2px 0px yellow;   /* 字型陰影 */
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 用 `margin` 簡寫設定外距：上 10px、右 5px、下 10px、左 5px。
+
+<details>
+<summary>顯示解答</summary>
+
+```css
+/* 順序：上 右 下 左（順時針） */
+margin: 10px 5px 10px 5px;
+```
+
+</details>
 
 ### ❌ / ✅ 常見錯誤
 
@@ -196,6 +275,17 @@ margin: 10px 5px 10px 20px;
 
 就像樂高說明書：HTML 決定樂高擺哪裡，JS 決定機器人該怎麼動。
 
+#### ✏️ 練習範例
+
+**任務：** 判斷以下哪些是「直譯語言」的特性：① 需要先編譯才能執行 ② 瀏覽器直接逐行執行 ③ 不用事先編譯。
+
+<details>
+<summary>顯示解答</summary>
+
+② 和 ③ 正確。JavaScript 是直譯語言（interpreted language），不需事先編譯（compile），直接在瀏覽器上執行。
+
+</details>
+
 ### 2-2 如何使用 JavaScript
 
 JS 寫在 `<script></script>` 標籤內，可放在 `<body>` 或 `<head>`。
@@ -222,6 +312,34 @@ JS 寫在 `<script></script>` 標籤內，可放在 `<body>` 或 `<head>`。
 
 > ⚠️ **瀏覽器遇到 `<script>` 會暫停解析 HTML**，先執行完 JS 才繼續。所以大檔案的 JS 通常放在 `<body>` 最後面，避免網頁卡住。不同邏輯的程式也可以拆成不同 `.js` 檔，方便維護。
 
+#### ✏️ 練習範例
+
+**任務：** 建立 `hello.js`（內容 `alert('Hi from external file!')`），並在 HTML 中用 `<script src>` 引用它。
+
+<details>
+<summary>顯示解答</summary>
+
+`hello.js`：
+```js
+alert('Hi from external file!');
+```
+
+`index.html`：
+```html
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+</head>
+<body>
+  <!-- 引用外部 JS 檔 -->
+  <script src="hello.js"></script>
+</body>
+</html>
+```
+
+</details>
+
 ### 2-3 變數與作用域
 
 **概念：** 變數是「貼了標籤的盒子」，可以存放資料。
@@ -246,6 +364,24 @@ function foo() {
 }
 alert(carName);              // 會顯示 Ferrari
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 宣告一個函式 `showName()`，裡面用 `var` 宣告 `name = 'Mary'` 並 `alert` 它；接著在函式外呼叫 `showName()`，再試試直接在函式外 `alert(name)`，猜猜哪邊會出錯？
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+function showName() {
+  var name = 'Mary';
+  alert(name);        // ✅ 顯示 Mary
+}
+showName();           // ✅ 可以呼叫
+alert(name);          // ❌ ReferenceError！var 只在函式內可見（函式作用域）
+```
+
+</details>
 
 ### 2-4 資料型態
 
@@ -288,6 +424,26 @@ console.log(typeof 123);      // 輸出 number
 console.log(typeof true);     // 輸出 boolean
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用 `typeof` 判斷下列各值分別是什麼型態：`'hello'`、`123`、`true`、`null`、`undefined`、`[1,2,3]`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+console.log(typeof 'hello');     // string
+console.log(typeof 123);         // number
+console.log(typeof true);        // boolean
+console.log(typeof null);        // object（歷史遺留 bug，實務上要知道）
+console.log(typeof undefined);   // undefined
+console.log(typeof [1, 2, 3]);   // object（陣列也是物件型態）
+```
+
+> 💡 順帶用 `isNaN('abc')` → true，`isNaN(20)` → false 練習判斷「不是數字」。
+
+</details>
+
 ### 2-5 if 判斷語法
 
 **概念：** if 是「人生的十字路口」。條件成立走 A 路，否則走 B 路。
@@ -309,6 +465,24 @@ if (text) {
   alert(false);     // 會執行，因為空字串判斷為 false
 }
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 以下哪些值會被 if 判斷為 `false`？寫出程式驗證：`0`、`'hello'`、`null`、`[]`、`''`、`false`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+if (0)      { console.log('0 → true');  } else { console.log('0 → false');  }   // false
+if ('hello'){ console.log("'hello' → true"); } else { console.log("'hello' → false"); } // true
+if (null)   { console.log('null → true'); } else { console.log('null → false'); }   // false
+if ([])     { console.log('[] → true');  } else { console.log('[] → false');  }   // true（空陣列是真值！）
+if ('')     { console.log("'' → true");  } else { console.log("'' → false");  }   // false
+if (false)  { console.log('false → true'); } else { console.log('false → false'); } // false
+```
+
+</details>
 
 ### 2-6 迴圈語法
 
@@ -337,6 +511,33 @@ do {
 } while (StillHungry());
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用 for 迴圈計算 1 到 100 的總和，並用 `console.log` 輸出。再用 while 寫一次。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+// for 寫法
+var sum = 0;
+for (var i = 1; i <= 100; i++) {
+  sum += i;
+}
+console.log(sum);   // 5050
+
+// while 寫法
+var sum = 0;
+var i = 1;
+while (i <= 100) {
+  sum += i;
+  i++;
+}
+console.log(sum);   // 5050
+```
+
+</details>
+
 ### 2-7 彈出式視窗
 
 **概念：** 三種內建對話盒，就像跟使用者「面對面講話」。
@@ -361,6 +562,29 @@ var nickname = prompt('請輸入你的暱稱');
 alert('Hello ' + nickname);
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用 `prompt` 請使用者輸入姓名，再用 `confirm` 確認，最後用 `alert` 說「Hello, [姓名]」。若按「取消」則顯示「取消輸入」。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var nickname = prompt('請輸入你的暱稱');
+if (nickname) {
+  var yes = confirm('你確定要使用「' + nickname + '」嗎？');
+  if (yes) {
+    alert('Hello, ' + nickname);
+  } else {
+    alert('取消輸入');
+  }
+} else {
+  alert('你沒有輸入暱稱');
+}
+```
+
+</details>
+
 ### 2-8 函式 Function
 
 **概念：** 函式是「可以重複呼叫的流程」。兩種宣告方式：
@@ -378,6 +602,33 @@ var square = function(number) {
 ```
 
 > 💡 差別：**函式宣告**會被「提升」（hoisting），宣告之前就能呼叫；**函式表達式**必須先指定變數才能用。
+
+#### ✏️ 練習範例
+
+**任務：** 用「函式表達式」寫一個 `double(x)`，接收一個數字回傳兩倍值，並分別測試「宣告前呼叫」與「宣告後呼叫」的結果。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+// 函式宣告：宣告前就能呼叫（hoisting）
+console.log(square(3));      // 9
+
+function square(n) {
+  return n * n;
+}
+
+// 函式表達式：必須先指定變數才能用
+console.log(double(3));      // ❌ TypeError: double is not a function
+
+var double = function(x) {
+  return x * 2;
+};
+
+console.log(double(3));      // 6
+```
+
+</details>
 
 ### 完整範例：迴圈猜數字
 
@@ -438,6 +689,23 @@ var fruits = ['Apple', 'Banana'];
 - 一群相同性質的資料（購物清單、學生名單、表格資料）
 - 需要逐一處理的資料（用迴圈搭配）
 
+#### ✏️ 練習範例
+
+**任務：** 宣告一個空陣列 `shoppingCart`，再宣告一個含三個字串的陣列 `students = ['Alice', 'Bob', 'Cathy']`，並印出 `students` 的長度與第一個元素。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var shoppingCart = [];                       // 空陣列
+var students = ['Alice', 'Bob', 'Cathy'];
+console.log(students.length);                // 3
+console.log(students[0]);                    // Alice（索引從 0 開始）
+console.log(students[students.length - 1]);  // Cathy（最後一個）
+```
+
+</details>
+
 ### 3-2 新增元素
 
 | 方法 | 作用 | 範例 |
@@ -451,6 +719,23 @@ fruits.push('Orange');
 console.log(fruits);   // ["Apple", "Banana", "Orange"]
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 從空陣列開始，先用 `push` 加入 `'Banana'`、`'Apple'`，再用 `unshift` 在最前面加入 `'Cherry'`，最後輸出陣列。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var fruits = [];
+fruits.push('Banana');       // ["Banana"]
+fruits.push('Apple');        // ["Banana", "Apple"]
+fruits.unshift('Cherry');    // ["Cherry", "Banana", "Apple"]
+console.log(fruits);         // ["Cherry", "Banana", "Apple"]
+```
+
+</details>
+
 ### 3-3 讀取元素
 
 ```js
@@ -458,6 +743,22 @@ var fruits = ['Apple', 'Banana'];
 var first = fruits[0];                    // Apple
 var last = fruits[fruits.length - 1];     // Banana（最後一個）
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 給定 `var nums = [10, 20, 30, 40]`，用索引讀出「第一個」、「第二個」、「最後一個」元素。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var nums = [10, 20, 30, 40];
+console.log(nums[0]);                 // 10（第一個）
+console.log(nums[1]);                 // 20（第二個）
+console.log(nums[nums.length - 1]);   // 40（最後一個）
+```
+
+</details>
 
 ### 3-4 刪除元素
 
@@ -472,6 +773,27 @@ var last = fruits.pop();    // last = Banana
 console.log(fruits);        // ["Apple"]
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 給定 `var queue = ['A', 'B', 'C', 'D']`，用 `shift()` 移除第一個、用 `pop()` 移除最後一個，每步輸出結果，並印出被移除的值。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var queue = ['A', 'B', 'C', 'D'];
+
+var first = queue.shift();   // 移除 'A'
+console.log(first);          // A
+console.log(queue);          // ["B", "C", "D"]
+
+var last = queue.pop();      // 移除 'D'
+console.log(last);           // D
+console.log(queue);          // ["B", "C"]
+```
+
+</details>
+
 ### 3-5 搜尋 indexOf
 
 ```js
@@ -479,6 +801,21 @@ var ary = [2, 6, 9];
 var i = ary.indexOf(2);    // 返回 0（在第幾個位置）
 var j = ary.indexOf(7);    // 返回 -1（找不到）
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 給定 `var week = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']`，找出 `'Wed'` 的位置；再找不存在的 `'Sun'`，確認回傳值。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var week = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+console.log(week.indexOf('Wed'));   // 2
+console.log(week.indexOf('Sun'));   // -1（找不到）
+```
+
+</details>
 
 ### 3-6 splice 插入/刪除/替換
 
@@ -503,6 +840,22 @@ var removed = fruits.splice(2, 2, 'Watermelon', 'Lemon');
 console.log(fruits);    // ["Banana", "Orange", "Watermelon", "Lemon", "Peach"]
 console.log(removed);   // ["Apple", "Mango"]
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 給定 `var fruits = ['Banana', 'Orange', 'Apple', 'Mango', 'Peach']`，用 `splice(1, 2, 'Watermelon')` 把索引 1、2 的兩個元素替換成 `'Watermelon'`，輸出結果。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var fruits = ['Banana', 'Orange', 'Apple', 'Mango', 'Peach'];
+var removed = fruits.splice(1, 2, 'Watermelon');
+console.log(fruits);    // ["Banana", "Watermelon", "Mango", "Peach"]
+console.log(removed);   // ["Orange", "Apple"]（被刪除的）
+```
+
+</details>
 
 ### ❌ / ✅ 常見錯誤
 
@@ -542,6 +895,25 @@ myObj.color = 'blue';       // 建立 color 屬性
 var myColor = myObj.color;  // 讀取屬性
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用物件實字 `{}` 建立一個 `car` 物件，加上 `brand`、`year`、`mileage` 三個屬性並印出。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var car = {};
+car.brand = 'Toyota';
+car.year = 2024;
+car.mileage = 15000;
+console.log(car.brand);     // Toyota
+console.log(car.year);      // 2024
+console.log(car.mileage);   // 15000
+```
+
+</details>
+
 ### 4-2 物件方法 Method
 
 物件裡可以放函式，叫**方法**。函式裡的 `this` 代表「這個物件自己」。
@@ -558,6 +930,28 @@ var user = {
 
 var name = user.fullName();   // name = 'Mary Lee'
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 建立一個 `product` 物件，含 `name`、`price`、`qty` 三個屬性，再加一個 `total()` 方法回傳 `price * qty`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var product = {
+  name: '咖啡豆',
+  price: 300,
+  qty: 3,
+  total: function() {
+    return this.price * this.qty;   // this 指向 product 自己
+  }
+};
+
+console.log(product.total());   // 900
+```
+
+</details>
 
 ### 4-3 JSON 資料格式
 
@@ -586,6 +980,29 @@ var attendees = [
 
 > ⚠️ **JSON 與 JS 物件差別**：JSON 的 key 一定要雙引號；JS 物件可以不用。JSON 是「純文字格式」，JS 物件是「記憶體裡的資料」。
 
+#### ✏️ 練習範例
+
+**任務：** 用 JSON 格式寫一個物件陣列，內含兩筆學生資料（`name`、`grade`），並練習把「符合標準的 JSON」和「JS 物件」區分開。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+// 標準 JSON：key 雙引號、無尾端逗號
+var students = [
+  { "name": "Mary", "grade": 95 },
+  { "name": "John", "grade": 88 }
+];
+console.log(students[0].name);   // Mary
+
+// 在實際 JS 裡可用 JSON.parse 把字串變成物件
+var jsonText = '{"name": "Mary", "grade": 95}';
+var obj = JSON.parse(jsonText);
+console.log(obj.name);           // Mary
+```
+
+</details>
+
 ### ❌ / ✅ 常見錯誤
 
 ```js
@@ -613,6 +1030,19 @@ var good = { "name": "Eric", "age": 20 };
 | Timer | 瀏覽器內建計時器 |
 | `cookie` | 管理瀏覽器 cookie |
 
+#### ✏️ 練習範例
+
+**任務：** 判斷下列哪些屬於「BOM」可控制的項目：① 視窗尺寸 ② 頁面網址 ③ 某個 `<p>` 的文字 ④ 定時器。
+
+<details>
+<summary>顯示解答</summary>
+
+①、②、④ 屬於 BOM（window、location、Timer）。
+
+③ 屬於 **DOM**（`document` 控制頁面元素）。口訣：**BOM 管瀏覽器，DOM 管網頁內容**。
+
+</details>
+
 ### 5-2 window 開新視窗
 
 ```js
@@ -623,12 +1053,48 @@ var windowObj = window.open(
 );
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用 `window.open` 開啟一個 500x400 的新視窗，網址為 `https://www.google.com/`，並設定不可調整大小。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var windowObj = window.open(
+  'https://www.google.com/',
+  'google',
+  'width=500,height=400,resizable=no,scrollbars=yes'
+);
+```
+
+</details>
+
 ### 5-3 location 操作網址
 
 ```js
 location.href = 'https://www.google.com/';   // 跳轉到另一個網站
 var path = location.pathname;                // 取得當前網址路徑
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 寫一個函式 `goGoogle()`，呼叫時把目前頁面跳轉到 `https://www.google.com/`；同時練習用 `location.pathname` 印出目前網址路徑。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+function goGoogle() {
+  location.href = 'https://www.google.com/';
+}
+
+// 呼叫 goGoogle() 就會跳轉
+// 查看目前路徑：
+console.log(location.pathname);
+```
+
+</details>
 
 ### 5-4 Timer 計時器
 
@@ -651,6 +1117,26 @@ var intervalID = window.setInterval(function() {
 }, 3000);
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用 `setInterval` 每秒印一次 `'tick'`，並在 5 秒後用 `clearInterval` 停止計時器。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var count = 0;
+var timer = setInterval(function() {
+  count++;
+  console.log('tick ' + count);
+  if (count >= 5) {
+    clearInterval(timer);     // 5 秒後停止
+  }
+}, 1000);
+```
+
+</details>
+
 ### 5-5 Cookie
 
 **概念：** Cookie 是「瀏覽器裡的小便條紙」。伺服器與瀏覽器之間記錄狀態（例如記住你是誰）。
@@ -672,6 +1158,31 @@ function btnRead() {
   }
 }
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 寫兩個函式：`saveNickname()` 把 `nickname=Kevin` 存入 Cookie（1 分鐘過期），`readNickname()` 把 `document.cookie` 用 `;` 拆開印出每一筆。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+function saveNickname() {
+  var d = new Date();
+  d.setTime(d.getTime() + (1 * 60 * 1000));      // 1 分鐘過期
+  var expires = "expires=" + d.toUTCString();
+  document.cookie = 'nickname=Kevin; ' + expires + '; path=/';
+}
+
+function readNickname() {
+  var cookieAry = document.cookie.split(';');
+  for (var i = 0; i < cookieAry.length; i++) {
+    console.log(cookieAry[i]);
+  }
+}
+```
+
+</details>
 
 ### ❌ / ✅ 常見錯誤
 
@@ -702,6 +1213,19 @@ setTimeout(function(){ alert('只執行一次'); }, 1000);
 2. 定義哪些**方法**可以操作
 3. 定義哪些**事件**可以綁定處理函式
 
+#### ✏️ 練習範例
+
+**任務：** 判斷下列「DOM 提供」的三件事分別對應哪個項目：① `href` 屬性可存取 ② `appendChild()` 方法可呼叫 ③ 可對按鈕綁定 `click`。
+
+<details>
+<summary>顯示解答</summary>
+
+① → DOM 定義元素的**屬性**；② → DOM 定義的**方法**；③ → DOM 定義的**事件**。
+
+口訣：**DOM 給你屬性、方法、事件三張牌**。
+
+</details>
+
 ### 6-2 查找元素
 
 | 方法 | 找什麼 | 回傳 |
@@ -724,6 +1248,25 @@ var test = parentDOM.getElementsByClassName('test');
 console.log(test.length);                                       // 輸出 2
 console.log(test[0].innerText);                                 // 輸出 <p class="test">hello word2</p>
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 承上頁 HTML，用 `getElementById` 找到 `parent-id`，再依序用 `getElementsByTagName('p')` 和 `getElementsByClassName('test')` 統計個數並印出。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var parentDOM = document.getElementById('parent-id');
+var allP = parentDOM.getElementsByTagName('p');
+var test = parentDOM.getElementsByClassName('test');
+
+console.log(allP.length);    // 3（3 個 <p>）
+console.log(test.length);    // 2（2 個 class="test"）
+console.log(test[0].innerText);   // hello word2
+```
+
+</details>
 
 ### 6-3 父子兄弟節點
 
@@ -772,6 +1315,24 @@ alert(document.getElementById('s1').nextSibling.id);     // s2
 alert(document.getElementById('s2').nextSibling);        // null
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 給定 `<div id="foo"><span>A</span><span>B</span></div>`（無換行），用 `firstChild`、`lastChild`、`nextSibling` 印出這三個節點的內容。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var foo = document.getElementById('foo');
+alert(foo.firstChild.innerHTML);             // A
+alert(foo.lastChild.innerHTML);              // B
+alert(foo.firstChild.nextSibling.innerHTML); // B
+```
+
+> ⚠️ 標籤之間若換行，`firstChild` 會取到 `#text` 空白節點，練習時請保持「不換行」或改用 `firstElementChild`。
+
+</details>
+
 ### 6-4 修改節點內容
 
 | 屬性 | 作用 | 注意 |
@@ -798,6 +1359,25 @@ alert(div.innerHTML);
 alert(div.firstChild.nodeValue);         // hello world
 alert(div.attributes.id.nodeValue);      // foo
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 給定 `<div id="foo"><span>hello world</span> 101</div>`，分別用 `innerHTML`、`innerText` 印出內容，再把 `innerHTML` 改成 `123` 後再次印出。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var div = document.getElementById('foo');
+
+alert(div.innerHTML);    // <span>hello world</span> 101（含標籤）
+alert(div.innerText);    // hello world 101（純文字）
+
+div.innerHTML = '123';
+alert(div.innerHTML);    // 123
+```
+
+</details>
 
 ### 6-5 新增節點
 
@@ -840,6 +1420,25 @@ var cell2 = newRow.insertCell();
 cell2.textContent = 'Book Price';
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 給定 `<ul id="list"></ul>`，用 for 迴圈建立 3 個 `<li>`，內容為「項目 1 / 項目 2 / 項目 3」，依序 `appendChild` 到 `<ul>`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var head = document.getElementById('list');
+for (var i = 1; i <= 3; i++) {
+  var li = document.createElement('li');   // 建立新元素
+  li.textContent = '項目 ' + i;            // 設定內容
+  head.appendChild(li);                    // 放進去
+}
+// 結果：<li>項目 1</li><li>項目 2</li><li>項目 3</li>
+```
+
+</details>
+
 ### 6-6 刪除節點
 
 ```js
@@ -873,6 +1472,27 @@ currentDiv.appendChild(newDiv);
 outerDiv.innerHTML = '';
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 給定 `<ul id="todo"><li>1</li><li>2</li><li>3</li></ul>`，用 `removeChild` 刪掉中間那個 `<li>`，再用 `innerHTML = ''` 清空整個 `<ul>`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var head = document.getElementById('todo');
+
+// 刪掉 index 1 的 <li>2</li>
+head.removeChild(head.childNodes[1]);
+console.log(head.innerHTML);   // <li>1</li><li>3</li>
+
+// 全部清空
+head.innerHTML = '';
+console.log(head.innerHTML);   // （空字串）
+```
+
+</details>
+
 ### 6-7 修改 CSS 樣式
 
 **三種改樣式的方式：**
@@ -901,6 +1521,26 @@ alert(computed.height);   // 顯示 100px（來自 <style>）
 alert(computed.top);      // 顯示 50px（來自行內 style，優先）
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 給定 `<p id="foo">hello world</p>`，用三種寫法：① 把文字設成綠色 ② 把背景設成灰色 ③ 用 `cssText` 一次設字體大小 20px 與紫色文字。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var foo = document.getElementById('foo');
+
+// ① 駝峰式屬性
+foo.style.color = 'green';
+// ② 字串屬性
+foo.style['background-color'] = 'gray';
+// ③ cssText 一次設定
+foo.style.cssText = 'font-size: 20px; color: purple;';
+```
+
+</details>
+
 ### 6-8 屬性 getAttribute / setAttribute
 
 ```js
@@ -916,6 +1556,23 @@ alert(foo.getAttribute('data-foo'));   // ""（有這個屬性但沒值，回傳
 foo.setAttribute('target', '_blank');
 alert(foo.getAttribute('target'));     // _blank
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 給定 `<a id="foo" href="http://www.gjun.com/">www.gjun.com</a>`，先讀取不存在的 `target`（預期 null），再用 `setAttribute` 設定 `target="_blank"` 後讀取確認。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var foo = document.getElementById('foo');
+
+alert(foo.getAttribute('target'));   // null（還沒設定）
+foo.setAttribute('target', '_blank'); // 設定
+alert(foo.getAttribute('target'));    // _blank
+```
+
+</details>
 
 ### 6-9 事件 Event
 
@@ -963,6 +1620,22 @@ scene.addEventListener("mouseover", function() {
   window.alert('Some help text');
 }, false);
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 給定 `<button id="btn">Click</button>`，用 `addEventListener` 綁定 click 事件，點擊時把按鈕文字改成 `'被點過了！'`（提示：用 `event.target`）。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var btn = document.getElementById('btn');
+btn.addEventListener('click', function(event) {
+  event.target.innerHTML = '被點過了！';
+});
+```
+
+</details>
 
 ### ❌ / ✅ 常見錯誤
 
@@ -1018,6 +1691,28 @@ document.addEventListener('click', myAlert);
 </datalist>
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用 `<select>` + `<optgroup>` 做一個分組下拉選單：一組「台灣」內含臺北、臺中，一組「日本」內含東京、大阪。
+
+<details>
+<summary>顯示解答</summary>
+
+```html
+<select id="city" name="city">
+  <optgroup label="台灣">
+    <option value="tpe">臺北</option>
+    <option value="txg">臺中</option>
+  </optgroup>
+  <optgroup label="日本">
+    <option value="tyo">東京</option>
+    <option value="osaka">大阪</option>
+  </optgroup>
+</select>
+```
+
+</details>
+
 ### 7-2 表單輸入驗證屬性
 
 **概念：** 直接在 HTML 屬性上宣告「輸入格式規則」，瀏覽器自動驗證，省下大量 JS 程式碼。
@@ -1036,6 +1731,23 @@ document.addEventListener('click', myAlert);
        title="2 digits and 3 uppercase letters" />
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 寫一個必填的電話欄位，並用 `pattern` 驗證格式為「10 位數字」（提示：`[0-9]{10}`），加入 `placeholder` 與 `title` 提示。
+
+<details>
+<summary>顯示解答</summary>
+
+```html
+<input id="phone" name="phone" type="tel"
+       placeholder="請輸入 10 位手機號碼"
+       pattern="[0-9]{10}"
+       title="需為 10 位數字，例如 0912345678"
+       required="required" />
+```
+
+</details>
+
 ### 7-3 用 JavaScript 驗證輸入
 
 **概念：** 攔截表單的 `onsubmit` 事件，驗證不通過就回傳 `false` 阻止送出。
@@ -1052,6 +1764,33 @@ function check() {
 }
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 完成 `check()`：若姓名欄位為空就 `alert` 提示並回傳 `false`；否則回傳 `true`。表單用 `onsubmit="return check()"` 攔截。
+
+<details>
+<summary>顯示解答</summary>
+
+```html
+<form action="test.aspx" onsubmit="return check()">
+  <input id="name" name="name" type="text" />
+  <button type="submit">送出</button>
+</form>
+```
+
+```js
+function check() {
+  var name = document.getElementById('name').value;
+  if (name === '') {
+    alert('姓名不能為空！');
+    return false;    // 阻止送出
+  }
+  return true;       // 允許送出
+}
+```
+
+</details>
+
 > 🔧 **現在試試看：** 做一個表單，姓名必填、電話用 pattern 驗證格式，送出前用 check() 檢查。
 
 ---
@@ -1063,6 +1802,19 @@ function check() {
 **概念：** AJAX = **A**synchronous **J**avaScript **A**nd **X**ML。它讓網頁可以在**背景**跟伺服器要資料、更新部分畫面，**不用重新載入整頁**。
 
 就像點外送：你不用走出門（重新載入整頁），外送員（AJAX）會直接把餐送到家門口（更新局部畫面）。
+
+#### ✏️ 練習範例
+
+**任務：** 判斷下列哪個情境適合用 AJAX：① 更新購物車數量而不重整頁面 ② 整頁跳轉到登入頁 ③ 讀取氣象資料局部顯示。
+
+<details>
+<summary>顯示解答</summary>
+
+① 和 ③ 適合 AJAX（在背景取得資料、更新部分畫面）。
+
+② 屬於整頁跳轉，不需要 AJAX。口訣：**要局部更新才用 AJAX**。
+
+</details>
 
 ### 8-2 傳送 HTTP 請求的流程
 
@@ -1079,6 +1831,21 @@ var url = "http://server.com/resources/...";
 request.open("GET", url);   // 指定方法 + 網址
 request.send();             // 送出
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 用 XHR 的 4 個步驟，寫出「建立物件 → 指定 GET + URL → 送出請求」的程式碼，URL 為 `data.txt`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var request = new XMLHttpRequest();      // 1. 產生物件
+request.open("GET", "data.txt");         // 2. 指定方法 + URL
+request.send();                          // 3. 送出（真正的 AJAX 還需要事件處理，見下單元）
+```
+
+</details>
 
 ### 8-3 完整 AJAX 流程範例
 
@@ -1115,6 +1882,30 @@ function handleStateChange() {
 
 **readyState 狀態：** 4 代表「請求完成」。**status：** 200 代表「伺服器正常回應」。
 
+#### ✏️ 練習範例
+
+**任務：** 複習完整流程，補完以下程式：建立 XHR、設定 `onreadystatechange`、當 `readyState === 4 && status === 200` 時把 `responseText` 塞進 `<div id="content">`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var xhr = new XMLHttpRequest();
+xhr.onreadystatechange = function() {
+  if (xhr.readyState === 4) {
+    if (xhr.status === 200) {
+      document.getElementById('content').innerHTML = xhr.responseText;
+    } else {
+      window.alert('檔案開啟錯誤!');
+    }
+  }
+};
+xhr.open("GET", "poetry.txt", true);
+xhr.send(null);
+```
+
+</details>
+
 ### 8-4 接收 JSON 資料
 
 ```js
@@ -1138,6 +1929,32 @@ httpRequest.open('GET', 'user.txt');
 httpRequest.send();
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 承上範例（伺服器回傳 `{"userName":"Mary"}`），在 `status === 200` 時，除了顯示 `userName`，再用 `console.log` 印出整個解析後的物件，並處理「非 200」的情況。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var httpRequest = new XMLHttpRequest();
+httpRequest.onreadystatechange = function() {
+  if (httpRequest.readyState === 4) {
+    if (httpRequest.status === 200) {
+      var jsonResponse = JSON.parse(httpRequest.responseText);
+      console.log(jsonResponse);                                  // 整個物件
+      document.getElementById('user').innerHTML = jsonResponse.userName;
+    } else {
+      alert('ERROR - server status code: ' + httpRequest.status);
+    }
+  }
+};
+httpRequest.open('GET', 'user.txt');
+httpRequest.send();
+```
+
+</details>
+
 ### 8-5 POST 傳送資料到伺服器
 
 **概念：** 要送資料過去時，改用 POST，並設定表頭 `Content-Type`。
@@ -1151,6 +1968,23 @@ request.open("POST", url, true);
 request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
 request.send(data);
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 用 POST 傳送 `name=Mary&city=Taipei` 到 `saveUser`，記得設定 `Content-Type`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+var data = "name=Mary&city=Taipei";
+var request = new XMLHttpRequest();
+request.open("POST", "saveUser", true);
+request.setRequestHeader("Content-Type", "application/x-www-form-urlencoded");
+request.send(data);
+```
+
+</details>
 
 ### 8-6 現代寫法：fetch + async/await
 
@@ -1178,6 +2012,28 @@ fetch() 發送請求 ──await──→ 等待伺服器回應
    ▼
 response.json() ──await──→ 等待 JSON 解析
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 用 `async/await` 重寫 8-4 的範例：`fetch('user.txt')` → `response.json()` → 把 `userName` 顯示到 `<div id="user">`，並用 `try/catch` 處理錯誤。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+async function getUser() {
+  try {
+    const response = await fetch('user.txt');
+    const data = await response.json();
+    document.getElementById('user').innerHTML = data.userName;
+  } catch (error) {
+    console.error("An error occurred:", error);
+  }
+}
+getUser();
+```
+
+</details>
 
 > 💡 **await**：讓程式「等 fetch 完成再往下執行」，非阻塞、不會凍結瀏覽器。
 
@@ -1223,6 +2079,34 @@ console.log(data.userName);
 <script src="//ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 在 HTML 中正確載入 jQuery（Google CDN 3.6.0），並檢查有沒有「載入成功」。
+
+<details>
+<summary>顯示解答</summary>
+
+```html
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+</head>
+<body>
+  <script>
+    if (typeof jQuery !== 'undefined') {
+      alert('jQuery 載入成功！版本：' + jQuery.fn.jquery);
+    } else {
+      alert('jQuery 載入失敗');
+    }
+  </script>
+</body>
+</html>
+```
+
+</details>
+
 ### 9-2 基本觀念：$( ) 選擇器
 
 **概念：** jQuery 程式碼由 `$` 開始，後面接 `()`，括號裡放「你想找誰」。
@@ -1256,6 +2140,23 @@ $(document).ready(function() {
 });
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用 jQuery 選擇器選取：① 所有 `<div>` ② 所有 `class="item"` ③ `id="main"`，並在 `$(document).ready` 中隱藏它們。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+$(document).ready(function() {
+  $("div").hide();        // 所有 <div>
+  $(".item").hide();      // 所有 class="item"
+  $("#main").hide();      // id="main"
+});
+```
+
+</details>
+
 ### 9-3 設定 / 取得內容
 
 | 方法 | 作用 |
@@ -1276,6 +2177,25 @@ alert("Text: " + $("#test").text());      // 純文字
 alert("HTML: " + $("#test").html());      // 含標籤
 alert("Value: " + $("#test").val());      // input 的 value
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 給定 `<p id="p1">舊文字</p>` 和 `<input id="name">`，用 jQuery 分別：① 用 `.text()` 把 p1 改成「新文字」② 用 `.html()` 改成粗體「<b>Hello</b>」③ 用 `.val()` 把 input 設成「Mary」。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+$("#p1").text("新文字");               // 純文字
+$("#p1").html("<b>Hello</b>");         // 會真的變成粗體
+$("#name").val("Mary");                // input 的 value = Mary
+
+// 讀取時：
+console.log($("#p1").text());          // 新文字
+console.log($("#p1").html());          // <b>Hello</b>
+```
+
+</details>
 
 ### 9-4 CSS 類別操作
 
@@ -1298,6 +2218,24 @@ var color = $("div").css("background-color");
 $("p").css("color", color);
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 給定 `<div class="hello">Hi</div>`，用 `addClass` 加上 `big`、用 `removeClass` 移除 `small`、再用 `toggleClass('active')` 做切換。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+$(".hello").addClass("big");        // <div class="hello big">
+$(".hello").removeClass("small");
+$(".hello").toggleClass("active");  // 第一次：加上 active；再點一次：移除 active
+
+// 同時設定多個 CSS
+$(".hello").css({ "color": "red", "font-size": "20px" });
+```
+
+</details>
+
 ### 9-5 每個元素逐一處理：each + find
 
 ```js
@@ -1318,6 +2256,32 @@ $.each(arr, function(i) {
 // find：在選取元素底下搜尋
 $(".grand-parent").find("li").css("border", "2px solid red");
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 給定下方陣列，用 `$.each` 把每個商品名稱印到 console；再用 `.find("li")` 找出 `.parent` 底下的所有 `<li>`。
+
+```js
+var arr = [{ "name": "Apple", "price": 60 }, { "name": "Lemon", "price": 90 }];
+```
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+// $.each 遍歷陣列
+$.each(arr, function(i) {
+  console.log(i + 1 + '. ' + this.name + ' $' + this.price);
+});
+// 輸出：
+// 1. Apple $60
+// 2. Lemon $90
+
+// find：在選取元素底下搜尋
+$(".parent").find("li").css("border", "2px solid red");
+```
+
+</details>
 
 ### 9-6 DOM 新增 / 插入 / 刪除
 
@@ -1351,6 +2315,26 @@ $('.hello').empty();      // 清空，自己還在
 $('.hello').remove();     // 連自己一起刪
 $('.hello').clone().appendTo('.goodbye');   // 複製一份貼到 goodbye
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 給定 `<p>I would like to say: </p>`，用 `.append('<b>Hello</b>')` 加在內容最後面；再用 `.before('<b>Hi</b>')` 加在元素前面。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+$('p').append('<b>Hello</b>');
+// <p>I would like to say: <b>Hello</b></p>
+
+$('p').before('<b>Hi</b>');
+// <b>Hi</b><p>I would like to say: <b>Hello</b></p>
+
+// 刪除
+$('p').remove();   // 連元素一起刪掉
+```
+
+</details>
 
 ### 9-7 事件
 
@@ -1399,6 +2383,29 @@ $("input").focus(function() { $(this).css("background-color", "yellow"); });
 $("input").blur(function() { $(this).css("background-color", "white"); });
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 做一個輸入框：焦點進入時背景變黃（`focus`），離開時變白（`blur`）；再對按鈕綁定 `click` 事件顯示「被點擊」。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+$(document).ready(function() {
+  $("input").focus(function() {
+    $(this).css("background-color", "yellow");
+  });
+  $("input").blur(function() {
+    $(this).css("background-color", "white");
+  });
+  $("button").click(function() {
+    alert("被點擊");
+  });
+});
+```
+
+</details>
+
 ### 9-8 表單事件與驗證
 
 ```js
@@ -1412,6 +2419,27 @@ $("form").submit(function(event) {
   }
 });
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 在 `submit` 事件中驗證輸入不能是空白：若為空白顯示錯誤訊息並 `event.preventDefault()` 阻止送出。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+$(document).ready(function() {
+  $("form").submit(function(event) {
+    var value = $("#firstName").val();
+    if (value === '' || value == null) {
+      $("#result").html('<p class="error">姓名不能為空！</p>').show();
+      event.preventDefault();
+    }
+  });
+});
+```
+
+</details>
 
 ### 9-9 jQuery AJAX
 
@@ -1521,6 +2549,35 @@ function onSuccess(data) {
 }
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用 `$.get` 讀取 `demo.txt`，成功後把資料顯示到 `<div id="msg">`；再改用 `$.ajax` 的完整寫法（指定 `dataType: 'text'`）。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+// 簡短寫法 $.get
+$.get("demo.txt", function(data, status) {
+  $("#msg").text(data);
+});
+
+// 完整寫法 $.ajax
+$.ajax({
+  method: 'GET',
+  url: 'demo.txt',
+  dataType: 'text',
+  success: function(data) {
+    $("#msg").text(data);
+  },
+  error: function(xhr) {
+    alert('讀取失敗，狀態碼：' + xhr.status);
+  }
+});
+```
+
+</details>
+
 ### 9-10 表格列操作：修改 / 刪除
 
 ```js
@@ -1537,6 +2594,26 @@ function updateCoffee(btn) {
   alert(n);
 }
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 在每列加入「刪除」按鈕，點擊時用 `closest('tr')` 找到該列並 `remove()` 整列。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+// 建立表格列時，最後一格放刪除按鈕
+var td = $("<td></td>")
+  .html('<button onclick="deleteRow(this)">刪除</button>')
+  .appendTo(row);
+
+function deleteRow(btn) {
+  $(btn).closest("tr").remove();   // 往上找該列，整列刪掉
+}
+```
+
+</details>
 
 ### ❌ / ✅ 常見錯誤
 
@@ -1604,6 +2681,24 @@ user = {};            // ❌ TypeError，不能換成新物件
 
 > 💡 **原則：** 優先用 `const`，需要重新指派才改用 `let`，棄用 `var`。
 
+#### ✏️ 練習範例
+
+**任務：** 判斷以下宣告該用 `let` 還是 `const`：① 迴圈計數器 `i` ② 永不改變的 `PI` ③ 會累加的分數 `score`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+for (let i = 0; i < 10; i++) { }   // ① 需要重新指派 → let
+const PI = 3.14159;                // ② 永不改變 → const
+let score = 0;                     // ③ 會累加 → let
+score += 10;
+
+// 原則：預設 const，需要重新指派才用 let
+```
+
+</details>
+
 ### 10-2 Template Literals 樣板字串
 
 **概念：** 用反引號 `` ` `` 包住字串，`${}` 嵌入變數或表達式，告別字串拼接的痛苦。
@@ -1629,6 +2724,28 @@ const a = 5, b = 3;
 console.log(`${a} + ${b} = ${a + b}`);             // 5 + 3 = 8
 console.log(`${a > b ? 'a 較大' : 'b 較大'}`);    // a 較大
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 用樣板字串輸出：「Mary 今年 25 歲，住在 Taipei。」並計算「5 + 3 = 8」這種嵌入運算的字串。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+const name = 'Mary';
+const age = 25;
+const city = 'Taipei';
+
+console.log(`${name} 今年 ${age} 歲，住在 ${city}。`);
+// Mary 今年 25 歲，住在 Taipei。
+
+const a = 5, b = 3;
+console.log(`${a} + ${b} = ${a + b}`);
+// 5 + 3 = 8
+```
+
+</details>
 
 ### 10-3 Arrow Functions 箭頭函式
 
@@ -1682,6 +2799,26 @@ const obj = {
 };
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 把以下一般函式改成箭頭函式：`function add(a, b) { return a + b; }`、`function double(n) { return n * 2; }`，並搭配 `map` 把 `[1,2,3]` 變成 `[2,4,6]`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+const add = (a, b) => a + b;
+const double = n => n * 2;       // 單一參數可省略括號
+
+const result = [1, 2, 3].map(n => n * 2);
+console.log(result);   // [2, 4, 6]
+
+console.log(add(1, 2));      // 3
+console.log(double(5));      // 10
+```
+
+</details>
+
 ### 10-4 Destructuring 解構賦值
 
 **概念：** 從陣列或物件「一次拿出多個值」，就像行李拆箱，以前要一件一件拿，現在可以一口氣全部擺到桌上。
@@ -1733,6 +2870,25 @@ function greet({ name, age }) {
 greet(user);   // Mary is 25 years old.
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 給定 `const user = { name: 'John', age: 30 }`，用物件解構取出並印出；再用陣列解構從 `const colors = ['red', 'green', 'blue']` 取出第一、第三個顏色（跳過第二個）。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+const user = { name: 'John', age: 30 };
+const { name, age } = user;
+console.log(name, age);   // John 30
+
+const colors = ['red', 'green', 'blue'];
+const [first, , third] = colors;   // 跳過第二個
+console.log(first, third);         // red blue
+```
+
+</details>
+
 ### 10-5 Spread / Rest 展開與其餘運算子
 
 **概念：** 三個點 `...` 依位置有兩種身份：
@@ -1765,6 +2921,28 @@ console.log(first);   // 1
 console.log(rest);    // [3, 4, 5]
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用 Spread 合併 `[1,2]` 和 `[3,4]` 成 `[1,2,3,4]`；再用 Rest 寫一個 `sum(...nums)` 計算任意數量參數的總和。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+// Spread：合併陣列
+const a = [1, 2];
+const b = [3, 4];
+console.log([...a, ...b]);   // [1, 2, 3, 4]
+
+// Rest：收集所有參數
+function sum(...nums) {
+  return nums.reduce((acc, n) => acc + n, 0);
+}
+console.log(sum(1, 2, 3, 4));   // 10
+```
+
+</details>
+
 ### 10-6 Default Parameters 預設參數
 
 **概念：** 函式參數直接設定預設值，不需要在函式內另外判斷 `undefined`。
@@ -1785,6 +2963,24 @@ greet('Mary');    // Hello, Mary
 greet();          // Hello, 陌生人
 greet(undefined); // Hello, 陌生人（傳 undefined 也觸發預設值）
 ```
+
+#### ✏️ 練習範例
+
+**任務：** 寫一個 `order(product, qty = 1)` 函式，沒傳 `qty` 時預設為 1，輸出「[product] x [qty]」。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+function order(product, qty = 1) {
+  console.log(`${product} x ${qty}`);
+}
+
+order('咖啡');          // 咖啡 x 1（使用預設值）
+order('咖啡', 3);       // 咖啡 x 3
+```
+
+</details>
 
 ### 10-7 ES6 Classes 類別語法
 
@@ -1839,6 +3035,31 @@ buddy.perform();
 // knows: sit, shake
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 建立一個 `Book` 類別，`constructor` 接收 `title` 與 `price`，提供 `info()` 方法回傳「書名：xxx，價格：xxx 元」。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+class Book {
+  constructor(title, price) {
+    this.title = title;
+    this.price = price;
+  }
+  info() {
+    return `書名：${this.title}，價格：${this.price} 元`;
+  }
+}
+
+const book = new Book('JavaScript 深入淺出', 480);
+console.log(book.info());
+// 書名：JavaScript 深入淺出，價格：480 元
+```
+
+</details>
+
 ### 10-8 Promise 與 async/await
 
 **概念：** Promise 是「非同步操作的契約書」。就像網路購物：下訂（送出請求）→ 等待 → 到貨（fulfilled）或 退貨（rejected）。
@@ -1881,6 +3102,30 @@ getUser(1);
 
 > 💡 **async 函式**回傳 Promise；**await** 等待 Promise 完成後才繼續執行，讓程式流程一目瞭然。
 
+#### ✏️ 練習範例
+
+**任務：** 建立一個 `wait(ms)` Promise（`setTimeout` 後 `resolve`），再用 `async/await` 依序等待並印出「開始 → 等待 1 秒 → 結束」。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+function wait(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+async function run() {
+  console.log('開始');
+  await wait(1000);
+  console.log('等待 1 秒後');
+  console.log('結束');
+}
+
+run();
+```
+
+</details>
+
 ### 10-9 Map 與 Set 新資料結構
 
 **Map — 任意型態的鍵值對：**
@@ -1914,6 +3159,29 @@ const unique = [...new Set(arr)];
 console.log(unique);      // [1, 2, 3]
 ```
 
+#### ✏️ 練習範例
+
+**任務：** 用 Set 把 `[1, 2, 3, 2, 1, 4]` 去重複；用 Map 建立 `'one' → 1`、`'two' → 2`，讀出 `'one'` 的值並印出 `size`。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+// Set 去重複
+const arr = [1, 2, 3, 2, 1, 4];
+const unique = [...new Set(arr)];
+console.log(unique);   // [1, 2, 3, 4]
+
+// Map 鍵值對
+const map = new Map();
+map.set('one', 1);
+map.set('two', 2);
+console.log(map.get('one'));   // 1
+console.log(map.size);         // 2
+```
+
+</details>
+
 ### 10-10 for...of 迭代器
 
 **概念：** `for...of` 是 ES6 的新迴圈語法，可以遍歷任何可迭代物件（陣列、字串、Map、Set）。
@@ -1944,6 +3212,27 @@ for (const [index, fruit] of fruits.entries()) {
 | `for...of` | 陣列、字串、Map、Set | 取「值」，支援 break/continue |
 | `for...in` | 物件 | 取「鍵名」，不建議用於陣列 |
 | `forEach` | 陣列 | 簡潔，但無法 break 跳出 |
+
+#### ✏️ 練習範例
+
+**任務：** 用 `for...of` 印出 `['Apple', 'Banana', 'Cherry']` 的每個元素，並在遇到 `'Banana'` 時 `break` 跳出。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+const fruits = ['Apple', 'Banana', 'Cherry'];
+for (const fruit of fruits) {
+  console.log(fruit);
+  if (fruit === 'Banana') {
+    break;          // for...of 支援 break，forEach 不行
+  }
+}
+// Apple
+// Banana
+```
+
+</details>
 
 ### ❌ / ✅ 常見錯誤
 
@@ -1982,9 +3271,10 @@ async function getData() {
 
 ---
 
-## 附錄 A｜練習題
+## 附錄 A｜綜合練習題
 
 > 先自己寫，再展開看解答。題號 ⭐ 越多越難。
+> 這是「跨單元的綜合題」；想針對單一概念練，回到各章節的「✏️ 練習範例」即可。
 
 ### 練習題 1 ⭐：迴圈總和
 
