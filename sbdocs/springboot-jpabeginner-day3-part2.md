@@ -509,6 +509,14 @@ Content-Type: application/json
 ```
 
 **測試 4：查詢不存在的書籍**
+## 修改 Service findById(Long id )
+```java
+    public Optional<Book> findById(Long id) {
+    	Book b=  bookRepository.findById(id)
+    			  .orElseThrow(() -> new BookNotFoundException(id));
+    	return Optional.of(b);    	              
+    }
+```
 ```
 GET http://localhost:8080/api/books/9999
 ```
