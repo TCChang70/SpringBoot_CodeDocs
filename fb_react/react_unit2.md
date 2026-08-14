@@ -17,6 +17,8 @@
 
 > 💡 **學習心法**：本單元是 React 的「心臟」。先求看懂 JSX 長什麼樣，再動手做元件，最後把 state 與 effect 串起來。
 
+> 🚀 **實際動手（Vite 測試專案）**：本單元所有概念都有對應的**可執行互動 Demo**，請參考 `react_demos/unit2-app/`（Vite + React 專案）。執行 `npm install` 後以 `npm run dev` 啟動，即可在瀏覽器中逐個點擊「測試」每節範例，並對照 `src/demos/` 下的原始碼學習。
+
 ---
 
 ## 2.1 JSX 語法（JavaScript XML）
@@ -102,6 +104,7 @@ ALICE
 JSX 的 `{}` 裡不能直接寫 `if`，改用以下三種方式：
 
 ```jsx
+<<<<<<< HEAD
 // 方法1：三元運算子（有 else）
 {isLoggedIn ? <h1>歡迎回來，{username}！</h1> : <h1>請先登入</h1>}
 
@@ -111,6 +114,11 @@ JSX 的 `{}` 裡不能直接寫 `if`，改用以下三種方式：
 
 ```jsx
 // 方法3：提前 return（適合「整個畫面」切換，最直覺）
+=======
+import { useState } from 'react';
+
+// 方法1 + 方法2：三元運算子（有 else）+ && 短路運算（只有 if）
+>>>>>>> 410283c (Update unit2 doc)
 function UserGreeting({ isLoggedIn, username }) {
   if (!isLoggedIn) {
     return <h1>請先登入</h1>;
@@ -137,6 +145,7 @@ function LoginToggle() {
 
   return (
     <div>
+<<<<<<< HEAD
       <UserGreeting isLoggedIn={isLoggedIn} username="小明" />
 
       {/* 方法2：&& 短路運算 */}
@@ -146,11 +155,48 @@ function LoginToggle() {
       <button onClick={() => setIsLoggedIn(prev => !prev)}>
         目前{isLoggedIn ? "已登入" : "未登入"}，點我切換
       </button>
+=======
+      {/* 方法1：三元運算子 */}
+      {isLoggedIn ? (
+        <h1>歡迎回來，{username}！</h1>
+      ) : (
+        <h1>請先登入</h1>
+      )}
+
+      {/* 方法2：&& 短路運算（不滿足時渲染 false，什麼都不顯示） */}
+      {isLoggedIn && <button>登出</button>}
+>>>>>>> 410283c (Update unit2 doc)
     </div>
   );
 }
 
+<<<<<<< HEAD
 export default LoginToggle;
+=======
+// 方法3：提前 return（適合權限檢查等複雜情況）
+function AdminPanel({ isAdmin }) {
+  if (!isAdmin) {
+    return <p>你沒有管理員權限</p>;
+  }
+  return <div>管理員後台…</div>;
+}
+
+// 父元件：用 useState 控制登入狀態，傳 props 給子元件
+function App() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  return (
+    <div>
+      <UserGreeting isLoggedIn={isLoggedIn} username="小明" />
+      <button onClick={() => setIsLoggedIn(prev => !prev)}>
+        切換登入狀態
+      </button>
+    </div>
+  );
+}
+
+export default App;
+>>>>>>> 410283c (Update unit2 doc)
 ```
 ---
 
@@ -165,14 +211,22 @@ function FruitList() {
   return (
     <ul>
       {fruits.map((fruit, index) => (
+<<<<<<< HEAD
         // 純文字陣列沒有 id 可用時，暫時用 index
+=======
+        // ⚠️ 靜態列表暫時可用 index，但見下方「更好的做法」
+>>>>>>> 410283c (Update unit2 doc)
         <li key={index}>{fruit}</li>
       ))}
     </ul>
   );
 }
 
+<<<<<<< HEAD
 // ✅ 資料有唯一 id 時，優先使用 id 當 key
+=======
+// 更好的做法：使用資料中的唯一 id 當 key（資料增刪時才不會錯位）
+>>>>>>> 410283c (Update unit2 doc)
 const products = [
   { id: 1, name: "iPhone", price: 999 },
   { id: 2, name: "MacBook", price: 1999 },
