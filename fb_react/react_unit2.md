@@ -85,43 +85,78 @@ function App() {
 }
 ```
 
+預期輸出：
+```
+Hello, Alice!
+含稅價格：104.895 元
+ALICE
+已登入
+```
+
 > ⚠️ `{}` 只能放**表達式**，不能放 `if`、`for` 等陳述式（Statements）。
 
 ---
 
 ### 條件渲染（Conditional Rendering）
 
+JSX 的 `{}` 裡不能直接寫 `if`，改用以下三種方式：
+
 ```jsx
+// 方法1：三元運算子（有 else）
+{isLoggedIn ? <h1>歡迎回來，{username}！</h1> : <h1>請先登入</h1>}
+
+// 方法2：&& 短路運算（只有 if，沒有 else）
+{isLoggedIn && <button>登出</button>}
+```
+
+```jsx
+// 方法3：提前 return（適合「整個畫面」切換，最直覺）
 function UserGreeting({ isLoggedIn, username }) {
+  if (!isLoggedIn) {
+    return <h1>請先登入</h1>;
+  }
+  return <h1>歡迎回來，{username}！</h1>;
+}
+```
+
+**完整可執行範例**（`useState` 在 2.3 會詳細說明）：
+
+```jsx
+import { useState } from 'react';
+
+function UserGreeting({ isLoggedIn, username }) {
+  // 方法3：提前 return
+  if (!isLoggedIn) {
+    return <h1>請先登入</h1>;
+  }
+  return <h1>歡迎回來，{username}！</h1>;
+}
+
+function LoginToggle() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
   return (
     <div>
-      {/* 方法1：三元運算子（有 else） */}
-      {isLoggedIn ? (
-        <h1>歡迎回來，{username}！</h1>
-      ) : (
-        <h1>請先登入</h1>
-      )}
+      <UserGreeting isLoggedIn={isLoggedIn} username="小明" />
 
-      {/* 方法2：&& 短路運算（只有 if，沒有 else） */}
+      {/* 方法2：&& 短路運算 */}
       {isLoggedIn && <button>登出</button>}
 
-      {/* 方法3：提前 return（適合複雜情況） */}
+      {/* 方法1：三元運算子 */}
+      <button onClick={() => setIsLoggedIn(prev => !prev)}>
+        目前{isLoggedIn ? "已登入" : "未登入"}，點我切換
+      </button>
     </div>
   );
 }
-```
-```
-<div>
-   {/* App() 使用方法 */}
-  <UserGreeting isLoggedIn={isLoggedIn} username="小明" />
-  <button onClick={() => setIsLoggedIn(prev => !prev)}>
-             切換登入狀態
-  </button>
-</div>
+
+export default LoginToggle;
 ```
 ---
 
 ### 列表渲染（List Rendering）
+
+用 `.map()` 把陣列轉成 JSX 陣列，並為每個項目加上唯一的 `key`。
 
 ```jsx
 const fruits = ["蘋果", "香蕉", "芒果"];
@@ -130,14 +165,14 @@ function FruitList() {
   return (
     <ul>
       {fruits.map((fruit, index) => (
-        // key 必須是唯一且穩定的值（不要用 index，盡量用 id）
+        // 純文字陣列沒有 id 可用時，暫時用 index
         <li key={index}>{fruit}</li>
       ))}
     </ul>
   );
 }
 
-// 更好的做法：使用資料中的唯一 id
+// ✅ 資料有唯一 id 時，優先使用 id 當 key
 const products = [
   { id: 1, name: "iPhone", price: 999 },
   { id: 2, name: "MacBook", price: 1999 },
@@ -155,6 +190,14 @@ function ProductList() {
   );
 }
 ```
+
+預期畫面（`FruitList`）：
+```
+• 蘋果
+• 香蕉
+• 芒果
+```
+（`ProductList` 同理會渲染出 iPhone 與 MacBook 兩列）
 
 #### ⚠️ key 的重要性
 ```jsx
@@ -189,14 +232,18 @@ App
 
 ### 函式元件（Function Component）
 
+元件就是一個「回傳 JSX 的函式」，名稱必須**大寫開頭**（React 靠這個分辨元件與 HTML 標籤）。
+
 ```jsx
-// 元件名稱必須大寫開頭！
+// 寫法 A：函式宣告（Function Declaration）
 function Welcome() {
   return <h1>歡迎來到 React 世界！</h1>;
 }
 
-// 也可用箭頭函式
+// 寫法 B：箭頭函式（Arrow Function）
 const Welcome = () => <h1>歡迎來到 React 世界！</h1>;
+
+// ⚠️ 兩種寫法選一種即可，不要同時宣告同名元件
 
 // 在其他元件中使用（像 HTML 標籤一樣）
 function App() {
@@ -294,7 +341,13 @@ npm install prop-types
 import PropTypes from 'prop-types';
 
 function ProductCard({ name, price, inStock }) {
-  return (/* ... */);
+  return (
+    <div className="card">
+      <h2>{name}</h2>
+      <p>價格：${price}</p>
+      {inStock ? <span>有庫存</span> : <span>缺貨中</span>}
+    </div>
+  );
 }
 
 // 定義 props 的型別和必填
@@ -352,6 +405,7 @@ function Counter() {
 
 ```jsx
 // ❌ 錯誤：直接修改不會觸發重新渲染
+// （而且 count 是 const，直接指派其實會直接拋錯）
 const [count, setCount] = useState(0);
 count = count + 1;   // 永遠不要這樣做！
 
@@ -494,17 +548,17 @@ useEffect(() => {
 ```jsx
 // 1. 沒有依賴陣列 → 每次渲染後都執行（通常不需要）
 useEffect(() => {
-  console.log("每次渲染後都執行");
+  console.log("每次渲染後都執行"); // 每次渲染後都會重複印出
 });
 
 // 2. 空依賴陣列 [] → 只在元件「掛載（Mount）」時執行一次
 useEffect(() => {
-  console.log("只執行一次，適合初始化 API 呼叫");
+  console.log("只執行一次，適合初始化 API 呼叫"); // 整份檔案只印出一次
 }, []);
 
 // 3. 有依賴值 → 依賴值改變時才執行
 useEffect(() => {
-  console.log(`userId 改變了，重新載入資料：${userId}`);
+  console.log(`userId 改變了，重新載入資料：${userId}`); // userId 每改變一次就印出一次
 }, [userId]); // userId 改變時才執行
 ```
 
@@ -678,6 +732,8 @@ function UserSearch() {
 export default UserSearch;
 ```
 
+> 💡 這裡刻意用 Promise chain 簡化錯誤處理，好聚焦搜尋邏輯。實務上請加上 `.catch(...)`，或改用 `async/await` + `try/catch`（回看 2.4 的 `UserList` 範例）。
+
 ---
 
 ## 重點整理（Key Takeaways）
@@ -742,7 +798,7 @@ setUser({ ...user, name: "Bob" });
 
 ### 練習 1：把 HTML 改成 JSX（⭐⭐ 基礎）
 
-**目標**：以下程式碼在 JSX 中全是錯誤的，請改成正確的 JSX。
+**目標**：以下程式碼含有多處 JSX 錯誤，請改成正確的 JSX。（注意：`<input type="checkbox" checked>` 中的 `checked` 是合法的 JSX 布林簡寫，等同 `checked={true}`，不需要修改。）
 
 ```jsx
 <div class="card" onclick="handleClick()">
