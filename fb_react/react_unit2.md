@@ -104,7 +104,6 @@ ALICE
 JSX 的 `{}` 裡不能直接寫 `if`，改用以下三種方式：
 
 ```jsx
-<<<<<<< HEAD
 // 方法1：三元運算子（有 else）
 {isLoggedIn ? <h1>歡迎回來，{username}！</h1> : <h1>請先登入</h1>}
 
@@ -114,11 +113,6 @@ JSX 的 `{}` 裡不能直接寫 `if`，改用以下三種方式：
 
 ```jsx
 // 方法3：提前 return（適合「整個畫面」切換，最直覺）
-=======
-import { useState } from 'react';
-
-// 方法1 + 方法2：三元運算子（有 else）+ && 短路運算（只有 if）
->>>>>>> 410283c (Update unit2 doc)
 function UserGreeting({ isLoggedIn, username }) {
   if (!isLoggedIn) {
     return <h1>請先登入</h1>;
@@ -133,70 +127,33 @@ function UserGreeting({ isLoggedIn, username }) {
 import { useState } from 'react';
 
 function UserGreeting({ isLoggedIn, username }) {
-  // 方法3：提前 return
+  // 方法3：提前 return（登入狀態不同，整個畫面就不同）
   if (!isLoggedIn) {
     return <h1>請先登入</h1>;
   }
   return <h1>歡迎回來，{username}！</h1>;
 }
 
-function LoginToggle() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  return (
-    <div>
-<<<<<<< HEAD
-      <UserGreeting isLoggedIn={isLoggedIn} username="小明" />
-
-      {/* 方法2：&& 短路運算 */}
-      {isLoggedIn && <button>登出</button>}
-
-      {/* 方法1：三元運算子 */}
-      <button onClick={() => setIsLoggedIn(prev => !prev)}>
-        目前{isLoggedIn ? "已登入" : "未登入"}，點我切換
-      </button>
-=======
-      {/* 方法1：三元運算子 */}
-      {isLoggedIn ? (
-        <h1>歡迎回來，{username}！</h1>
-      ) : (
-        <h1>請先登入</h1>
-      )}
-
-      {/* 方法2：&& 短路運算（不滿足時渲染 false，什麼都不顯示） */}
-      {isLoggedIn && <button>登出</button>}
->>>>>>> 410283c (Update unit2 doc)
-    </div>
-  );
-}
-
-<<<<<<< HEAD
-export default LoginToggle;
-=======
-// 方法3：提前 return（適合權限檢查等複雜情況）
-function AdminPanel({ isAdmin }) {
-  if (!isAdmin) {
-    return <p>你沒有管理員權限</p>;
-  }
-  return <div>管理員後台…</div>;
-}
-
-// 父元件：用 useState 控制登入狀態，傳 props 給子元件
 function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   return (
     <div>
+      {/* 方法3：提前 return 的結果 */}
       <UserGreeting isLoggedIn={isLoggedIn} username="小明" />
+
+      {/* 方法2：&& 短路運算（登入後才顯示登出按鈕） */}
+      {isLoggedIn && <button>登出</button>}
+
+      {/* 方法1：三元運算子（切換按鈕的文字） */}
       <button onClick={() => setIsLoggedIn(prev => !prev)}>
-        切換登入狀態
+        目前{isLoggedIn ? "已登入" : "未登入"}，點我切換
       </button>
     </div>
   );
 }
 
 export default App;
->>>>>>> 410283c (Update unit2 doc)
 ```
 ---
 
@@ -211,22 +168,14 @@ function FruitList() {
   return (
     <ul>
       {fruits.map((fruit, index) => (
-<<<<<<< HEAD
-        // 純文字陣列沒有 id 可用時，暫時用 index
-=======
-        // ⚠️ 靜態列表暫時可用 index，但見下方「更好的做法」
->>>>>>> 410283c (Update unit2 doc)
+        // 純文字陣列沒有 id 可用時，暫時用 index（見下方「更好的做法」）
         <li key={index}>{fruit}</li>
       ))}
     </ul>
   );
 }
 
-<<<<<<< HEAD
-// ✅ 資料有唯一 id 時，優先使用 id 當 key
-=======
-// 更好的做法：使用資料中的唯一 id 當 key（資料增刪時才不會錯位）
->>>>>>> 410283c (Update unit2 doc)
+// ✅ 更好的做法：資料有唯一 id 時，優先使用 id 當 key（資料增刪時才不會錯位）
 const products = [
   { id: 1, name: "iPhone", price: 999 },
   { id: 2, name: "MacBook", price: 1999 },
@@ -295,16 +244,16 @@ function Welcome() {
 }
 
 // 寫法 B：箭頭函式（Arrow Function）
-const Welcome = () => <h1>歡迎來到 React 世界！</h1>;
+const WelcomeArrow = () => <h1>歡迎來到 React 世界！</h1>;
 
-// ⚠️ 兩種寫法選一種即可，不要同時宣告同名元件
+// 兩種寫法都可以；注意變數名稱不能重複宣告，所以箭頭版用不同名稱
 
-// 在其他元件中使用（像 HTML 標籤一樣）
+// 在其他元件中使用（像 HTML 標籤一樣，可以重複使用）
 function App() {
   return (
     <div>
-      <Welcome />
-      <Welcome />  {/* 可以重複使用 */}
+      <Welcome />        {/* 寫法 A */}
+      <WelcomeArrow />   {/* 寫法 B */}
     </div>
   );
 }
@@ -475,6 +424,8 @@ setCount(prevCount => prevCount + 1);
 ### 陣列與物件 state 的更新
 
 ```jsx
+import { useState } from 'react';
+
 // ===== 物件 State =====
 function ProfileForm() {
   const [user, setUser] = useState({ name: "", email: "" });
@@ -489,36 +440,43 @@ function ProfileForm() {
   );
 }
 
-// ===== 陣列 State =====
+// ===== 陣列 State（每筆資料帶唯一 id，讓 key 有穩定值）=====
 function TodoList() {
-  const [todos, setTodos] = useState(["買咖啡", "學 React"]);
+  const [todos, setTodos] = useState([
+    { id: 1, text: "買咖啡" },
+    { id: 2, text: "學 React" },
+  ]);
 
-  // 新增
+  // 新增（展開運算子產生新陣列）
   const addTodo = (text) => {
-    setTodos([...todos, text]);          // ✅
+    setTodos([...todos, { id: Date.now(), text }]); // ✅
   };
 
   // 刪除（用 filter 產生新陣列）
-  const removeTodo = (index) => {
-    setTodos(todos.filter((_, i) => i !== index)); // ✅
+  const removeTodo = (id) => {
+    setTodos(todos.filter((todo) => todo.id !== id)); // ✅
   };
 
   // 更新（用 map 產生新陣列）
-  const updateTodo = (index, newText) => {
-    setTodos(todos.map((todo, i) => i === index ? newText : todo)); // ✅
+  const updateTodo = (id, newText) => {
+    setTodos(
+      todos.map((todo) => (todo.id === id ? { ...todo, text: newText } : todo)) // ✅
+    );
   };
 
   return (
     <ul>
-      {todos.map((todo, index) => (
-        <li key={index}>
-          {todo}
-          <button onClick={() => removeTodo(index)}>刪除</button>
+      {todos.map((todo) => (
+        <li key={todo.id}>
+          {todo.text}
+          <button onClick={() => removeTodo(todo.id)}>刪除</button>
         </li>
       ))}
     </ul>
   );
 }
+
+export default TodoList;
 ```
 
 ---
@@ -528,6 +486,8 @@ function TodoList() {
 「受控元件」指的是表單元素的值由 React state 控制，每次輸入都觸發 `onChange`。
 
 ```jsx
+import { useState } from 'react';
+
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -562,6 +522,8 @@ function LoginForm() {
     </form>
   );
 }
+
+export default LoginForm;
 ```
 
 > **現在試試看**：實作一個 Todo List，包含「新增」輸入框和「刪除」按鈕功能。
@@ -671,6 +633,8 @@ export default UserList;
 ### 清除副作用（Cleanup Function）
 
 ```jsx
+import { useState, useEffect } from 'react';
+
 function Timer() {
   const [seconds, setSeconds] = useState(0);
 
@@ -703,6 +667,8 @@ function WindowSize() {
 
   return <p>視窗寬度：{width}px</p>;
 }
+
+export default Timer;
 ```
 
 #### ⚠️ 常見錯誤
@@ -743,21 +709,38 @@ function UserSearch() {
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    setLoading(true);
-    fetch('https://jsonplaceholder.typicode.com/users')
-      .then(res => res.json())
-      .then(data => {
-        setUsers(data);
-        setLoading(false);
-      });
+    let cancelled = false;
+
+    async function loadUsers() {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch('https://jsonplaceholder.typicode.com/users');
+        if (!res.ok) throw new Error(`HTTP 錯誤：${res.status}`);
+        const data = await res.json();
+        if (!cancelled) setUsers(data);
+      } catch (err) {
+        if (!cancelled) setError(err.message);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    loadUsers();
+    // Cleanup：防止元件卸載後才回傳資料 → 對已卸載元件 setState
+    return () => { cancelled = true; };
   }, []);
 
-  // 根據 searchTerm 過濾使用者（不需要再呼叫 API）
+  // 根據 searchTerm 過濾使用者（「衍生資料」，直接計算即可，不需再存 state）
   const filteredUsers = users.filter(user =>
     user.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (loading) return <p>載入中...</p>;
+  if (error) return <p>錯誤：{error}</p>;
 
   return (
     <div>
@@ -767,18 +750,14 @@ function UserSearch() {
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
       />
-      {loading ? (
-        <p>載入中...</p>
-      ) : (
-        <ul>
-          {filteredUsers.map(user => (
-            <li key={user.id}>
-              <strong>{user.name}</strong> — {user.email}
-            </li>
-          ))}
-          {filteredUsers.length === 0 && <p>找不到符合的使用者</p>}
-        </ul>
-      )}
+      <ul>
+        {filteredUsers.map(user => (
+          <li key={user.id}>
+            <strong>{user.name}</strong> — {user.email}
+          </li>
+        ))}
+        {filteredUsers.length === 0 && <p>找不到符合的使用者</p>}
+      </ul>
     </div>
   );
 }
@@ -786,7 +765,7 @@ function UserSearch() {
 export default UserSearch;
 ```
 
-> 💡 這裡刻意用 Promise chain 簡化錯誤處理，好聚焦搜尋邏輯。實務上請加上 `.catch(...)`，或改用 `async/await` + `try/catch`（回看 2.4 的 `UserList` 範例）。
+> 💡 這裡用 `async/await` + `try/catch` 完整處理錯誤（`res.ok` 檢查、`error` state、cleanup），與 2.4 的 `UserList` 範例一致。搜尋是「衍生資料」：直接對 `users` 過濾即可，不需要另外存一個 state。
 
 ---
 
