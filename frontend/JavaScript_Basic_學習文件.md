@@ -12,9 +12,11 @@
 - [Ch 1｜HTML 與 CSS 基礎](#ch-1html-與-css-基礎)
 - [Ch 2｜JavaScript 基本語法](#ch-2javascript-基本語法)
 - [Ch 3｜陣列 Array](#ch-3陣列-array)
+  - [3-7 迭代方法 map / filter / reduce](#3-7-迭代方法-map--filter--reduce)
 - [Ch 4｜物件 Object 與 JSON](#ch-4物件-object-與-json)
 - [Ch 5｜BOM 瀏覽器物件模型](#ch-5bom-瀏覽器物件模型)
 - [Ch 6｜DOM 文件物件模型](#ch-6dom-文件物件模型)
+  - [6-2 查找元素（含 querySelector）](#6-2-查找元素)
 - [Ch 7｜HTML5 表單與資料驗證](#ch-7html5-表單與資料驗證)
 - [Ch 8｜AJAX 存取遠端資料](#ch-8ajax-存取遠端資料)
 - [Ch 9｜jQuery 前端程式庫](#ch-9jquery-前端程式庫)
@@ -857,6 +859,60 @@ console.log(removed);   // ["Orange", "Apple"]（被刪除的）
 
 </details>
 
+### 3-7 迭代方法 map / filter / reduce
+
+**概念：** 三個陣列的「高階函式」，把「對每個元素做什麼」用函式描述，比 for 迴圈更簡潔易讀。
+
+| 方法 | 作用 | 回傳 |
+|------|------|------|
+| `map(fn)` | 把每個元素**轉換**成新值 | 長度相同的新陣列 |
+| `filter(fn)` | 篩選出**符合條件**的元素 | 符合條件的新陣列 |
+| `reduce(fn, init)` | 把所有元素**累積**成一個值 | 任意型態的單一值 |
+
+```js
+const nums = [1, 2, 3, 4, 5];
+
+// map：每個元素乘 2，回傳新陣列
+const doubled = nums.map(n => n * 2);
+console.log(doubled);   // [2, 4, 6, 8, 10]
+
+// filter：只保留偶數
+const evens = nums.filter(n => n % 2 === 0);
+console.log(evens);     // [2, 4]
+
+// reduce：加總所有元素（acc 是累計值，0 是初始值）
+const sum = nums.reduce((acc, n) => acc + n, 0);
+console.log(sum);       // 15
+
+// 串接使用（先篩再轉換）
+const result = nums
+  .filter(n => n > 2)       // [3, 4, 5]
+  .map(n => n * 10);        // [30, 40, 50]
+console.log(result);        // [30, 40, 50]
+```
+
+#### ✏️ 練習範例
+
+**任務：** 給定 `const scores = [55, 72, 88, 40, 95]`，用 `filter` 找出 60 分以上的成績，再用 `map` 將每個分數加 5 分，最後用 `reduce` 計算總分。
+
+<details>
+<summary>顯示解答</summary>
+
+```js
+const scores = [55, 72, 88, 40, 95];
+
+const passing = scores.filter(s => s >= 60);
+console.log(passing);   // [72, 88, 95]
+
+const boosted = scores.map(s => s + 5);
+console.log(boosted);   // [60, 77, 93, 45, 100]
+
+const total = scores.reduce((acc, s) => acc + s, 0);
+console.log(total);     // 350
+```
+
+</details>
+
 ### ❌ / ✅ 常見錯誤
 
 ```js
@@ -869,9 +925,16 @@ a = [];               // b 還是 [1,2,3]！
 var a = [1, 2, 3];
 var b = a;
 a.length = 0;         // b 也變成 []（同一個陣列）
+
+// ❌ map/filter/reduce 不修改原陣列，卻忘了接回傳值
+const nums = [1, 2, 3];
+nums.map(n => n * 2);          // ❌ 結果沒接，浪費了
+
+// ✅ 接回傳值
+const doubled = nums.map(n => n * 2);   // ✅
 ```
 
-> 🔧 **現在試試看：** 宣告 `var fruits = ['Apple', 'Banana']`，依序 push、unshift、pop、shift、splice，每一步都 `console.log(fruits)` 觀察變化。
+> 🔧 **現在試試看：** 宣告 `var fruits = ['Apple', 'Banana']`，依序 push、unshift、pop、shift、splice，每一步都 `console.log(fruits)` 觀察變化。再用 `map` 把所有字串轉大寫（`str.toUpperCase()`）。
 
 ---
 
@@ -1228,11 +1291,37 @@ setTimeout(function(){ alert('只執行一次'); }, 1000);
 
 ### 6-2 查找元素
 
+**舊式 API（仍有效，了解即可）：**
+
 | 方法 | 找什麼 | 回傳 |
 |------|--------|------|
 | `document.getElementById('id')` | 依 id | 單一元素 |
-| `element.getElementsByTagName('p')` | 依標籤名 | 元素集合（有 length） |
-| `element.getElementsByClassName('test')` | 依 class | 元素集合 |
+| `element.getElementsByTagName('p')` | 依標籤名 | 動態 HTMLCollection |
+| `element.getElementsByClassName('test')` | 依 class | 動態 HTMLCollection |
+
+**現代推薦寫法（querySelector / querySelectorAll）：**
+
+| 方法 | 找什麼 | 回傳 |
+|------|--------|------|
+| `document.querySelector('#id')` | CSS 選擇器，第一個符合 | 單一元素（或 null） |
+| `document.querySelectorAll('.cls')` | CSS 選擇器，所有符合 | 靜態 NodeList（可用 forEach） |
+
+```js
+// querySelector：找第一個符合的
+const title = document.querySelector('#title');   // 等同 getElementById
+const first = document.querySelector('.item');    // 第一個 class="item"
+const input = document.querySelector('input[type="text"]');   // 屬性選擇器
+
+// querySelectorAll：找所有符合的（回傳 NodeList，可用 forEach）
+const items = document.querySelectorAll('.item');
+items.forEach(el => console.log(el.textContent));
+
+// 也可以限定搜尋範圍（在特定元素底下查）
+const parent = document.querySelector('#container');
+const links = parent.querySelectorAll('a');
+```
+
+> 💡 **建議：** 優先用 `querySelector`/`querySelectorAll`，語法與 CSS 選擇器完全一致，比 `getElementsByClassName` 更靈活也更好記。
 
 ```html
 <div id="parent-id">
@@ -1251,19 +1340,26 @@ console.log(test[0].innerText);                                 // 輸出 <p cla
 
 #### ✏️ 練習範例
 
-**任務：** 承上頁 HTML，用 `getElementById` 找到 `parent-id`，再依序用 `getElementsByTagName('p')` 和 `getElementsByClassName('test')` 統計個數並印出。
+**任務：** 承上頁 HTML，先用舊式 API（`getElementById` + `getElementsByTagName`），再改用 `querySelector` / `querySelectorAll` 達到同樣效果，並用 `forEach` 印出每個 `.test` 元素的文字。
 
 <details>
 <summary>顯示解答</summary>
 
 ```js
+// 舊式寫法
 var parentDOM = document.getElementById('parent-id');
 var allP = parentDOM.getElementsByTagName('p');
 var test = parentDOM.getElementsByClassName('test');
-
-console.log(allP.length);    // 3（3 個 <p>）
-console.log(test.length);    // 2（2 個 class="test"）
+console.log(allP.length);         // 3
 console.log(test[0].innerText);   // hello word2
+
+// 現代推薦寫法（querySelectorAll + forEach）
+const parent = document.querySelector('#parent-id');
+const allPNew = parent.querySelectorAll('p');
+const testItems = parent.querySelectorAll('.test');
+
+console.log(allPNew.length);   // 3
+testItems.forEach(el => console.log(el.textContent));  // hello word2 / hello word3
 ```
 
 </details>
@@ -2072,6 +2168,8 @@ console.log(data.userName);
 **概念：** jQuery 是一套「物件導向、簡潔輕量級」的 JavaScript 程式庫。用最短的程式碼完成**跨瀏覽器**的 DOM 操作、事件處理、動態效果與 AJAX。
 
 就像工具箱：DOM 是散裝零件，jQuery 是已經組好的萬用工具。
+
+> 📌 **現代開發說明：** jQuery 在維護舊專案（尤其是 2015 年前的程式碼）和快速原型開發時仍廣泛使用。現代框架（React、Vue、Angular）通常不需要 jQuery，但理解 jQuery 有助於讀懂既有的大量程式碼，同時其設計思想（鏈式呼叫、選擇器、AJAX 封裝）對學習現代框架很有幫助。
 
 **載入 jQuery：**
 
@@ -3519,6 +3617,8 @@ loadUser();
 | 12 | `getValue: () => this.value` 在物件方法 | 改用 `getValue() { return this.value; }` | 箭頭函式沒有自己的 this |
 | 13 | `await` 用在非 async 函式 | 函式宣告加上 `async` 關鍵字 | await 只在 async 函式內有效 |
 | 14 | `const x = 1; x = 2;` | 需要重新指派時用 `let` | const 不可重新指派 |
+| 15 | `getElementsByClassName('cls')` | `querySelectorAll('.cls')` | querySelectorAll 更靈活，回傳靜態 NodeList 可用 forEach |
+| 16 | `map` 結果沒有接收變數 | `const result = arr.map(...)` | map/filter/reduce 不修改原陣列，需接回傳值 |
 
 ---
 
