@@ -5,14 +5,16 @@ import java.util.*;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.ToString;
 
 @Entity
 @Table(name = "orders")
 @Data
+@ToString(exclude = {"items"})
 public class Order {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Integer id;
 
     private String username;
 
@@ -23,6 +25,8 @@ public class Order {
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, targetEntity=OrderItem.class)
     private List<OrderItem> items = new ArrayList<>();
 
+	
     // getters, setters
+    
 }
 

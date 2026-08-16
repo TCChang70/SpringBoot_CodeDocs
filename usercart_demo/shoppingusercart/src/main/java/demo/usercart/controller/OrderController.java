@@ -45,8 +45,10 @@ public class OrderController {
 
     @GetMapping("/{username}")
     public ResponseEntity<List<Order>> getOrdersByUser(@PathVariable String username) {
+    	System.out.println("find user "+username);
     	List<Order> data=orderRepo.findByUsername(username);
-    	data.forEach(o->o.setItems(null));
+    	System.out.println("found user order is "+ data);
+    //	data.forEach(o->o.setItems(null));
         return ResponseEntity.ok(data);
     }
     @GetMapping
