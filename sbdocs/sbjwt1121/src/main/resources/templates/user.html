@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>User Jwt Validation</title>
+ <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+</head>
+<body>
+<h2>
+ <label>User Name</label>
+ <input type="text" id="username"  placeholder="admin"><br/>
+ <label>Password</label>
+ <input type="password" id="password" placeholder="1234"><br/>
+ <button id="loginBtn">登入</button><button onclick="checkLoginStatus()">檢驗Token</button> <br>
+ <button id="protectedBtn" onclick="fetchProtectedData()" >Header Toaken</button>
+ <div id="loginMessage">Message</div>
+  <div id="loginStatus">Status</div>
+ </h2>
+<script>
+var isLoggedIn = false;
+$('#loginBtn').click(function (e) {
+    e.preventDefault();
+    const user = $('#username').val();
+    const pass = $('#password').val();
+
+    $.ajax({
+        url: "http://localhost:8080/api/user/login",
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ username: user, password: pass }),
+        success: function (res) {
+            // 儲存 Token 到 localStorage
+            localStorage.setItem("token", res.token);
+            console.log("Token stored:", res.token);
+            
+            isLoggedIn = true;
+            $('#loginMessage').text('');
+            $('#loginStatus').text(`歡迎，${user}`);
+            sessionStorage.setItem("username", `${user}`);
+            alert("登入成功！");
+            
+            // 登入成功後可以執行其他操作，例如跳轉頁面或載入受保護的資料
+        },
+        error: function (xhr) {
+            $('#loginMessage').text('帳號或密碼錯誤');
+            console.error("Login failed:", xhr);
+        }
+    });
+});
+
+//檢查使用者是否已登入 (驗證 Token)
+function checkLoginStatus() {
+    const token = localStorage.getItem("token");
+    
+    if (!token) {
+        console.log("No token found, user is not logged in.");
+        handleLogout(); // 處理未登入狀態
+        return;
+    }
+
+    // 這裡可以選擇發送請求到後端驗證 Token
+    $.ajax({
+        url: "http://localhost:8080/api/user/validate", // 假設後端有這個驗證 API
+        type: "POST",
+        contentType: "application/json",
+        data: JSON.stringify({ token: token }),
+        success: function(res) {
+            if (res.valid) {
+                console.log("Token is valid.");
+                const username = sessionStorage.getItem("username");
+                $('#loginStatus').text(`歡迎回來，${username}`);
+                isLoggedIn = true;
+            } else {
+                console.log("Token is invalid.");
+                handleLogout();
+            }
+        },
+        error: function() {
+            console.log("Error validating token.");
+            handleLogout();
+        }
+    });
+}
+//處理登出或 Token 無效的情況
+function handleLogout() {
+    localStorage.removeItem("token");
+    sessionStorage.removeItem("username");
+    isLoggedIn = false;
+    $('#loginStatus').text('請登入');
+    // 可以在這裡顯示登入表單或重導向
+}
+function fetchProtectedData() {
+    const token = localStorage.getItem("token");
+    
+    $.ajax({
+        url: "http://localhost:8080/api/user/protected/resource",
+        type: "GET",
+        headers: {
+            "Authorization": "Bearer " + token // 將 Token 加入 Authorization Header
+        },
+        success: function(data) {
+          	$('#loginMessage').html(data.user+'<br/>'+data.timestamp);
+            console.log("Data received:", JSON.stringify(data));
+        },
+        error: function(xhr) {
+            if (xhr.status === 401) {
+                alert("登入已過期，請重新登入");
+                handleLogout();
+            }
+        }
+    });
+}
+</script>
+</body>
+</html>
