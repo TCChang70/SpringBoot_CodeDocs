@@ -627,9 +627,43 @@ function UserList() {
 
 export default UserList;
 ```
-
 ---
+### 加入 input userId state + useEffect userId
+```jsx
+ const [user, setUser] = useState({});
+ const [userId, setUserId] = useState(1); // 新增 state 來追蹤使用者 ID
+  useEffect(() => {
+        // 定義非同步函式（useEffect 的 callback 本身不能是 async）
+        async function fetchUserById(userId) {
+            try {
+                const response = await fetch(`https://jsonplaceholder.typicode.com/users/${userId}`);
 
+                if (!response.ok) {
+                    throw new Error(`HTTP 錯誤：${response.status}`);
+                }
+
+                const data = await response.json();
+                setUser(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchUserById(userId);
+    }, [userId]);
+
+<label htmlFor="userId">使用者 ID：</label>
+            <input
+                id="userId"
+                type="number"
+                value={userId}
+                onChange={(e) => setUserId(Number(e.target.value))}
+            />
+<span>使用者名稱：{user.name}</span>
+
+```
 ### 清除副作用（Cleanup Function）
 
 ```jsx
@@ -768,7 +802,40 @@ export default UserSearch;
 > 💡 這裡用 `async/await` + `try/catch` 完整處理錯誤（`res.ok` 檢查、`error` state、cleanup），與 2.4 的 `UserList` 範例一致。搜尋是「衍生資料」：直接對 `users` 過濾即可，不需要另外存一個 state。
 
 ---
+### 新增文字輸入跟useEffect結合
+```
+const [user, setUser] = useState({});
+const [userId, setUserId] = useState(1); // 新增 state 來追蹤使用者 ID
+<label htmlFor="userId">使用者 ID：</label>
+            <input
+                id="userId"
+                type="number"
+                value={userId}
+                onChange={(e) => setUserId(Number(e.target.value))}
+            />
+<span>使用者名稱：{user.name}</span>
+useEffect(() => {
+        // 定義非同步函式（useEffect 的 callback 本身不能是 async）
+        async function fetchUserById(userId) {
+            try {
+                const response = await fetch(`https://jsonplaceholder.typicode.com/users/${userId}`);
 
+                if (!response.ok) {
+                    throw new Error(`HTTP 錯誤：${response.status}`);
+                }
+
+                const data = await response.json();
+                setUser(data);
+            } catch (err) {
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        fetchUserById(userId);
+    }, [userId]);
+```
 ## 重點整理（Key Takeaways）
 
 ### 快速複習表
