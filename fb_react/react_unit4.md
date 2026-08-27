@@ -10,7 +10,7 @@
 
 | 主題 | 學習內容 | 對應章節 |
 |------|---------|---------|
-| Router 基礎 | `BrowserRouter`、`Routes`、`Route`、`Link` / `NavLink` | 4.1 |
+| Router 基礎 | `BrowserRouter`、`Routes`、`Route`、`Link` / `NavLink`、`end` 屬性 | 4.1 |
 | 動態路由 | `:id` 段落、`useParams`、多個動態參數 | 4.1 |
 | 程式化導航 | `useNavigate`、`useLocation`、`useSearchParams` | 4.1 |
 | 巢狀路由 | 父路由 + `<Outlet>`、index 子路由 | 4.1 |
@@ -108,51 +108,215 @@ export default function Home() {
 
 ### `<Link>` 與 `<NavLink>` — 導覽連結
 
-**絕對不要用 `<a href>` 做內部連結**，會觸發整頁重整。要用 React Router 提供的 `<Link>`。
+**絕對不要用 `<a href>` 做內部連結**，會觸發整頁重整。要用 React Router 提供的 `<Link>` 或 `<NavLink>`。
+
+#### `<Link>` vs `<NavLink>` 差異
+
+| 特性 | `<Link>` | `<NavLink>` |
+|------|---------|------------|
+| 基本導航 | ✅ | ✅ |
+| 自動判斷目前路由 | ❌ | ✅（回傳 `isActive`） |
+| 適用場景 | 一般連結（按鈕、卡片連結） | **導覽列**、Tab 選單、側邊欄 |
+
+> 💡 **選擇原則**：只要是「導覽列上需要標示目前頁面」的場合，一律用 `<NavLink>`。其他用 `<Link>` 即可。
+
+#### `NavLink` 的 `isActive` 參數
+
+`NavLink` 的 `className` 或 `style` 屬性會收到一個回呼函式，參數為 `{ isActive, isPending }`：
 
 ```jsx
-import { Link, NavLink } from 'react-router-dom';
+<NavLink
+  to="/about"
+  className={({ isActive, isPending }) =>
+    isPending ? 'pending' : isActive ? 'active' : ''
+  }
+>
+  關於
+</NavLink>
+```
 
-export default function Navbar() {
+| 參數 | 類型 | 說明 |
+|------|------|------|
+| `isActive` | `boolean` | 目前 URL 是否匹配此 NavLink 的 `to` 路徑 |
+| `isPending` | `boolean` | 該路由的資料是否仍在載入中（搭配 `lazy` 路由使用） |
+
+#### `end` 屬性 — 防止子路由也被匹配
+
+```jsx
+// 問題：路徑 /dashboard/settings 也會匹配 to="/" 的 NavLink！
+<NavLink to="/">首頁</NavLink>          // ❌ /dashboard/settings 時也會亮
+<NavLink to="/" end>首頁</NavLink>     // ✅ 只有精確匹配 / 才亮
+```
+
+> ⚠️ **陷阱**：`to="/"` 的 NavLink 在任何路徑下都會是 `isActive: true`（因為所有路徑都「包含」`/`）。加上 `end` 屬性後，只在**精確匹配**時才為 `true`。
+
+#### 完整 Navbar 範例 — 純 CSS 版
+
+```jsx
+// components/Navbar.jsx
+import { NavLink } from 'react-router-dom';
+import './Navbar.css';
+
+function Navbar() {
+  // 共用 className 回呼函式（避免重複）
+  const linkClass = ({ isActive, isPending }) =>
+    'nav-link' + (isActive ? ' active' : '') + (isPending ? ' pending' : '');
+
   return (
-    <nav>
-      {/* Link：基本連結，不重整頁面 */}
-      <Link to="/">首頁</Link>
-      <Link to="/about">關於</Link>
-
-      {/* NavLink：自動在目前路由加上 active class */}
-      <NavLink
-        to="/products"
-        style={({ isActive }) => ({
-          color: isActive ? 'blue' : 'black',
-          fontWeight: isActive ? 'bold' : 'normal',
-        })}
-      >
-        商品
-      </NavLink>
-
-      {/* 也可以用 className */}
-      <NavLink
-        to="/about"
-        className={({ isActive }) => isActive ? 'nav-active' : ''}
-      >
-        關於我們
-      </NavLink>
+    <nav className="navbar">
+      <div className="navbar-brand">我的網站</div>
+      <ul className="navbar-menu">
+        <li>
+          {/* end 屬性：防止 /dashboard 等路徑也匹配 / */}
+          <NavLink to="/" end className={linkClass}>
+            首頁
+          </NavLink>
+        </li>
+        <li>
+          <NavLink to="/about" className={linkClass}>關於</NavLink>
+        </li>
+        <li>
+          <NavLink to="/products" className={linkClass}>商品</NavLink>
+        </li>
+        <li>
+          <NavLink to="/dashboard" className={linkClass}>後台</NavLink>
+        </li>
+      </ul>
     </nav>
   );
 }
+
+export default Navbar;
+```
+
+```css
+/* components/Navbar.css */
+.navbar {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  padding: 0.75rem 1.5rem;
+  background: #1a1a2e;
+  color: #fff;
+}
+
+.navbar-brand {
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+.navbar-menu {
+  display: flex;
+  list-style: none;
+  gap: 0.25rem;
+  margin: 0;
+  padding: 0;
+}
+
+.nav-link {
+  display: inline-block;
+  padding: 0.5rem 1rem;
+  color: #adb5bd;
+  text-decoration: none;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.nav-link:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+/* 目前所在頁面 — 亮色 + 背景 */
+.nav-link.active {
+  color: #fff;
+  background: #0d6efd;
+  font-weight: 600;
+}
+
+/* 資料載入中（搭配 lazy route） */
+.nav-link.pending {
+  opacity: 0.6;
+}
+```
+
+#### 完整 Navbar 範例 — Bootstrap 版
+
+```jsx
+// components/Navbar.jsx
+import { NavLink } from 'react-router-dom';
+
+function Navbar() {
+  const linkClass = ({ isActive }) =>
+    'nav-link' + (isActive ? ' active' : '');
+
+  return (
+    <nav className="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div className="container">
+        <span className="navbar-brand fw-bold">我的網站</span>
+        <ul className="navbar-nav">
+          <li className="nav-item">
+            <NavLink to="/" end className={linkClass}>首頁</NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink to="/about" className={linkClass}>關於</NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink to="/products" className={linkClass}>商品</NavLink>
+          </li>
+          <li className="nav-item">
+            <NavLink to="/dashboard" className={linkClass}>後台</NavLink>
+          </li>
+        </ul>
+      </div>
+    </nav>
+  );
+}
+
+export default Navbar;
+```
+
+> 💡 **說明**：Bootstrap 的 `.nav-link.active` 已有藍底白字樣式，所以只需在 `isActive` 時加上 `active` class 即可，不需要自訂 CSS。
+
+#### `NavLink` 的 `style` 函式寫法（行內樣式）
+
+如果不使用 CSS class，也可以直接用 `style` 屬性動態設定行內樣式：
+
+```jsx
+<NavLink
+  to="/about"
+  style={({ isActive }) => ({
+    color: isActive ? '#0d6efd' : '#6c757d',
+    fontWeight: isActive ? 'bold' : 'normal',
+    textDecoration: 'none',
+  })}
+>
+  關於
+</NavLink>
 ```
 
 #### ⚠️ 常見錯誤
+
 ```jsx
 // ❌ 內部連結不要用 <a href>
 <a href="/about">關於</a>  // 會重整整個頁面，React 狀態全部清空！
 
-// ✅ 用 <Link to>
+// ✅ 一般連結用 <Link to>
 <Link to="/about">關於</Link>
+
+// ✅ 導覽列用 NavLink（自動加 active）
+<NavLink to="/about" className={({ isActive }) => isActive ? 'nav-active' : ''}>
+  關於
+</NavLink>
+
+// ❌ 忘記加 end 屬性，首頁連結在所有頁面都會亮
+<NavLink to="/">首頁</NavLink>
+
+// ✅ 加上 end，精確匹配
+<NavLink to="/" end>首頁</NavLink>
 ```
 
-> **現在試試看**：建立包含 Home、About、Contact 三個頁面的應用，並在 Navbar 中用 `NavLink` 標示目前所在頁面。
+> **現在試試看**：建立包含 Home、About、Contact 三個頁面的應用，並在 Navbar 中用 `NavLink` 標示目前所在頁面。嘗試「純 CSS 版」與「Bootstrap 版」兩種風格。
 
 ---
 
@@ -666,22 +830,30 @@ function App() {
 import { Outlet, NavLink } from 'react-router-dom';
 
 function Dashboard() {
+  const linkClass = ({ isActive }) =>
+    'sidebar-link' + (isActive ? ' active' : '');
+
   return (
     <div style={{ display: 'flex' }}>
       {/* 側邊欄（永遠顯示） */}
-      <aside>
-        <NavLink to="/dashboard">總覽</NavLink>
-        <NavLink to="/dashboard/profile">個人資料</NavLink>
-        <NavLink to="/dashboard/settings">設定</NavLink>
+      <aside style={{ width: 200, padding: '1rem', borderRight: '1px solid #ddd' }}>
+        <NavLink to="/dashboard"      end className={linkClass}>總覽</NavLink>
+        <NavLink to="/dashboard/profile"  className={linkClass}>個人資料</NavLink>
+        <NavLink to="/dashboard/settings" className={linkClass}>設定</NavLink>
       </aside>
 
       {/* 子路由在這裡渲染 */}
-      <main>
+      <main style={{ flex: 1, padding: '1rem' }}>
         <Outlet />
       </main>
     </div>
   );
 }
+
+/* CSS
+.sidebar-link    { display: block; padding: 8px 12px; color: #333; text-decoration: none; }
+.sidebar-link.active { background: #e9ecef; font-weight: bold; border-radius: 4px; }
+*/
 ```
 
 ---
@@ -817,7 +989,7 @@ function App() {
 |------|-----------|
 | `BrowserRouter` | 包在 App 最外層，讓路由生效 |
 | `<Routes>` / `<Route>` | 定義「URL → 元件」的對應關係；`path="*"` 做 404 |
-| `<Link>` / `<NavLink>` | 頁面切換連結（不用 `<a href>`）；`NavLink` 自動加 active 樣式 |
+| `<Link>` / `<NavLink>` | 頁面切換連結（不用 `<a href>`）；`NavLink` 自動加 active 樣式；`end` 屬性防止子路由匹配 |
 | 動態路由 | `path="/products/:id"`；元件內用 `useParams()` 取 `{ id }` |
 | `useNavigate` | 程式化跳轉：`navigate('/path')`、`navigate(-1)` 回上一頁 |
 | `useSearchParams` | 讀寫 URL 查詢字串（`?sort=price`） |
@@ -830,13 +1002,29 @@ function App() {
 
 `<a href="/about">` 會觸發**整頁重新載入**：瀏覽器重新向伺服器請求 `/about`，頁面上所有 React state 全部清空。SPA 的特色就是「不重整頁面」地切換內容，所以要用 `<Link>` 攔截點擊、只改 URL 並切換元件。
 
-#### 2. 動態路由的 `:id` 怎麼定義、怎麼讀？
+#### 2. 為什麼 `<NavLink to="/">` 在所有頁面都會亮？
+
+因為所有路徑都「包含」`/`（例如 `/about` 也包含 `/`），React Router 的路由匹配是**前綴匹配**，所以 `to="/"` 的 NavLink 在任何路徑下都是 `isActive: true`。
+
+解決方法：加上 `end` 屬性，改為**精確匹配**：
+
+```jsx
+// ❌ /about 時也會亮（因為 /about 包含 /）
+<NavLink to="/">首頁</NavLink>
+
+// ✅ 只有精確匹配 / 才亮
+<NavLink to="/" end>首頁</NavLink>
+```
+
+> 💡 **規則**：`to` 為 `"/"` 的 NavLink **必須加 `end`**，其他路徑（如 `/about`、`/products`）則不需要。
+
+#### 3. 動態路由的 `:id` 怎麼定義、怎麼讀？
 
 - 定義：`<Route path="/products/:id" element={<ProductDetail />} />`（`:id` 是「動態段落」）
 - 讀取：`const { id } = useParams();`（回傳**字串**）
 - 注意：想再「觸發載入」時，把 `id` 放進 `useEffect` 的依賴陣列，`id` 改變就會重新請求。
 
-#### 3. 受保護路由的「登入後跳回原本頁面」怎麼運作？
+#### 4. 受保護路由的「登入後跳回原本頁面」怎麼運作？
 
 ```jsx
 // 1. 未登入時，把「想去哪裡」記錄在 state，並導向登入頁
@@ -870,25 +1058,33 @@ navigate(state?.from?.pathname ?? '/');
 import { NavLink } from 'react-router-dom';
 
 function Navbar() {
+  const linkClass = ({ isActive }) =>
+    'nav-link' + (isActive ? ' active' : '');
+
   return (
-    <nav>
-      <NavLink
-        to="/"
-        style={({ isActive }) => ({
-          color: isActive ? 'blue' : 'black',
-          fontWeight: isActive ? 'bold' : 'normal',
-        })}
-      >
-        首頁
-      </NavLink>
-      <NavLink to="/about" className={({ isActive }) => (isActive ? 'active' : '')}>
-        關於
-      </NavLink>
-      <NavLink to="/products">商品</NavLink>
+    <nav className="navbar">
+      <NavLink to="/" end className={linkClass}>首頁</NavLink>
+      <NavLink to="/about" className={linkClass}>關於</NavLink>
+      <NavLink to="/products" className={linkClass}>商品</NavLink>
     </nav>
   );
 }
+
+/* CSS（放入 Navbar.css 或 index.css）
+.nav-link {
+  padding: 8px 16px;
+  color: #6c757d;
+  text-decoration: none;
+}
+.nav-link:hover { color: #000; }
+.nav-link.active { color: #0d6efd; font-weight: bold; }
+*/
 ```
+
+**重點說明**：
+- 使用 `NavLink` 而非 `Link`，因為需要自動判斷目前路由
+- `linkClass` 回呼函式集中管理 className，避免重複
+- `/` 路由加 `end` 屬性，防止在其他路徑時也亮起
 
 </details>
 
@@ -987,18 +1183,19 @@ function Login() {
 ## 單元小測驗
 
 1. 為什麼在 React 應用中不能用 `<a href>` 做頁面切換？
-2. `<Link>` 與 `<NavLink>` 的差異是什麼？
-3. 動態路由 `/users/:id` 中，如何在元件內取得 `id` 的值？
-4. `useNavigate(-1)` 會做什麼？
-5. 巢狀路由中 `<Outlet />` 的作用是什麼？
-6. 受保護路由如何實作？登入後如何跳回原本要去的頁面？
+2. `<Link>` 與 `<NavLink>` 的差異是什麼？`NavLink` 的 `isActive` 參數如何使用？
+3. 為什麼 `<NavLink to="/">` 在其他路徑下也會亮起？如何用 `end` 屬性修正？
+4. 動態路由 `/users/:id` 中，如何在元件內取得 `id` 的值？
+5. `useNavigate(-1)` 會做什麼？
+6. 巢狀路由中 `<Outlet />` 的作用是什麼？
+7. 受保護路由如何實作？登入後如何跳回原本要去的頁面？
 
 ---
 
 ## 里程碑 ✅
 
 - [ ] 能設置 `BrowserRouter` 並定義基本路由
-- [ ] 能用 `NavLink` 建立標示目前頁面的導覽列
+- [ ] 能用 `NavLink` 建立標示目前頁面的導覽列（含 `end` 屬性避免誤匹配）
 - [ ] 能實作動態路由並用 `useParams` 取得參數
 - [ ] 能在登入成功後用 `useNavigate` 程式化跳轉
 - [ ] 能設計巢狀路由並在父元件中使用 `<Outlet />`
