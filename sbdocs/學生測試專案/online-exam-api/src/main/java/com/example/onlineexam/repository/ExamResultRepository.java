@@ -16,4 +16,7 @@ public interface ExamResultRepository extends JpaRepository<ExamResult, Long> {
 
     @Transactional
     void deleteByExam(Exam exam);
+
+    @Transactional
+    void deleteByUser(User user);
 }

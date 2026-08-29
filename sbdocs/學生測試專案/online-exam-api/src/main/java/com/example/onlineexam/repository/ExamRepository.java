@@ -8,4 +8,5 @@ import java.util.List;
 public interface ExamRepository extends JpaRepository<Exam, Long> {
     List<Exam> findByActiveTrueOrderByIdAsc();
     List<Exam> findByCreatedByOrderByIdDesc(User user);
+    boolean existsByCreatedBy(User user);
 }

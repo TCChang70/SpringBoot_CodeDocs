@@ -12,6 +12,7 @@ import ExamFormPage from './pages/teacher/ExamFormPage'
 import ExamDetailPage from './pages/teacher/ExamDetailPage'
 import ExamResultsPage from './pages/teacher/ExamResultsPage'
 import StudentListPage from './pages/teacher/StudentListPage'
+import TeacherManagePage from './pages/teacher/TeacherManagePage'
 
 export default function App() {
   return (
@@ -36,6 +37,7 @@ export default function App() {
             <Route element={<Layout role="teacher" />}>
               <Route path="/teacher" element={<TeacherDashboard />} />
               <Route path="/teacher/students" element={<StudentListPage />} />
+              <Route path="/teacher/teachers" element={<TeacherManagePage />} />
               <Route path="/teacher/exam/new" element={<ExamFormPage />} />
               <Route path="/teacher/exam/:id/edit" element={<ExamFormPage />} />
               <Route path="/teacher/exam/:id" element={<ExamDetailPage />} />

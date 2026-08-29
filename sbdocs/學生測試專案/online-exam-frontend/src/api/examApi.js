@@ -38,6 +38,15 @@ export const getStudents = (token, className) => {
   return fetch(`${BASE}/students${qs}`, { headers: authHeader(token) }).then(handle)
 }
 export const getStudentClasses = (token) => fetch(`${BASE}/students/classes`, { headers: authHeader(token) }).then(handle)
+export const createStudent = (token, body) => fetch(`${BASE}/students`, { method:'POST', headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
+export const updateStudent = (token, id, body) => fetch(`${BASE}/students/${id}`, { method:'PUT', headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
+export const deleteStudent = (token, id) => fetch(`${BASE}/students/${id}`, { method:'DELETE', headers:authHeader(token) }).then(handle)
+
+/* ── Teachers CRUD ────────────────────────────────── */
+export const getTeachers    = (token)            => fetch(`${BASE}/teachers`,       { headers: authHeader(token) }).then(handle)
+export const createTeacher  = (token, body)      => fetch(`${BASE}/teachers`,       { method:'POST',   headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
+export const updateTeacher  = (token, id, body)  => fetch(`${BASE}/teachers/${id}`, { method:'PUT',    headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
+export const deleteTeacher  = (token, id)        => fetch(`${BASE}/teachers/${id}`, { method:'DELETE', headers:authHeader(token) }).then(handle)
 
 /* ── Results ──────────────────────────────────────── */
 export const getMyResults   = (token)         => fetch(`${BASE}/results/my`,           { headers: authHeader(token) }).then(handle)

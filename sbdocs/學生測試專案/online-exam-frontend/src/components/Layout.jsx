@@ -21,7 +21,8 @@ export default function Layout({ role }) {
           {isTeacher ? (
             <>
               <Link to="/teacher" className="btn btn-ghost btn-sm">測驗管理</Link>
-              <Link to="/teacher/students" className="btn btn-ghost btn-sm">👥 學生名冊</Link>
+              <Link to="/teacher/students" className="btn btn-ghost btn-sm">👥 學生管理</Link>
+              <Link to="/teacher/teachers" className="btn btn-ghost btn-sm">👨‍🏫 教師管理</Link>
             </>
           ) : (
             <>
