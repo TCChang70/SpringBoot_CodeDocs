@@ -19,14 +19,24 @@ export default function Layout({ role }) {
         </span>
         <div className="navbar-links">
           {isTeacher ? (
-            <Link to="/teacher" className="btn btn-ghost btn-sm">測驗管理</Link>
+            <>
+              <Link to="/teacher" className="btn btn-ghost btn-sm">測驗管理</Link>
+              <Link to="/teacher/students" className="btn btn-ghost btn-sm">👥 學生名冊</Link>
+            </>
           ) : (
             <>
               <Link to="/student" className="btn btn-ghost btn-sm">測驗列表</Link>
               <Link to="/student/results" className="btn btn-ghost btn-sm">我的成績</Link>
             </>
           )}
-          <span className="navbar-user">👤 {auth?.displayName}</span>
+          <span className="navbar-user">
+            👤 {auth?.displayName}
+            {!isTeacher && auth?.className && (
+              <span style={{ marginLeft:'.4rem', fontSize:'.75rem', background:'#dbeafe', color:'#1e40af', padding:'.15rem .45rem', borderRadius:999 }}>
+                {auth.className}
+              </span>
+            )}
+          </span>
           <button onClick={handleLogout} className="btn btn-ghost btn-sm">登出</button>
         </div>
       </nav>

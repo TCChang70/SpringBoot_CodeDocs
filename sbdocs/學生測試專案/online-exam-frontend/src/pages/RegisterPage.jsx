@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { register } from '../api/examApi'
 
 export default function RegisterPage() {
-  const [form, setForm] = useState({ username: '', password: '', displayName: '' })
+  const [form, setForm] = useState({ username: '', password: '', displayName: '', className: '' })
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const { login: authLogin } = useAuth()
@@ -54,6 +54,16 @@ export default function RegisterPage() {
               value={form.displayName}
               onChange={e => setForm({ ...form, displayName: e.target.value })}
               placeholder="您的姓名"
+              required
+            />
+          </div>
+          <div className="form-group">
+            <label className="form-label">屬於班級 *</label>
+            <input
+              className="form-input"
+              value={form.className}
+              onChange={e => setForm({ ...form, className: e.target.value })}
+              placeholder="例如：資工三甲、資工三乙"
               required
             />
           </div>

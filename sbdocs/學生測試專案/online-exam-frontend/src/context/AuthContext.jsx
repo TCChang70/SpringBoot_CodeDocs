@@ -13,7 +13,7 @@ export function AuthProvider({ children }) {
   })
 
   function login(data) {
-    const payload = { token: data.token, username: data.username, role: data.role, displayName: data.displayName }
+    const payload = { token: data.token, username: data.username, role: data.role, displayName: data.displayName, className: data.className }
     localStorage.setItem('exam_auth', JSON.stringify(payload))
     setAuth(payload)
   }

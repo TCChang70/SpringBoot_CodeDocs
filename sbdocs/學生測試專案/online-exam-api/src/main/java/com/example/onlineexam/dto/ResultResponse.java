@@ -7,6 +7,7 @@ public record ResultResponse(
     Long examId,
     String examTitle,
     String studentName,
+    String studentClass,
     Integer score,
     Integer totalPoints,
     double percentage,

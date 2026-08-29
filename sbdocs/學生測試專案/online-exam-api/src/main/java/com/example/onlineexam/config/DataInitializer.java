@@ -37,6 +37,7 @@ public class DataInitializer implements CommandLineRunner {
                 .username("student1")
                 .password(passwordEncoder.encode("password123"))
                 .displayName("小明")
+                .className("資工三甲")
                 .role("ROLE_STUDENT")
                 .build());
 
@@ -44,10 +45,27 @@ public class DataInitializer implements CommandLineRunner {
                 .username("student2")
                 .password(passwordEncoder.encode("password123"))
                 .displayName("小華")
+                .className("資工三乙")
                 .role("ROLE_STUDENT")
                 .build());
 
-        log.info("已建立預設帳號：teacher / student1 / student2（密碼均為 password123）");
+        userRepository.save(User.builder()
+                .username("student3")
+                .password(passwordEncoder.encode("password123"))
+                .displayName("小玲")
+                .className("資工三甲")
+                .role("ROLE_STUDENT")
+                .build());
+
+        userRepository.save(User.builder()
+                .username("student4")
+                .password(passwordEncoder.encode("password123"))
+                .displayName("小強")
+                .className("資工三乙")
+                .role("ROLE_STUDENT")
+                .build());
+
+        log.info("已建立預設帳號：teacher / student1-4（密碼均為 password123）");
 
         // 建立示範測驗
         Exam exam = examRepository.save(Exam.builder()

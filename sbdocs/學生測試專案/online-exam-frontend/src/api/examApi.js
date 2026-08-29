@@ -32,6 +32,13 @@ export const addQuestion    = (token, examId, body)      => fetch(`${BASE}/exams
 export const updateQuestion = (token, questionId, body)  => fetch(`${BASE}/exams/questions/${questionId}`,  { method:'PUT',    headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
 export const deleteQuestion = (token, questionId)        => fetch(`${BASE}/exams/questions/${questionId}`,  { method:'DELETE', headers:authHeader(token) }).then(handle)
 
+/* ── Students ─────────────────────────────────────── */
+export const getStudents = (token, className) => {
+  const qs = className ? `?className=${encodeURIComponent(className)}` : ''
+  return fetch(`${BASE}/students${qs}`, { headers: authHeader(token) }).then(handle)
+}
+export const getStudentClasses = (token) => fetch(`${BASE}/students/classes`, { headers: authHeader(token) }).then(handle)
+
 /* ── Results ──────────────────────────────────────── */
 export const getMyResults   = (token)         => fetch(`${BASE}/results/my`,           { headers: authHeader(token) }).then(handle)
 export const getExamResults = (token, examId) => fetch(`${BASE}/results/exam/${examId}`,{ headers: authHeader(token) }).then(handle)

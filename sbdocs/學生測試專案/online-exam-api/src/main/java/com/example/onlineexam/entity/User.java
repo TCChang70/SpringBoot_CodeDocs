@@ -27,4 +27,7 @@ public class User {
     /** ROLE_STUDENT 或 ROLE_TEACHER */
     @Column(nullable = false)
     private String role;
+
+    /** 學生所屬班級（教師此欄位為 null） */
+    private String className;
 }

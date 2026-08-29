@@ -110,6 +110,7 @@ export default function ExamResultsPage() {
                 <thead>
                   <tr>
                     <th>排名</th>
+                    <th>班級</th>
                     <th>學生姓名</th>
                     <th>得分</th>
                     <th>得分率</th>
@@ -122,6 +123,12 @@ export default function ExamResultsPage() {
                     <tr key={r.id}>
                       <td style={{ color: idx < 3 ? ['#f59e0b','#9ca3af','#b45309'][idx] : '#d1d5db', fontWeight: 700 }}>
                         #{idx + 1}
+                      </td>
+                      <td>
+                        {r.studentClass
+                          ? <span style={{ background:'#dbeafe', color:'#1e40af', padding:'.15rem .5rem', borderRadius:999, fontSize:'.8rem', fontWeight:500 }}>{r.studentClass}</span>
+                          : <span className="text-muted text-sm">—</span>
+                        }
                       </td>
                       <td style={{ fontWeight: 500 }}>{r.studentName}</td>
                       <td>{r.score} / {r.totalPoints}</td>

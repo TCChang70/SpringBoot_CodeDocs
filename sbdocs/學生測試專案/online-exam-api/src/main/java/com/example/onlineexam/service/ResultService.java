@@ -92,6 +92,7 @@ public class ResultService {
         double roundedPct = Math.round(pct * 10.0) / 10.0;
         return new ResultResponse(r.getId(), r.getExam().getId(),
                 r.getExam().getTitle(), r.getUser().getDisplayName(),
+                r.getUser().getClassName(),
                 r.getScore(), r.getTotalPoints(), roundedPct,
                 calculateGrade(pct), r.getSubmittedAt());
     }

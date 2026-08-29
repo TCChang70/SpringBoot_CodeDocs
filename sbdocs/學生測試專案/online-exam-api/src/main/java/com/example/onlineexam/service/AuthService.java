@@ -29,10 +29,11 @@ public class AuthService {
                 .username(req.username())
                 .password(passwordEncoder.encode(req.password()))
                 .displayName(req.displayName())
+                .className(req.className())
                 .role("ROLE_STUDENT")
                 .build());
         String token = jwtUtil.generateToken(user.getUsername());
-        return new LoginResponse(token, user.getUsername(), user.getRole(), user.getDisplayName());
+        return new LoginResponse(token, user.getUsername(), user.getRole(), user.getDisplayName(), user.getClassName());
     }
 
     public LoginResponse login(LoginRequest req) {
@@ -40,6 +41,6 @@ public class AuthService {
                 new UsernamePasswordAuthenticationToken(req.username(), req.password()));
         User user = userRepository.findByUsername(req.username()).orElseThrow();
         String token = jwtUtil.generateToken(user.getUsername());
-        return new LoginResponse(token, user.getUsername(), user.getRole(), user.getDisplayName());
+        return new LoginResponse(token, user.getUsername(), user.getRole(), user.getDisplayName(), user.getClassName());
     }
 }
