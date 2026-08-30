@@ -24,6 +24,8 @@ export const getExamDetail     = (token, examId) => fetch(`${BASE}/exams/${examI
 export const createExam = (token, body)         => fetch(`${BASE}/exams`,            { method:'POST',   headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
 export const updateExam = (token, examId, body) => fetch(`${BASE}/exams/${examId}`,  { method:'PUT',    headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
 export const deleteExam = (token, examId)       => fetch(`${BASE}/exams/${examId}`,  { method:'DELETE', headers:authHeader(token) }).then(handle)
+export const setExamStatus = (token, examId, active) =>
+  fetch(`${BASE}/exams/${examId}/status`, { method:'PATCH', headers:authHeader(token), body:JSON.stringify({ active }) }).then(handle)
 export const submitExam = (token, examId, answers) =>
   fetch(`${BASE}/exams/${examId}/submit`, { method:'POST', headers:authHeader(token), body:JSON.stringify({ answers }) }).then(handle)
 
@@ -31,6 +33,8 @@ export const submitExam = (token, examId, answers) =>
 export const addQuestion    = (token, examId, body)      => fetch(`${BASE}/exams/${examId}/questions`,      { method:'POST',   headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
 export const updateQuestion = (token, questionId, body)  => fetch(`${BASE}/exams/questions/${questionId}`,  { method:'PUT',    headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
 export const deleteQuestion = (token, questionId)        => fetch(`${BASE}/exams/questions/${questionId}`,  { method:'DELETE', headers:authHeader(token) }).then(handle)
+export const batchImportQuestions = (token, examId, questions) =>
+  fetch(`${BASE}/exams/${examId}/questions/batch`, { method:'POST', headers:authHeader(token), body:JSON.stringify({ questions }) }).then(handle)
 
 /* ── Students ─────────────────────────────────────── */
 export const getStudents = (token, className) => {

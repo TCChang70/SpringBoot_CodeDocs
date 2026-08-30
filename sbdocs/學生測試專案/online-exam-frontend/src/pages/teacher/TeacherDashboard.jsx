@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { getAllExams, deleteExam } from '../../api/examApi'
+import { getAllExams, deleteExam, setExamStatus } from '../../api/examApi'
 
 export default function TeacherDashboard() {
   const { auth } = useAuth()
@@ -24,6 +24,17 @@ export default function TeacherDashboard() {
     if (!window.confirm(`確定刪除「${exam.title}」？\n此操作無法復原，所有學生成績也將一併刪除。`)) return
     try {
       await deleteExam(auth.token, exam.id)
+      load()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleToggle(exam) {
+    const action = exam.active ? '關閉' : '開放'
+    if (!window.confirm(`確定要${action}「${exam.title}」嗎？\n${exam.active ? '關閉後學生將無法作答此測驗。' : '開放後學生即可作答此測驗。'}`)) return
+    try {
+      await setExamStatus(auth.token, exam.id, !exam.active)
       load()
     } catch (err) {
       setError(err.message)
@@ -121,6 +132,13 @@ export default function TeacherDashboard() {
                         <button className="btn btn-ghost btn-sm"
                           onClick={() => navigate(`/teacher/exam/${exam.id}/edit`)}>
                           ✏️ 編輯
+                        </button>
+                        <button
+                          className={`btn btn-sm ${exam.active ? 'btn-inactive' : 'btn-teacher'}`}
+                          onClick={() => handleToggle(exam)}
+                          title={exam.active ? '關閉測驗' : '開放測驗'}
+                        >
+                          {exam.active ? '🔒 關閉' : '✅ 開放'}
                         </button>
                         <button className="btn btn-danger btn-sm"
                           onClick={() => handleDelete(exam)}>
