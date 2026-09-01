@@ -1,0 +1,334 @@
+1. 在Spring中如何將一個類標註為Bean並讓Spring管理？
+    @_____
+    public class A {
+        // class body
+    }
+
+    - a) `@Component`
+    - b) `@Service`
+    - c) `@Repository`
+    - d) 以上皆是  
+    
+
+2. 如何定義一個攔截所有請求的控制器？
+   
+@_____
+    public class GlobalController {
+        @RequestMapping("/*")
+        public String handleAll() {
+            return "global";
+        }
+    }
+    ```
+    - a) `@Controller`
+    - b) `@GetMapping `
+    - c) `@Component`
+    - d) `@Service`  
+  
+ 
+3. 如何定義一個方法來接收查詢參數？
+    
+    @RestController
+    public class MyController {
+        @GetMapping("/greet")
+        public String greet(@_____ String name) {
+            return "Hello " + name;
+        }
+    }
+    ```
+    - a) `@Param `
+    - b) `@PathVariable`
+    - c) `@QueryParam`
+    - d) `@ RequestParam`  
+   
+
+
+4. 如何啟用Spring Boot的自動配置功能？
+    @_____
+    public class Application {
+        public static void main(String[] args) {
+            SpringApplication.run(Application.class, args);
+        }
+    }
+    - a) `@SpringBootApplication`
+    - b) `@EnableAutoConfiguration`
+    - c) `@ComponentScan`
+    - d) `@Configuration`  
+   
+
+ 
+5. 如何在JPA實體類上標註主鍵欄位？
+   
+    @Entity
+    public class User {
+        @_____
+        private Long id;
+        // other fields
+    }
+    
+    - a) `@ PrimaryKey `
+    - b) `@ Id `
+    - c) `@Key`
+    - d) `@GeneratedValue`  
+   
+6. 如何在JPA中宣告資料庫欄位`@ManyToOne`註解？
+    
+    @Entity
+    public class Order {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        @ManyToOne
+        @_____(name = "user_id")
+        private User user;
+    }
+    ```
+    - a) `@JoinTable`
+    - b) `@JoinColumn`
+    - c) `@Column`
+    - d) `@Embedded`  
+    
+ 
+
+˙7.如何在JPA中使用`@Query`註解進行自訂查詢？
+   
+    public interface UserRepository extends JpaRepository<User, Long> {
+        @_____("SELECT u FROM User u WHERE u.email = ?1")
+        User findByEmail(String email);
+    }
+    ```
+    - a) `@NativeQuery `
+    - b) `@NamedQuery`
+    - c) ` @Query `
+    - d) `@Sql`  
+    
+
+8. 如何在JPA中定義一個命名查詢？
+    
+    @Entity
+    @_____(name = "User.findByEmail", query = "SELECT u FROM User u WHERE u.email = :email")
+    public class User {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        private String email;
+    }
+   
+    - a) `@Query`
+    - b) `@NamedQuery`
+    - c) `@NativeQuery`
+    - d) `@NamedNativeQuery`  
+  
+ 
+9. 如何在JPA中使用註解來處理日期欄位？**
+    @Entity
+    public class Event {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+
+        @_____(TemporalType.DATE)
+        private Date eventDate;
+    }
+    ```
+    - a) `@Temporal`
+    - b) `@Date`
+    - c) `@Time`
+    - d) `@DateTime`  
+    
+
+10. 如何使用註解來處理大型物件欄位？
+    
+    @Entity
+    public class Document {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+
+        @_____
+        private byte[] content;
+    }
+    
+    - a) `@Lob`
+    - b) `@Blob`
+    - c) `@Large`
+    - d) `@Binary`  
+    
+
+ 
+11. 如何使用註解來監聽實體事件？
+    
+    @Entity
+    @_____(AuditListener.class)
+    public class User {
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+    }
+    ```
+    - a) `@ Listener `
+    - b) `@Entity`
+    - c) `@ EntityListeners `
+    - d) `@EventListener`  
+    
+
+12. `@Autowired` 註解的主要用途是什麼？
+   - a) 自動配置視圖
+   - b) 自動注入依賴
+   - c) 自動加載資源
+   - d) 自動配置數據庫  
+  
+
+13. `@RequestMapping` 註解的作用是什麼？
+   - a) 映射HTTP請求到處理方法
+   - b) 配置Spring的資料庫連接
+   - c) 配置視圖解析器
+   - d) 定義全局異常處理  
+   
+
+14. `@ModelAttribute` 註解的作用是什麼？
+   - a) 用於處理文件上傳
+   - b) 指定HTTP請求的方法
+   - c) 將方法傳入的物件添加到模型中
+   - d) 用於標註異常處理方法  
+   
+
+ 
+15. `@PathVariable` 註解的用途是什麼？
+   - a) 綁定表單數據
+   - b) 綁定URL中的路徑變數
+   - c) 綁定查詢參數
+   - d) 綁定HTTP頭信息  
+   
+
+16. `@SpringBootApplication` 註解包含了哪三個核心註解？
+    - a) `@Configuration`, `@EnableAutoConfiguration`, `@ComponentScan`
+    - b) `@Configuration`, `@EnableWebMvc`, `@ComponentScan`
+    - c) `@RestController`, `@EnableAutoConfiguration`, `@ComponentScan`
+    - d) `@ComponentScan`, `@EntityScan`, `@EnableAutoConfiguration`  
+
+
+    
+17. **哪一個註解用於啟用Spring Boot的自動配置？**
+    - a) `@SpringBootApplication `
+    - b) `@AutoConfigure`
+    - c) ` @EnableAutoConfiguration `
+    - d) `@EnableConfiguration`  
+   
+
+18. `@GeneratedValue` 註解的用途是什麼？
+    - a) 用於生成主鍵值
+    - b) 用於生成欄位值
+    - c) 用於設定欄位的預設值
+    - d) 用於設置自動累加數值  
+    
+19. `@NamedQuery` 註解的用途是什麼？
+    - a) 定義動態查詢
+    - b) 定義靜態查詢
+    - c) 定義本地查詢
+    - d) 定義查詢篩選條件  
+ 
+ 
+20. Spring Boot中@Repository註解的主要用途是什麼？
+a) 定義 REST 控制器
+b) 將類別標記為儲存庫，表示資料庫互動
+c) 建立計劃任務
+d) 配置應用程式屬性
+
+
+21. 在 Spring MVC 中，DispatcherServlet 參考 ____________ 將邏輯檢視名稱與實際檢視實作進行映射
+a) Resolver
+b) Handler Mapper
+c) Controller
+d) ViewResolver
+
+22. 在 Spring MVC Web 應用程式中，所有 HTTP 請求首先到達哪個元件？
+
+a) Controller class
+b) DispatcherServlet 
+c)HandlerMapper
+D)None of the above 
+
+23. @RestController註解是以下兩個註解的組合
+
+a)@Component and @ResponseBody annotations
+b)@Controller and @ResponseBody annotations
+c)@Service and @ResponseBody annotations
+d)None of the above
+
+
+24. Spring Boot Data JPA是什麼？ 
+a) 程式語言 
+b) 資料庫管理系統 
+c) Java 應用程式中 ORM 規範 
+d) 腳本語言
+
+
+ 
+25. 我們使用哪一種 HTTP 方法來發出 HTTP 請求來更新現有資源？
+a) POST
+b) PUT
+c) UPDATE
+d) DELETE
+
+26. REST API 請求中「Content-Type」標頭的作用是什麼？
+a) 指定要使用的HTTP方法
+b) 定義請求負載的格式
+c) 它提供身分驗證憑證
+d) 決定請求的快取控制策略
+
+27. Spring Boot @RestController接收表單資料給資料類別是透過哪一個註解
+a) @ResponseBody annotations
+b) @RequestBody annotations
+c) @Service annotations
+d)@ModelAttribute annotations
+
+28. Spring Boot @RestController 接收JSON資料給資料類別是透過哪一個註解
+a) @ResponseBody annotations
+b) @RequestBody annotations
+c) @Service annotations
+d)@ModelAttribute annotations
+
+29. Spring Boot @RestController 傳回JSON資料給前端是透過哪一個註解
+a) @ModelAttribute annotations
+b) @RequestBody annotations
+c) @Response annotations
+d) 不需要寫 annotations  
+
+30. Spring Boot 3 所使用的最低 Java 版本?
+a)	Java 8
+b)	Java 11
+c)	Java 17
+d)	Java 10
+ 
+Answer:
+1.	D
+2.	A
+3.	D
+4.	A
+5.	B
+6.	B
+7.	C
+8.	B
+9.	A
+10.	A
+11.	C
+12.	B
+13.	A
+14.	C
+15.	B
+16.	A
+17.	C
+18.	D
+19.	B
+20.	B
+21.	D
+22.	B
+23.	B
+24.	C
+25.	B
+26.	B
+27.	D
+28.	B
+29.	D
+30.	C

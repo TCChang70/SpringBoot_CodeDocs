@@ -1,0 +1,404 @@
+1. 下列哪個方法可以用來在JavaScript中建立並列印一組陣列的每個元素？
+   var arr = [1, 2, 3, 4, 5];
+   ‘填入程式碼’{
+       console.log(arr[i]);
+   }
+   - A. `arr.print();`
+   - B. `arr.forEach();`
+   - C. `for (var i = 0; i < arr.length; i++) { console.log(arr[i]); }`
+   - D. `arr.each();`
+   - 答案：C
+
+2. 如何在JavaScript中將字串`str`轉換為數字並判斷是否大於100？
+  
+   var str = "150";
+    ‘填入程式碼’
+   if (num > 100) {
+       console.log("大於100");
+   } else {
+       console.log("小於或等於100");
+   }
+  
+   - A. var num = parseInt(str); if (num > 100) { console.log("大於100"); }
+   - B. var num = parsefloat(str); if (num > 100) { console.log("大於100"); }
+   - C. var num = number(str); if (num > 100) { console.log("大於100"); }
+   - D. var num = parseNumber(str); if (num > 100) { console.log("大於100"); }
+   - 答案：A
+
+3. 如何使用jQuery的`attr`方法設置圖片元素的`src`屬性？ 
+   $(document).ready(function() {
+       var img = $("<img>");
+       ‘填入程式碼’
+       $("body").append(img);
+   });  
+   - A. img.setAttribute("src", "image.jpg");
+   - B. img.attr("src", "image.jpg");
+   - C. img.source("image.jpg");
+   - D. img.setSrc("image.jpg");
+   - 答案：B
+
+4. 下列哪個jQuery方法可以用來發送HTTP GET請求並處理回應？
+ 
+   $(document).ready(function() {
+        ‘填入程式碼’("https://api.example.com/data", function(response) {
+           console.log(response);
+       });
+   });
+  
+   - A. $.get("url", callback);
+   - B. $.ajaxGet("url", callback);
+   - C. $.sendGet("url", callback);
+   - D. $.requestGet("url", callback);
+   - 答案：A
+
+5. 如何在JavaScript中將數字`num`轉換為字串並附加到另一個字串？
+   
+   var num = 123;
+   var str = "The number is: ";
+   ‘填入程式碼’
+   console.log(result);
+  
+   - A. var result = str + num.string();
+   - B. var result = str + num.toStr();
+   - C. var result = str + num.convertToString();
+   - D. var result = str + num.toString();
+   - 答案：D
+
+ 
+6. 如何檢查陣列`arr`是否包含值`3`，如果包含則列印“Found”？
+  
+   var arr = [1, 2, 3, 4, 5];
+   if (‘填入程式碼’) {
+       console.log("Found");
+   } else {
+       console.log("Not Found");
+   }
+ 
+   - A. if (arr.contains(3)) { console.log("Found"); }
+   - B. if (arr.has(3)) { console.log("Found"); }
+   - C. if (arr.exists(3)) { console.log("Found"); }
+   - D. if (arr.includes(3)) { console.log("Found"); }
+   - 答案：D
+
+7. 下列哪個方法可以用來移除陣列`arr`的第一個元素並列印剩下的元素？
+  
+   var arr = [1, 2, 3, 4, 5];
+   ‘填入程式碼’
+   for (var i = 0; i < arr.length; i++) {
+       console.log(arr[i]);
+   }
+ 
+   - A. arr.pop();
+   - B. arr.shift();
+   - C. arr.removeFirst();
+   - D. arr.unshift();
+   - 答案：B
+
+ 
+8. 使用jQuery發送HTTP POST請求並處理回應，以下哪個是正確的語法？
+ 
+   $(document).ready(function() {
+       ‘填入程式碼’("https://api.example.com/data", { key: "value" }, function(response) {
+           console.log(response);
+       });
+   });
+  
+   - A. $.post("url", data, callback);
+   - B. $.ajaxPost("url", data, callback);
+   - C. $.sendPost("url", data, callback);
+   - D. $.requestPost("url", data, callback);
+   - 答案：A
+
+9. 如何在JavaScript中將陣列`arr`轉換為字串並列印？
+  
+   var arr = [1, 2, 3, 4, 5];
+   var str = ‘填入程式碼’;
+   console.log(str);
+  
+   - A. var str = arr.toString();
+   - B. var str = arr.convertToString();
+   - C. var str = arr.stringify();
+   - D. var str = arr.join(", ");
+   - 答案：D
+ 
+
+10. 如何在JavaScript中建一個空陣列並添加元素？
+   
+    var ‘填入程式碼’;
+    arr.push(1);
+    arr.push(2);
+    arr.push(3);
+    for (var i = 0; i < arr.length; i++) {
+        console.log(arr[i]);
+    }
+    
+    - A. var arr = {};
+    - B. var arr = new Array();
+    - C. var arr = new List();
+    - D. var arr = [];
+    - 答案：D
+
+11. 使用jQuery選擇所有class為"example"的元素並改變它們的文本，以下哪個是正確的語法？
+    
+    $(document).ready(function() {
+        $(".example").each(function() {
+            ‘填入程式碼’.text("New Text");
+        });
+    });
+    
+    - A. $(".example").setText("New Text");
+    - B. $(".example").html("New Text");
+    - C. $(this).text("New Text");
+    - D. $(".example").changeText("New Text");
+    - 答案：C
+ 
+
+12. 下列哪個方法可以用來從字串`str`中提取子字串並打印？
+    
+    var str = "Hello, world!";
+    var substr = ‘填入程式碼’;
+    console.log(substr);
+    ```
+    - A. str.extract(0, 5);
+    - B. str.substring(0, 5);
+    - C. str.substr(0, 5);
+    - D. str.slice(0, 5);
+    - 答案：D
+
+13. 在JavaScript中，如何檢查兩個值是否相等且類型也相同？
+    
+    var a = 5;
+    var b = "5";
+    if (‘填入程式碼’) {
+        console.log("相等");
+    } else {
+        console.log("不相等");
+    }
+    ```
+    - A. a == b
+    - B. a === b
+    - C. a = b
+    - D. a !== b
+    - 答案：B
+
+ 
+14. 使用jQuery設置元素的CSS樣式並打印結果，以下哪個是正確的語法？
+    
+    $(document).ready(function() {
+        ‘填入程式碼’ ("background-color", "red");
+        console.log($("#element").css("background-color"));
+    });
+    ```
+    - A. $("#element").style("background-color", "red");
+    - B. $("#element").attr("background-color", "red");
+    - C. $("#element").setStyle("background-color", "red");
+    - D. $("#element").css("background-color", "red");
+    - 答案：D
+
+15. 在jQuery中，如何將點擊事件綁定到元素並列印訊息？
+    
+    $(document).ready(function() {
+        ‘填入程式碼’ ("click", function() {
+            console.log("Element clicked!");
+        });
+    });
+    
+    - A. $("#element").bind("click", function(){});  
+    - B. $("#element").Click(function(){});
+    - C. $("#element").on("click", function(){});
+    - D. $("#element").attach("click", function(){});
+    - 答案：C
+16. 在JavaScript中，如何使用模板字串建包含變數的字串？
+    
+    var name = "John";
+    var age = 30;
+    var ‘填入程式碼’;
+    console.log(str);
+    ```
+    - A. var str = "My name is " + name + " and I am " + age + " years old.";
+    - B. var str = 'My name is ${name} and I am ${age} years old.';
+    - C. var str = "My name is ${name} and I am ${age} years old.";
+    - D. var str = `My name is ${name} and I am ${age} years old.`;
+    - 答案：D
+
+17. 使用jQuery隱藏元素，並在隱藏後打印訊息，以下哪個是正確的語法？
+    ```javascript
+    $(document).ready(function() {
+        ‘填入程式碼’(function() {
+            console.log("Element hidden");
+        });
+    });
+    ```
+    - A. $("#element").display("none", function(){});
+    - B. $("#element").hide(function(){});
+    - C. $("#element").invisible(function(){});
+    - D. $("#element").none(function(){});
+    - 答案：B
+
+18. 在JavaScript中，如何合併兩個陣列並打印結果？
+    
+    var arr1 = [1, 2, 3];
+    var arr2 = [4, 5, 6];
+    var ‘填入程式碼’;
+    console.log(arr3);
+    
+    - A. var arr3 = arr1.join(arr2);
+    - B. var arr3 = arr1.merge(arr2);
+    - C. var arr3 = arr1.concat(arr2);
+    - D. var arr3 = arr1.combine(arr2);
+    - 答案：C
+
+19. 使用jQuery從一個元素中刪除class，以下哪個是正確的語法？
+   
+    $(document).ready(function() {
+        ‘填入程式碼’("example");
+    });
+    - A. $("#element").deleteClass("example");
+    - B. $("#element").eraseClass("example");
+    - C. $("#element").removeClass("example");
+    - D. $("#element").stripClass("example");
+    - 答案：C
+
+20. 在JavaScript中，如何計算陣列`arr`的長度並打印？
+    
+    var arr = [1, 2, 3, 4, 5];
+    var ‘填入程式碼’;
+    console.log(length);
+    ```
+    - A. var length = arr.size();
+    - B. var length = arr.count();
+    - C. var length = arr.length();
+    - D. var length = arr.length;
+    - 答案：D
+
+21. 使用jQuery將內容附加到選定元素，以下哪個是正確的語法？
+   
+    $(document).ready(function() {
+        ‘填入程式碼’("<p>New content</p>");
+    });
+    ```
+    - A. $("#element").append("<p>New content</p>");
+    - B. $("#element").add("<p>New content</p>");
+    - C. $("#element").insert("<p>New content</p>");
+    - D. $("#element").push("<p>New content</p>");
+    - 答案：A
+
+22. 如何在JavaScript中反轉陣列`arr`？
+    
+    var arr = [1, 2, 3, 4, 5];
+    ‘填入程式碼’
+    console.log(arr);
+    ```
+    - A. arr.flip();
+    - B. arr.turn();
+    - C. arr.reverse();
+    - D. arr.invert();
+    - 答案：C
+ 
+
+23. 使用jQuery發送非同步的Ajax請求，以下哪個是正確的語法？
+   
+    $(document).ready(function() {
+        ‘填入程式碼’({
+            url: "https://api.example.com/data",
+            type: "GET",
+            success: function(response) {
+                console.log(response);
+            }
+        });
+    });
+    ```
+    - A. $.ajax({ url: "url", type: "GET", success: function(response) {} });
+    - B. $.request({ url: "url", method: "GET", success: function(response) {} });
+    - C. $.send({ url: "url", method: "GET", success: function(response) {} });
+    - D. $.call({ url: "url", method: "GET", success: function(response) {} });
+    - 答案：A
+
+24. 如何在JavaScript中從陣列`arr`中刪除索引為`2`的元素？
+    
+    var arr = [1, 2, 3, 4, 5];
+    ‘填入程式碼’;
+    console.log(arr);
+    ```
+    - A. arr.remove(2);
+    - B. arr.delete(2);
+    - C. arr.cut(2);
+    - D. arr.splice(2, 1);
+    - 答案：D
+ 
+
+25. 使用jQuery設置元素的HTML內容，以下哪個是正確的語法？
+    
+    $(document).ready(function() {
+        ‘填入程式碼’("<p>Example</p>");
+    });
+    ```
+    - A. $("#element").text("<p>Example</p>");
+    - B. $("#element").val("<p>Example</p>");
+    - C. $("#element").setHTML("<p>Example</p>");
+    - D. $("#element").html("<p>Example</p>");
+    - 答案：D
+
+26. 在JavaScript中，如何將字串`str`拆分為陣列？
+    
+    var str = "a,b,c,d";
+    var arr = ‘填入程式碼’;
+    console.log(arr);
+    ```
+    - A. str.divide(",");
+    - B. str.separate(",");
+    - C. str.scatter(",");
+    - D. str.split(",");
+    - 答案：D
+
+27. 使用jQuery獲取選定元素的值，以下哪個是正確的語法？
+    
+    $(document).ready(function() {
+        var value = ‘填入程式碼’;
+        console.log(value);
+    });
+    ```
+    - A. $("#element").Value();
+    - B. $("#element").fetch();
+    - C. $("#element").retrieve();
+    - D. $("#element").val();
+    - 答案：D
+
+28. 在JavaScript中，如何在數組的開始位置添加一個元素？
+   
+    var arr = [2, 3, 4, 5];
+    ‘填入程式碼’;
+    console.log(arr);
+    ```
+    - A. arr.push(1);
+    - B. arr.insert(1);
+    - C. arr.prepend(1);
+    - D. arr.unshift(1);
+    - 答案：D
+
+29. 使用jQuery檢查一個元素是否具有指定的class，以下哪個是正確的語法？
+   
+    $(document).ready(function() {
+        if (‘填入程式碼’("example")) {
+            console.log("Element has class 'example'");
+        }
+    });
+    ```
+    - A. $("#element").checkClass("example");
+    - B. $("#element").containsClass("example");
+    - C. $("#element").isClass("example");
+    - D. $("#element").hasClass("example");
+    - 答案：D
+
+30. 在JavaScript中，如何對陣列`arr`進行排序並列印結果？
+    
+    var arr = [5, 3, 8, 1, 2];
+    ‘填入程式碼’
+    console.log(arr);
+    ```
+    - A. arr.order();
+    - B. arr.arrange();
+    - C. arr.organize();
+    - D. arr.sort();
+    - 答案：D
+

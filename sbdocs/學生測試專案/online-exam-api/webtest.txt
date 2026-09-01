@@ -1,0 +1,454 @@
+1. 以下Servlet程式碼中，`doGet`方法會回傳什麼？
+   
+   protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+       response.setContentType("text/html");
+       PrintWriter out = response.getWriter();
+       out.println("<html><body>");
+       out.println("<h1>Hello, World</h1>");
+       out.println("</body></html>");
+   }
+  
+   a. "Hello, World" 文字  
+   b. 404 錯誤  
+   c. "<h1>Hello, World</h1>" 文字  
+   d. 500 錯誤
+
+2. 如何在Servlet中設置回應的內容類型為JSON？
+   
+   protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+       // 設置回應的內容類型
+   }
+ 
+   a. `response.setContentType("application/json");`  
+   b. `response.setContentType("text/json");`  
+   c. `response.setContentType("json/application");`  
+   d. `response.setContentType("json/text");`
+  
+
+ 
+3. 在JSP中如何輸出EL變數`user.name`的值？
+  
+   <%
+       request.setAttribute("user", new User("John"));
+   %>
+   <!-- 輸出user.name -->
+ 
+   a. `<%= user.name %>`  
+   b. `${user.name}`  
+   c. `<c:out value="${user.name}"/>`  
+   d. `<%= request.getAttribute("user.name") %>`
+  
+
+4. 下列哪個標籤用來動態包含另一個JSP頁面？
+   
+   <!-- 包含header.jsp -->
+  
+   a. `<jsp:import page="header.jsp" />` 
+   b. `<jsp:forward page="header.jsp" />`  
+   c. `<%@ include file="header.jsp" %>`  
+   d. `<jsp:include page="header.jsp" />`  
+
+  
+
+5. 如何在JSTL中迭代一個List並輸出每個元素？
+  
+   <%
+       List<String> items = Arrays.asList("item1", "item2", "item3");
+       request.setAttribute("items", items);
+   %>
+   <!-- 迭代並輸出 -->
+   
+   a. `<c:loop var="item" values="${items}">${item}</c:loop>`
+   b. `<c:iterate var="item" list="${items}">${item}</c:iterate>`  
+   c. `<c:forEach var="item" items="${items}">${item}</c:forEach>`    
+   d. `<c:each var="item" items="${items}">${item}</c:each>`
+  
+
+
+6. 使用JDBC執行SQL查詢並處理結果集的正確方法是什麼？
+  
+   String query = "SELECT * FROM users";
+   try (Connection con = DriverManager.getConnection(url, user, password);
+        Statement stmt = con.createStatement();
+        ResultSet rs = stmt.executeQuery(query)) {
+       while (rs.next()) {
+           System.out.println(rs.getString("username"));
+       }
+   } catch (SQLException e) {
+       e.printStackTrace();
+   }
+  
+   a. 程式發生錯誤
+   b. 程式正確  
+   c. 需添加finally塊  
+   d. 需使用PreparedStatement
+
+
+7. 在Servlet中如何發送重定向？
+  
+   protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+       // 重定向到新的URL
+   }
+  
+   a. `response.forward("newURL");`
+   b. `request.sendRedirect("newURL");`  
+   c. `request.forward("newURL");`  
+   d. `response.sendRedirect("newURL");` 
+   
+
+
+
+
+
+
+8. 在JSP中如何設置Bean的屬性？
+  
+   <jsp:useBean id="user" class="com.example.User" />
+   <!-- 設置user.name屬性 -->
+ 
+   a. `<jsp:setBeanProperty name="user" property="name" value="John" />`  
+   b. `<jsp:useProperty name="user" property="name" value="John" />`  
+   c. `<jsp:setProperty name="user" property="name" value="John" />`  
+   d. `<jsp:setProperty name="user" property="name" value="${name}" />`
+  
+
+9. 如何在Servlet中獲取客戶端的IP地址？
+  
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        String clientIP = // 獲取客戶端IP地址
+    }
+   
+    a. `request.getIPAddress();`
+    b. `request.getRemoteAddr();` 
+    c. `request.getClientAddress();`  
+    d. `request.getAddress();`
+   
+
+
+10. 如何在Servlet中設置請求的字符編碼為UTF-8？
+    
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // 設置請求字符編碼
+    }
+   
+    a. `response.setEncoding("UTF-8");` 
+    b. `response.setCharacterEncoding("UTF-8");`  
+    c. `request.setEncoding("UTF-8");`  
+    d. `request.setCharacterEncoding("UTF-8");`
+
+
+11. 如何在JSP中動態包含另一個JSP頁面且參數傳遞？
+    
+    <!-- 包含header.jsp並傳遞參數 -->
+  
+    a. `<jsp:forward page="header.jsp"><jsp:param name="param1" value="value1"/></jsp:forward>`  
+    b. `<jsp:include page="header.jsp"><jsp:param name="param1" value="value1"/></jsp:include>`  
+    c. `<%@ include file="header.jsp"><jsp:param name="param1" value="value1"/></%@ include>`  
+    d. `<jsp:import page="header.jsp"><jsp:param name="param1" value="value1"/></jsp:import>`
+ 
+
+
+12. 如何在JDBC中設置自動Transaction模式為false？
+    
+    try (Connection con = DriverManager.getConnection(url, user
+, password)) {
+        // 設置自動Transaction模式
+    }
+  
+    a. `con.setAutoCommit(false);`  
+    b. `con.disableAutoCommit();`  
+    c. `con.setCommitMode(false);`  
+    d. `con.disableCommit();`
+   
+
+ 
+13. 在JSP中如何獲取請求參數`username`？
+  
+    <!-- 獲取請求參數 -->
+   
+    a. `<%= request.getAttribute("username") %>` 
+    b. `<%= request.getParam("username") %>`  
+    c. `<%= request.getParameter("username") %>`  
+    d. `<%= request.getParameterValues("username")[0] %>`
+   
+
+14. 如何在EL中訪問Session範圍的屬性？
+    
+    <%
+        session.setAttribute("user", "John");
+    %>
+    <!-- 訪問Session屬性 -->
+ 
+    a. `${sessionContext.user}`
+    b. `${session.user}`  
+    c. `${sessionAttributes.user}`  
+    d. `${sessionScope.user}`
+ 
+
+    
+15. 在Servlet中如何獲取請求的上下文路徑？
+  
+   protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+       // 獲取上下文路徑
+   }
+ 
+   a. `request.getServletPath();`
+   b. `request.getContextPath();`  
+   c. `request.getRequestURI();`  
+   d. `request.getPathInfo();`
+
+
+
+16. 在JSP中如何轉發請求到另一個Servlet？
+  
+   <!-- 轉發請求到AnotherServlet -->
+   
+   a. `<c:include url="AnotherServlet"/>`
+   b. `<jsp:include page="AnotherServlet"/>`  
+   c. `<c:forward url="AnotherServlet"/>`  
+   d. `<jsp:forward page="AnotherServlet"/>` 
+
+17. 在EL中如何訪問ServletContext範圍內的屬性？ 
+   <%
+       getServletContext().setAttribute("appName", "MyApp");
+   %>
+   <!-- 訪問ServletContext範圍內的屬性 -->
+  
+   a. `${servletScope.appName}`  
+   b. `${contextScope.appName}`  
+   c. `${applicationScope.appName}` 
+   d. `${globalScope.appName}`
+ 
+
+18. 在JSTL中如何判斷變數是否為null？
+  
+   <%
+       request.setAttribute("name", null);
+   %>
+   <!-- 判斷變數是否為null -->
+  
+   a. `<c:if test="${name == null}">`  
+   b. `<c:if test="${name eq null}">`  
+   c. `<c:if test="${empty name}">`  
+   d. 以上皆是
+
+
+
+
+
+
+19. 在JSP中如何使用標籤庫？
+  
+   <!-- 使用標籤庫 -->
+   
+   a. `<%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>`  
+   b. `<%@ taglib url="http://java.sun.com/jsp/jstl/core" prefix="c" %>`  
+   c. `<%@ taglib namespace="http://java.sun.com/jsp/jstl/core" prefix="c" %>`  
+   d. `<%@ taglib uri="http://java.sun.com/jsp/jstl" prefix="c" %>`
+
+
+
+
+20. 如何在EL中比較兩個字符串是否相等？
+   
+   <%
+       request.setAttribute("str1", "hello");
+       request.setAttribute("str2", "hello");
+   %>
+   <!-- 比較str1和str2是否相等 -->
+ 
+   a. `${str1 equal str2}`
+   b. `${str1 == str2}`  
+   c. `${str1.equals(str2)}`  
+   d. `${str1 eq str2}` 
+  
+
+21. 在JDBC中如何設置查詢的最大列數？
+   
+    String query = "SELECT * FROM users";
+    try (Connection con = DriverManager.getConnection(url, user, password);
+         Statement stmt = con.createStatement()) {
+        // 設置最大行數為10
+    }
+   
+    a. `stmt.setMaxRows(10);`  
+    b. `stmt.setRowLimit(10);`  
+    c. `stmt.setMaxResults(10);`  
+    d. `stmt.setLimit(10);`
+    22. 在Servlet中如何設置回應的狀態碼為404？
+  
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        // 設置狀態碼為404
+    }
+  
+    a. `response.setStatus(HttpServletResponse.SC_NOT_FOUND);`  
+    b. `response.sendError(HttpServletResponse.SC_NOT_FOUND);`  
+    c. `response.setError(HttpServletResponse.SC_NOT_FOUND);`  
+    d. `response.setResponseCode(HttpServletResponse.SC_NOT_FOUND);`
+   
+
+23. 在JSP中如何使用EL訪問JavaBean的屬性？
+   
+    <%
+        User user = new User("John", "Doe");
+        request.setAttribute("user", user);
+    %>
+    <!-- 訪問user的firstName屬性 -->
+    
+    a. `${user.firstName}`  
+    b. `${user.getFirstName()}`  
+    c. `${user["firstName"]}`  
+    d. `${user[firstName]}`
+
+24. 在JSTL中如何判斷List是否為空？
+   
+    <%
+        List<String> items = new ArrayList<>();
+        request.setAttribute("items", items);
+    %>
+    <!-- 判斷List是否為空 -->
+   
+    a. `<c:if test="${items.size() == 0}">`
+ b. `<c:if test="${items == null}">`  
+    c. `<c:if test="${empty items}">`  
+    d. `<c:if test="${items.isEmpty()}">`
+25. 在EL中如何使用運算表達式計算兩個數字的和？
+  
+   <%
+       request.setAttribute("num1", 10);
+       request.setAttribute("num2", 20);
+   %>
+   <!-- 計算兩個數字的和 -->
+ 
+   a. `${num1 }+${num2}`  
+   b. `${num1 + num2}`  
+   c. `${num1.plus(num2)}`  
+   d. `${num1.concat(num2)}`
+  
+
+
+26. 在JDBC中如何執行批量更新？
+  
+   String sql = "INSERT INTO users (username, password) VALUES (?, ?)";
+   try (Connection con = DriverManager.getConnection(url, user, password);
+        PreparedStatement pstmt = con.prepareStatement(sql)) {
+       pstmt.setString(1, "user1");
+       pstmt.setString(2, "pass1");
+       pstmt.addBatch();
+       pstmt.setString(1, "user2");
+       pstmt.setString(2, "pass2");
+       pstmt.addBatch();
+       // 執行批量更新
+   }
+   
+   a. `pstmt.executeUpdateBatch();`
+   b. `pstmt.executeBatchUpdate();`  
+   c. `pstmt.batchUpdate();`  
+   d. `pstmt.executeBatch();` 
+
+
+
+
+
+27. 在Servlet中如何取得所有請求參數的名稱？
+   protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+       // 取得所有請求參數的名稱
+   }
+ 
+   a. `request.getParameterValues();`  
+   b. `request.getParameterNames();` 
+   c. `request.getParameterList();`  
+   d. `request.getParameterMap();`
+
+
+
+
+28. 在JSP中如何使用標籤庫來處理SQL查詢？
+  
+   <%@ taglib uri="http://java.sun.com/jsp/jstl/sql" prefix="sql" %>
+   <sql:setDataSource var="ds" driver="com.mysql.cj.jdbc.Driver" url="jdbc:mysql://localhost:3306/mydb" user="root" password="password"/>
+   <sql:query dataSource="${ds}" var="result">
+       SELECT * FROM users
+   </sql:query>
+   <c:forEach var="row" items="${result.rows}">
+       <!-- 顯示查詢結果 -->
+   </c:forEach>
+
+   a. `<c:forEach var="row" items="${result.rows}"><c:out value="${row.username}"/></c:forEach>`  
+   b. `<c:forEach var="row" items="${result.rows}"><c:out value="${row['username']}"/></c:forEach>`  
+   c. `<c:forEach var="row" items="${result.rows}"><c:out value="${row.get('username')}"/></c:forEach>`  
+   d. `<c:forEach var="row" items="${result.rows}"><c:out value="${row['username']}"/></c:forEach>`
+   
+
+
+
+29. 在JDBC中如何使用事務？
+  
+    try (Connection con = DriverManager.getConnection(url, user, password)) {
+        con.setAutoCommit(false);
+        try (PreparedStatement pstmt = con.prepareStatement("INSERT INTO users (username, password) VALUES (?, ?)")) {
+            pstmt.setString(1, "user1");
+            pstmt.setString(2, "pass1");
+            pstmt.executeUpdate();
+            pstmt.setString(1, "user2");
+            pstmt.setString(2, "pass2");
+            pstmt.executeUpdate();
+            // 提交異動
+        } catch (SQLException e) {
+            // 回復異動
+        }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+   
+    a. `con.complete();
+    b. `con.finish();`  
+    c. `con.commit();``  
+    d. `con.end();`
+
+30. 在JSTL中如何遍歷List中的特定範圍？
+    
+    <%
+        List<String> items = Arrays.asList("one", "two", "three", "four");
+        request.setAttribute("items", items);
+    %>
+    <!-- 遍歷List中的特定範圍 -->
+  
+    a. `<c:forEach var="item" items="${items}" begin="1" end="2">`  
+    b. `<c:forEach var="item" items="${items}" beginIndex="1" endIndex="2">`  
+    c. `<c:forEach var="item" items="${items}" start="1" finish="2">`  
+    d. `<c:forEach var="item" items="${items}" from="1" to="2">`
+
+java web  basic test:
+
+1. A
+2. A
+3. B
+4. D
+5. C
+6. B
+7. D
+8. C
+9. B
+10. D
+11. B
+12. A
+13. C
+14. D
+15. B
+16. D
+17. C
+18. D
+19. A
+20. D
+21. A
+22. B
+23. A
+24. C
+25. B
+26. D
+27. B
+28. B
+29. C
+30. A
+
