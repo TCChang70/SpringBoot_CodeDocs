@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getExamDetail, addQuestion, updateQuestion, deleteQuestion, setExamStatus, batchImportQuestions } from '../../api/examApi'
+import OptionText from '../../components/OptionText'
 
 const EMPTY = {
   questionText: '', optionA: '', optionB: '', optionC: '', optionD: '',
@@ -533,7 +534,7 @@ export default function ExamDetailPage() {
                       style={q.correctAnswer === opt ? { background: 'var(--success)', color: 'white' } : {}}>
                       {opt}
                     </span>
-                    <span>{q[`option${opt}`]}</span>
+                    <OptionText value={q[`option${opt}`]} />
                     {q.correctAnswer === opt && (
                       <span style={{ marginLeft: 'auto', fontSize: '.75rem', color: 'var(--success)', fontWeight: 700 }}>
                         ✓ 正確答案

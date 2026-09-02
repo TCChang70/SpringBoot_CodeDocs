@@ -175,6 +175,21 @@ a:hover { text-decoration: underline; }
 .option.selected .option-label { background: var(--primary); color: white; }
 .option.correct  .option-label { background: var(--success);  color: white; }
 .option.wrong    .option-label { background: var(--danger);   color: white; }
+.option-text { white-space: pre-wrap; line-height: 1.5; }
+.option-code {
+  margin: .25rem 0;
+  padding: .5rem .625rem;
+  background: #0f172a;
+  color: #e2e8f0;
+  border-radius: 6px;
+  font-size: .85rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  flex: 1;
+  min-width: 0;
+}
+.option:has(.option-code) { align-items: flex-start; }
+.option:has(.option-code) .option-label { margin-top: .25rem; }
 
 /* ── Result card ───────────────────────────────────── */
 .result-big-score { font-size: 3.5rem; font-weight: 800; color: var(--primary); line-height: 1; }

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getExamForStudent, submitExam } from '../../api/examApi'
+import OptionText from '../../components/OptionText'
 
 const GRADE_COLOR = { A: '#065f46', B: '#1e40af', C: '#92400e', D: '#9a3412', F: '#991b1b' }
 
@@ -21,7 +22,7 @@ function OptionRow({ q, opt, selected, onSelect, readOnly }) {
       onClick={() => { if (!readOnly) onSelect(opt) }}
     >
       <span className="option-label">{opt}</span>
-      <span>{q[`option${opt}`]}</span>
+      <OptionText value={q[`option${opt}`]} />
       {checked && <span style={{ marginLeft: 'auto', color: 'var(--success)', fontWeight: 700 }}>✓</span>}
     </button>
   )
@@ -225,7 +226,7 @@ export default function TakeExamPage() {
                   {['A', 'B', 'C', 'D'].map(opt => (
                     <div key={opt} className={`option${selected === opt ? ' selected' : ''}`}>
                       <span className="option-label">{opt}</span>
-                      <span>{qq[`option${opt}`]}</span>
+                      <OptionText value={qq[`option${opt}`]} />
                       {selected === opt && <span style={{ marginLeft: 'auto', color: 'var(--success)', fontWeight: 700 }}>我的答案</span>}
                     </div>
                   ))}
