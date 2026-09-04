@@ -6,6 +6,20 @@ import OptionText from '../../components/OptionText'
 
 const GRADE_COLOR = { A: '#065f46', B: '#1e40af', C: '#92400e', D: '#9a3412', F: '#991b1b' }
 
+const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
+
+function questionOptions(q) {
+  return OPTION_LETTERS.filter(o => q[`option${o}`] !== undefined && q[`option${o}`] !== null && String(q[`option${o}`]).trim() !== '')
+}
+
+function parseSelected(value) {
+  return (value || '').split(',').map(s => s.trim()).filter(Boolean)
+}
+
+function formatSelected(list) {
+  return [...list].sort().join(',')
+}
+
 function formatTime(secs) {
   const m = Math.floor(secs / 60).toString().padStart(2, '0')
   const s = (secs % 60).toString().padStart(2, '0')
@@ -13,7 +27,8 @@ function formatTime(secs) {
 }
 
 function OptionRow({ q, opt, selected, onSelect, readOnly }) {
-  const checked = selected === opt
+  const selectedList = parseSelected(selected)
+  const checked = selectedList.includes(opt)
   return (
     <button
       type="button"
@@ -23,7 +38,7 @@ function OptionRow({ q, opt, selected, onSelect, readOnly }) {
     >
       <span className="option-label">{opt}</span>
       <OptionText value={q[`option${opt}`]} />
-      {checked && <span style={{ marginLeft: 'auto', color: 'var(--success)', fontWeight: 700 }}>✓</span>}
+      {checked && <span style={{ marginLeft: 'auto', color: 'var(--success)', fontWeight: 700 }}>{q.multiSelect ? '☑' : '✓'}</span>}
     </button>
   )
 }
@@ -66,8 +81,21 @@ export default function TakeExamPage() {
     setPhase('exam')
   }
 
+  function handleSelect(question, opt) {
+    setAnswers(prev => {
+      const key = String(question.id)
+      const current = parseSelected(prev[key])
+      if (question.multiSelect) {
+        const next = current.includes(opt) ? current.filter(x => x !== opt) : [...current, opt]
+        return { ...prev, [key]: next.length ? formatSelected(next) : '' }
+      }
+      return { ...prev, [key]: current.includes(opt) ? '' : opt }
+    })
+  }
+
   async function handleSubmit() {
-    const unanswered = (exam?.questions?.length ?? 0) - Object.keys(answers).length
+    const answeredCount = Object.values(answers).filter(Boolean).length
+    const unanswered = (exam?.questions?.length ?? 0) - answeredCount
     if (unanswered > 0 && !window.confirm(`尚有 ${unanswered} 題未作答，確定要提交嗎？`)) return
     setSubmitting(true)
     setError('')
@@ -131,7 +159,7 @@ export default function TakeExamPage() {
   }
 
   const total = exam.questions.length
-  const answered = Object.keys(answers).length
+  const answered = Object.values(answers).filter(Boolean).length
   const isWarning = timeLeft !== null && timeLeft < 300
   const q = exam.questions[currentIdx]
 
@@ -223,13 +251,16 @@ export default function TakeExamPage() {
                 </div>
                 <div className="question-text">{qq.questionText}</div>
                 <div className="options" style={{ pointerEvents: 'none' }}>
-                  {['A', 'B', 'C', 'D'].map(opt => (
-                    <div key={opt} className={`option${selected === opt ? ' selected' : ''}`}>
-                      <span className="option-label">{opt}</span>
-                      <OptionText value={qq[`option${opt}`]} />
-                      {selected === opt && <span style={{ marginLeft: 'auto', color: 'var(--success)', fontWeight: 700 }}>我的答案</span>}
-                    </div>
-                  ))}
+                  {questionOptions(qq).map(opt => {
+                    const isChosen = parseSelected(selected).includes(opt)
+                    return (
+                      <div key={opt} className={`option${isChosen ? ' selected' : ''}`}>
+                        <span className="option-label">{opt}</span>
+                        <OptionText value={qq[`option${opt}`]} />
+                        {isChosen && <span style={{ marginLeft: 'auto', color: 'var(--success)', fontWeight: 700 }}>我的答案</span>}
+                      </div>
+                    )
+                  })}
                 </div>
                 {!selected && (
                   <div className="text-sm" style={{ marginTop: '.5rem', color: '#ef4444', fontWeight: 500 }}>
@@ -259,16 +290,16 @@ export default function TakeExamPage() {
         /* ── Single question screen ── */
         <div>
           <div className="question-card">
-            <div className="question-number">第 {currentIdx + 1} 題 · {q.points} 分</div>
+            <div className="question-number">第 {currentIdx + 1} 題 · {q.points} 分{q.multiSelect && <span style={{ color: 'var(--primary)', marginLeft: '.5rem', fontWeight: 600 }}>（複選題）</span>}</div>
             <div className="question-text">{q.questionText}</div>
             <div className="options">
-              {['A', 'B', 'C', 'D'].map(opt => (
+              {questionOptions(q).map(opt => (
                 <OptionRow
                   key={opt}
                   q={q}
                   opt={opt}
                   selected={answers[String(q.id)]}
-                  onSelect={o => setAnswers(prev => ({ ...prev, [String(q.id)]: o }))}
+                  onSelect={o => handleSelect(q, o)}
                 />
               ))}
             </div>

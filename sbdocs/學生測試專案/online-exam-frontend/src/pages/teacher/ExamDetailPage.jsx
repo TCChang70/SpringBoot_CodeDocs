@@ -4,17 +4,33 @@ import { useAuth } from '../../context/AuthContext'
 import { getExamDetail, addQuestion, updateQuestion, deleteQuestion, setExamStatus, batchImportQuestions } from '../../api/examApi'
 import OptionText from '../../components/OptionText'
 
+const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
+
 const EMPTY = {
   questionText: '', optionA: '', optionB: '', optionC: '', optionD: '',
-  correctAnswer: 'A', points: 1,
+  optionE: '', optionF: '', optionG: '', optionH: '', optionI: '',
+  multiSelect: false, correctAnswer: 'A', points: 1,
+}
+
+function questionOptions(q) {
+  return OPTION_LETTERS.filter(o => q[`option${o}`] !== undefined && q[`option${o}`] !== null && String(q[`option${o}`]).trim() !== '')
+}
+
+function parseAnswers(value) {
+  return (value || '').split(',').map(s => s.trim()).filter(Boolean)
+}
+
+function formatAnswers(list) {
+  return [...list].sort().join(',')
 }
 
 // 下載 CSV 範例模板
 function downloadTemplate() {
   const template =
-    '題目\t選項A\t選項B\t選項C\t選項D\t正確答案\t配分\n' +
-    'Java 中哪個關鍵字用於建立物件實例？\tcreate\tnew\tinstance\tmake\tB\t2\n' +
-    '以下哪個不是 Java 的基本資料型別？\tint\tboolean\tString\tdouble\tC\t2\n'
+    '題目\t選項A\t選項B\t選項C\t選項D\t選項E\t選項F\t正確答案\t配分\n' +
+    'Java 中哪個關鍵字用於建立物件實例？\tcreate\tnew\tinstance\tmake\t\t\tB\t2\n' +
+    '以下哪個不是 Java 的基本資料型別？\tint\tboolean\tString\tdouble\t\t\tC\t2\n' +
+    '以下哪些是 Java 的基本資料型別？（多選）\tint\tString\tboolean\tlong\t\t\tA,C\t2\n'
   const blob = new Blob(['\uFEFF' + template], { type: 'text/csv;charset=utf-8' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
@@ -35,7 +51,7 @@ function QuestionForm({ initial, onSave, onCancel, saving }) {
       <h3 style={{ fontWeight: 700, marginBottom: '1rem', color: 'var(--teacher)' }}>
         {initial.questionText ? '✏️ 編輯題目' : '➕ 新增題目'}
       </h3>
-      <form onSubmit={e => { e.preventDefault(); onSave(form) }}>
+      <form onSubmit={e => { e.preventDefault(); if (form.correctAnswer.trim() === '') { alert('請至少選擇一個正確答案'); return } onSave(form) }}>
         <div className="form-group">
           <label className="form-label">題目內容 *</label>
           <textarea className="form-textarea" value={form.questionText}
@@ -44,30 +60,58 @@ function QuestionForm({ initial, onSave, onCancel, saving }) {
         </div>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-          {['A', 'B', 'C', 'D'].map(opt => (
+          {OPTION_LETTERS.map(opt => (
             <div key={opt} className="form-group">
               <label className="form-label">
                 選項 {opt}
-                {form.correctAnswer === opt && (
+                {parseAnswers(form.correctAnswer).includes(opt) && (
                   <span style={{ marginLeft: '.5rem', color: 'var(--success)', fontSize: '.8rem' }}>✓ 正確答案</span>
                 )}
               </label>
               <input className="form-input" value={form[`option${opt}`]}
                 onChange={e => set(`option${opt}`, e.target.value)}
-                placeholder={`選項 ${opt}`} required />
+                placeholder={`選項 ${opt}`} required={opt === 'A' || opt === 'B' || opt === 'C' || opt === 'D'} />
             </div>
           ))}
         </div>
 
-        <div style={{ display: 'flex', gap: '1rem' }}>
-          <div className="form-group" style={{ flex: 1 }}>
-            <label className="form-label">正確答案 *</label>
-            <select className="form-select" value={form.correctAnswer}
-              onChange={e => set('correctAnswer', e.target.value)}>
-              {['A', 'B', 'C', 'D'].map(o => <option key={o}>{o}</option>)}
-            </select>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-start' }}>
+          <div className="form-group" style={{ flex: 1, minWidth: 220 }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+              <input type="checkbox" checked={form.multiSelect}
+                onChange={e => set('multiSelect', e.target.checked)} />
+              此題為<strong>多選題</strong>（可選多個正確答案）
+            </label>
+            <div style={{ fontSize: '.85rem', color: '#6b7280', marginTop: '.25rem' }}>
+              依序點選下方勾選框設定正確答案{form.multiSelect ? '（可勾選多個）' : '（單選）'}
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '.4rem', marginTop: '.5rem' }}>
+              {questionOptions(form).map(o => {
+                const checked = parseAnswers(form.correctAnswer).includes(o)
+                return (
+                  <label key={o} className="btn btn-sm" style={{
+                    cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '.25rem',
+                    background: checked ? 'var(--success)' : 'var(--gray-100)',
+                    color: checked ? 'white' : 'inherit',
+                  }}>
+                    <input type="checkbox" checked={checked}
+                      style={{ margin: 0 }}
+                      onChange={() => {
+                        const cur = parseAnswers(form.correctAnswer)
+                        if (form.multiSelect) {
+                          const next = checked ? cur.filter(x => x !== o) : [...cur, o]
+                          set('correctAnswer', next.length ? formatAnswers(next) : form.correctAnswer)
+                        } else {
+                          set('correctAnswer', checked ? '' : o)
+                        }
+                      }} />
+                    {o}
+                  </label>
+                )
+              })}
+            </div>
           </div>
-          <div className="form-group" style={{ flex: 1 }}>
+          <div className="form-group" style={{ flex: 1, maxWidth: 160 }}>
             <label className="form-label">配分</label>
             <input type="number" className="form-input" value={form.points}
               onChange={e => set('points', Number(e.target.value))} min={1} />
@@ -191,20 +235,32 @@ export default function ExamDetailPage() {
         : splitCsvLine(lines[i]).map(c => c.trim())
       const lineNo = i + 1
       if (cols.length < 7) {
-        throw new Error(`第 ${lineNo} 行僅有 ${cols.length} 欄，需包含 7 欄：題目、選項A、選項B、選項C、選項D、正確答案、配分`)
+        throw new Error(`第 ${lineNo} 行僅有 ${cols.length} 欄，需包含至少 7 欄：題目、選項A～D、正確答案、配分`)
       }
-      const correct = cols[5].toUpperCase()
-      if (!['A', 'B', 'C', 'D'].includes(correct)) {
-        throw new Error(`第 ${lineNo} 行正確答案「${cols[5]}」無效，必須是 A / B / C / D`)
+      // 最後兩欄為「正確答案」「配分」；中間欄位為選項 A…I
+      const correctRaw = cols[cols.length - 2]
+      const points = parseInt(cols[cols.length - 1], 10)
+      const correct = correctRaw.toUpperCase()
+      const correctParts = correct.split(',').map(c => c.trim()).filter(Boolean)
+      if (correctParts.length === 0 || correctParts.some(c => !['A','B','C','D','E','F','G','H','I'].includes(c))) {
+        throw new Error(`第 ${lineNo} 行正確答案「${correctRaw}」無效，必須是 A~I 的組合（多選以逗號分隔，如 A,C）`)
       }
-      const points = parseInt(cols[6], 10)
-      questions.push({
+      const optionCount = cols.length - 3
+      if (optionCount > 9) {
+        throw new Error(`第 ${lineNo} 行選項過多（${optionCount} 個），最多 9 個（A~I）`)
+      }
+      const optLetters = OPTION_LETTERS.slice(0, optionCount)
+      const q = {
         lineNo,
         questionText: cols[0],
-        optionA: cols[1], optionB: cols[2], optionC: cols[3], optionD: cols[4],
-        correctAnswer: correct,
+        optionA: '', optionB: '', optionC: '', optionD: '',
+        optionE: '', optionF: '', optionG: '', optionH: '', optionI: '',
+        multiSelect: correctParts.length > 1,
+        correctAnswer: correctParts.join(','),
         points: Number.isNaN(points) || points < 1 ? 1 : points,
-      })
+      }
+      optLetters.forEach((letter, idx) => { q[`option${letter}`] = cols[1 + idx] })
+      questions.push(q)
     }
     return questions
   }
@@ -326,7 +382,7 @@ export default function ExamDetailPage() {
                   支援 <strong>.csv</strong> 檔或直接貼上文字；欄位可用 <strong>逗號（,）</strong> 或 <strong>Tab</strong> 分隔，系統會自動判斷。
                 </li>
                 <li>
-                  每「行」代表一題，固定 <strong>7 欄</strong>，順序如下：
+                  每「行」代表一題，欄位順序如下：<strong>題目、選項A、選項B、選項C、選項D、（選項E～I 可省略）、正確答案、配分</strong>
                 </li>
               </ol>
               <div className="table-wrapper" style={{ margin: '.5rem 0' }}>
@@ -342,17 +398,19 @@ export default function ExamDetailPage() {
                     <tr><td>3. 選項B</td><td>選項 B 內容</td><td>create</td></tr>
                     <tr><td>4. 選項C</td><td>選項 C 內容</td><td>make</td></tr>
                     <tr><td>5. 選項D</td><td>選項 D 內容</td><td>instance</td></tr>
-                    <tr><td>6. 正確答案</td><td>僅可填 A / B / C / D</td><td>A</td></tr>
-                    <tr><td>7. 配分</td><td>正整數，預設 1</td><td>2</td></tr>
+                    <tr><td>6~9. 選項E~I</td><td>選用，最多到 I</td><td>（可空白）</td></tr>
+                    <tr><td>末2. 正確答案</td><td>A~I；多選以逗號分隔（如 A,C）</td><td>A</td></tr>
+                    <tr><td>末1. 配分</td><td>正整數，預設 1</td><td>2</td></tr>
                   </tbody>
                 </table>
               </div>
               <div style={{ fontSize: '.8rem', lineHeight: 1.7 }}>
                 <div>✅ 第一行若為標題列（如「題目,選項A,...」）會自動略過。</div>
                 <div>🔹 分隔符：逗號 或 Tab 皆可；分數可留空（預設 1 分）。</div>
+                <div>🔹 多選題：正確答案欄填多個字母並以逗號分隔（如 <strong>A,C</strong>），系統會自動辨識為多選題。</div>
                 <div>📝 完整「一行」範例：</div>
                 <code style={{ display: 'block', background: '#fff', border: '1px solid #bfdbfe', borderRadius: 6, padding: '.5rem .75rem', margin: '.35rem 0', whiteSpace: 'pre-wrap' }}>
-                  Java 中哪個關鍵字建立物件？,new,create,make,instance,A,2
+                  Java 中哪個關鍵字建立物件？,new,create,make,instance,,,,A,2
                 </code>
                 <button className="btn btn-ghost btn-sm" onClick={downloadTemplate}
                   style={{ marginTop: '.25rem' }}>
@@ -441,17 +499,14 @@ export default function ExamDetailPage() {
               <div className="table-wrapper">
                 <table>
                   <thead>
-                    <tr><th>#</th><th>題目</th><th>A</th><th>B</th><th>C</th><th>D</th><th>答案</th><th>分</th></tr>
+                    <tr><th>#</th><th>題目</th>{OPTION_LETTERS.map(o => <th key={o}>{o}</th>)}<th>答案</th><th>分</th></tr>
                   </thead>
                   <tbody>
                     {importPreview.slice(0, 10).map((q, idx) => (
                       <tr key={idx}>
                         <td className="text-muted text-sm">{idx + 1}</td>
                         <td className="text-sm">{q.questionText}</td>
-                        <td className="text-sm">{q.optionA}</td>
-                        <td className="text-sm">{q.optionB}</td>
-                        <td className="text-sm">{q.optionC}</td>
-                        <td className="text-sm">{q.optionD}</td>
+                        {OPTION_LETTERS.map(o => <td key={o} className="text-sm">{q[`option${o}`]}</td>)}
                         <td style={{ fontWeight: 600, color: 'var(--success)' }}>{q.correctAnswer}</td>
                         <td className="text-sm">{q.points}</td>
                       </tr>
@@ -505,7 +560,10 @@ export default function ExamDetailPage() {
               <QuestionForm
                 key={q.id}
                 initial={{ questionText: q.questionText, optionA: q.optionA, optionB: q.optionB,
-                           optionC: q.optionC, optionD: q.optionD, correctAnswer: q.correctAnswer, points: q.points }}
+                           optionC: q.optionC, optionD: q.optionD,
+                           optionE: q.optionE || '', optionF: q.optionF || '', optionG: q.optionG || '',
+                           optionH: q.optionH || '', optionI: q.optionI || '',
+                           multiSelect: q.multiSelect, correctAnswer: q.correctAnswer, points: q.points }}
                 onSave={form => handleSave(form, q.id)}
                 onCancel={() => setEditingId(null)}
                 saving={saving}
@@ -515,7 +573,7 @@ export default function ExamDetailPage() {
           return (
             <div key={q.id} className="question-card" style={{ borderLeft: '4px solid var(--teacher)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.5rem' }}>
-                <div className="question-number">第 {idx + 1} 題 · {q.points} 分</div>
+                <div className="question-number">第 {idx + 1} 題 · {q.points} 分{q.multiSelect && <span style={{ marginLeft: '.5rem', color: 'var(--teacher)' }}>（多選）</span>}</div>
                 <div style={{ display: 'flex', gap: '.4rem' }}>
                   <button className="btn btn-ghost btn-sm"
                     onClick={() => { setEditingId(q.id); setShowAddForm(false) }}>
@@ -528,20 +586,23 @@ export default function ExamDetailPage() {
               </div>
               <div className="question-text">{q.questionText}</div>
               <div className="options" style={{ pointerEvents: 'none' }}>
-                {['A', 'B', 'C', 'D'].map(opt => (
-                  <div key={opt} className={`option${q.correctAnswer === opt ? ' correct' : ''}`}>
-                    <span className="option-label"
-                      style={q.correctAnswer === opt ? { background: 'var(--success)', color: 'white' } : {}}>
-                      {opt}
-                    </span>
-                    <OptionText value={q[`option${opt}`]} />
-                    {q.correctAnswer === opt && (
-                      <span style={{ marginLeft: 'auto', fontSize: '.75rem', color: 'var(--success)', fontWeight: 700 }}>
-                        ✓ 正確答案
+                {questionOptions(q).map(opt => {
+                  const correct = parseAnswers(q.correctAnswer).includes(opt)
+                  return (
+                    <div key={opt} className={`option${correct ? ' correct' : ''}`}>
+                      <span className="option-label"
+                        style={correct ? { background: 'var(--success)', color: 'white' } : {}}>
+                        {opt}
                       </span>
-                    )}
-                  </div>
-                ))}
+                      <OptionText value={q[`option${opt}`]} />
+                      {correct && (
+                        <span style={{ marginLeft: 'auto', fontSize: '.75rem', color: 'var(--success)', fontWeight: 700 }}>
+                          ✓ 正確答案
+                        </span>
+                      )}
+                    </div>
+                  )
+                })}
               </div>
             </div>
           )
