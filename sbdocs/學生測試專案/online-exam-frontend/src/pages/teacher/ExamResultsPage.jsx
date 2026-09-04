@@ -1,9 +1,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { getExamResults } from '../../api/examApi'
+import { getExamResults, getExamResultDetail } from '../../api/examApi'
+import OptionText from '../../components/OptionText'
 
 const GRADE_BG = { A:'#10b981', B:'#3b82f6', C:'#f59e0b', D:'#f97316', F:'#ef4444' }
+
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
 
 export default function ExamResultsPage() {
   const { id } = useParams()
@@ -12,6 +15,9 @@ export default function ExamResultsPage() {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [detail, setDetail] = useState(null)
+  const [detailLoading, setDetailLoading] = useState(false)
+  const [detailError, setDetailError] = useState('')
 
   useEffect(() => {
     getExamResults(auth.token, id)
@@ -19,6 +25,16 @@ export default function ExamResultsPage() {
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [auth.token, id])
+
+  function viewResult(r) {
+    setDetailError('')
+    setDetailLoading(true)
+    setDetail(null)
+    getExamResultDetail(auth.token, id, r.id)
+      .then(setDetail)
+      .catch(err => setDetailError(err.message))
+      .finally(() => setDetailLoading(false))
+  }
 
   if (loading) return <div className="loading">⏳ 載入成績中...</div>
 
@@ -116,6 +132,7 @@ export default function ExamResultsPage() {
                     <th>得分率</th>
                     <th>等級</th>
                     <th>提交時間</th>
+                    <th>作答紀錄</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -152,6 +169,11 @@ export default function ExamResultsPage() {
                       <td className="text-sm text-muted">
                         {new Date(r.submittedAt).toLocaleString('zh-TW')}
                       </td>
+                      <td>
+                        <button className="btn btn-sm btn-teacher" onClick={() => viewResult(r)}>
+                          📋 查看作答
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -159,6 +181,93 @@ export default function ExamResultsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* ── 作答紀錄 modal ─────────────────────────── */}
+      {(detail || detailLoading) && (
+        <div className="modal-overlay" onMouseDown={e => { if (e.target === e.currentTarget) setDetail(null) }}>
+          <div className="modal">
+            <div className="modal-header">
+              <h2 className="modal-title">作答紀錄</h2>
+              <button className="btn btn-ghost btn-sm" onClick={() => setDetail(null)}>✕ 關閉</button>
+            </div>
+
+            {detailError && <div className="alert alert-error">{detailError}</div>}
+
+            {detailLoading ? (
+              <div className="loading">⏳ 載入作答紀錄中...</div>
+            ) : detail && (
+              <>
+                <div className="answers-summary">
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '1.05rem' }}>{detail.studentName}</div>
+                    <div className="text-muted text-sm">
+                      {detail.studentClass || '—'} · {new Date(detail.submittedAt).toLocaleString('zh-TW')}
+                    </div>
+                  </div>
+                  <div className="answers-summary-stats">
+                    <div className="answer-stat">
+                      <span className="answer-stat-num" style={{ color: 'var(--primary)' }}>{detail.score}</span>
+                      <span className="answer-stat-label">得分 / {detail.totalPoints}</span>
+                    </div>
+                    <div className="answer-stat">
+                      <span className="answer-stat-num" style={{ color: detail.grade === 'F' ? 'var(--danger)' : GRADE_BG[detail.grade] }}>
+                        {detail.grade}
+                      </span>
+                      <span className="answer-stat-label">等級</span>
+                    </div>
+                    <div className="answer-stat">
+                      <span className="answer-stat-num" style={{ color: 'var(--success)' }}>{detail.correctCount}</span>
+                      <span className="answer-stat-label">答對 / {detail.answers.length}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="answers-list">
+                  {detail.answers.map((a, idx) => {
+                    const correctParts = String(a.correctAnswer || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
+                    const studentParts = String(a.studentAnswer || '').split(',').map(s => s.trim().toUpperCase()).filter(Boolean)
+                    return (
+                      <div key={a.questionId} className={`answer-item ${a.correct ? 'answer-item-correct' : 'answer-item-wrong'}`}>
+                        <div className="answer-item-head">
+                          <span className="answer-idx">題{idx + 1}</span>
+                          <span className={`answer-badge ${a.correct ? 'answer-badge-ok' : 'answer-badge-no'}`}>
+                            {a.correct ? '✓ 答對' : '✗ 答錯'}
+                          </span>
+                          {a.multiSelect && <span className="answer-multi">複選</span>}
+                          {a.points != null && <span className="text-muted text-sm">{a.points} 分</span>}
+                        </div>
+                        <div className="question-text" style={{ marginBottom: '.5rem' }}>{a.questionText}</div>
+                        <div className="answer-code-lines">
+                          {LETTERS.filter(l => a[`option${l}`] != null && String(a[`option${l}`]).trim() !== '').map(l => {
+                            const isCorrect = correctParts.includes(l)
+                            const isStudent = studentParts.includes(l)
+                            return (
+                              <div key={l} className={`answer-option ${isCorrect ? 'answer-option-correct' : ''} ${(isStudent && !isCorrect) ? 'answer-option-wrong' : ''}`}>
+                                <span className="answer-option-label">{l}</span>
+                                <div className="answer-option-body">
+                                  <OptionText value={a[`option${l}`]} />
+                                  <div className="answer-option-chips">
+                                    {isCorrect && <span className="chip chip-correct">正確答案</span>}
+                                    {isStudent && isCorrect && <span className="chip chip-student-ok">學生選擇</span>}
+                                    {(isStudent && !isCorrect) && <span className="chip chip-student-wrong">學生誤選</span>}
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                        {studentParts.length === 0 && (
+                          <div className="answer-unanswered">本題未作答</div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
       )}
     </>
   )

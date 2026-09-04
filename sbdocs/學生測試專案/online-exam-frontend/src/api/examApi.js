@@ -55,3 +55,5 @@ export const deleteTeacher  = (token, id)        => fetch(`${BASE}/teachers/${id
 /* ── Results ──────────────────────────────────────── */
 export const getMyResults   = (token)         => fetch(`${BASE}/results/my`,           { headers: authHeader(token) }).then(handle)
 export const getExamResults = (token, examId) => fetch(`${BASE}/results/exam/${examId}`,{ headers: authHeader(token) }).then(handle)
+export const getExamResultDetail = (token, examId, resultId) =>
+  fetch(`${BASE}/results/exam/${examId}/${resultId}`, { headers: authHeader(token) }).then(handle)
