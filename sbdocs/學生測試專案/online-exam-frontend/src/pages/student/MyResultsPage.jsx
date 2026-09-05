@@ -20,10 +20,12 @@ export default function MyResultsPage() {
   if (loading) return <div className="loading">⏳ 載入成績中...</div>
   if (error) return <div className="alert alert-error">{error}</div>
 
-  const avg = results.length
-    ? (results.reduce((s, r) => s + r.percentage, 0) / results.length).toFixed(1)
+  const visible = results.filter(r => !r.scoreHidden)
+  const avg = visible.length
+    ? (visible.reduce((s, r) => s + r.percentage, 0) / visible.length).toFixed(1)
     : 0
-  const best = results.length ? Math.max(...results.map(r => r.percentage)) : 0
+  const best = visible.length ? Math.max(...visible.map(r => r.percentage)) : 0
+  const hiddenCount = results.length - visible.length
 
   return (
     <>
@@ -59,12 +61,19 @@ export default function MyResultsPage() {
             </div>
           </div>
 
+          {hiddenCount > 0 && (
+            <div className="alert alert-info">
+              🔒 共有 {hiddenCount} 筆成績尚未公布，公布後即可在下方查看。
+            </div>
+          )}
+
           <div className="card">
             <div className="table-wrapper">
               <table>
                 <thead>
                   <tr>
                     <th>測驗名稱</th>
+                    <th>次數</th>
                     <th>得分</th>
                     <th>得分率</th>
                     <th>等級</th>
@@ -75,30 +84,45 @@ export default function MyResultsPage() {
                   {results.map(r => (
                     <tr key={r.id}>
                       <td style={{ fontWeight: 500 }}>{r.examTitle}</td>
-                      <td>{r.score} / {r.totalPoints}</td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-                          <div className="progress-bar-bg" style={{ flex: 1, height: 8 }}>
-                            <div
-                              className="progress-bar-fill"
-                              style={{
-                                width: `${r.percentage}%`,
-                                background: r.percentage >= 80 ? 'var(--success)' : r.percentage >= 60 ? 'var(--warning)' : 'var(--danger)',
-                                height: 8,
-                              }}
-                            />
-                          </div>
-                          <span style={{ minWidth: 42, textAlign: 'right' }}>{r.percentage}%</span>
-                        </div>
+                      <td className="text-sm">
+                        {r.attemptNumber != null
+                          ? <span style={{ background:'#d1fae5', color:'#065f46', padding:'.15rem .5rem', borderRadius:999, fontSize:'.8rem', fontWeight:500 }}>第 {r.attemptNumber} 次</span>
+                          : <span className="text-muted text-sm">—</span>}
                       </td>
-                      <td>
-                        <span
-                          className={`badge badge-grade-${r.grade}`}
-                          style={{ fontWeight: 700, fontSize: '.9rem', color: GRADE_COLOR[r.grade] }}
-                        >
-                          {r.grade}
-                        </span>
-                      </td>
+                      {r.scoreHidden ? (
+                        <td colSpan={3}>
+                          <span className="text-muted text-sm" style={{ fontWeight: 500 }}>
+                            🔒 成績尚未公布
+                          </span>
+                        </td>
+                      ) : (
+                        <>
+                          <td>{r.score} / {r.totalPoints}</td>
+                          <td>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+                              <div className="progress-bar-bg" style={{ flex: 1, height: 8 }}>
+                                <div
+                                  className="progress-bar-fill"
+                                  style={{
+                                    width: `${r.percentage}%`,
+                                    background: r.percentage >= 80 ? 'var(--success)' : r.percentage >= 60 ? 'var(--warning)' : 'var(--danger)',
+                                    height: 8,
+                                  }}
+                                />
+                              </div>
+                              <span style={{ minWidth: 42, textAlign: 'right' }}>{r.percentage}%</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span
+                              className={`badge badge-grade-${r.grade}`}
+                              style={{ fontWeight: 700, fontSize: '.9rem', color: GRADE_COLOR[r.grade] }}
+                            >
+                              {r.grade}
+                            </span>
+                          </td>
+                        </>
+                      )}
                       <td className="text-sm text-muted">
                         {new Date(r.submittedAt).toLocaleString('zh-TW')}
                       </td>

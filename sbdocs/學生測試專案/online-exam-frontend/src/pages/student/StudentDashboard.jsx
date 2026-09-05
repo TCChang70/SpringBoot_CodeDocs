@@ -46,6 +46,16 @@ export default function StudentDashboard() {
                 <span>📋 {exam.questionCount} 題</span>
                 <span>⏱ {exam.timeLimit} 分鐘</span>
               </div>
+              <div style={{ display: 'flex', gap: '.4rem', marginTop: '.5rem', flexWrap: 'wrap' }}>
+                {exam.allowRetake ? (
+                  <span className="badge badge-active" style={{ fontSize: '.75rem' }}>🔁 可重複作答</span>
+                ) : (
+                  <span className="badge badge-inactive" style={{ fontSize: '.75rem' }}>🔒 限答一次</span>
+                )}
+                {exam.hideResult && (
+                  <span className="badge badge-inactive" style={{ fontSize: '.75rem' }}>🙈 成績隱藏</span>
+                )}
+              </div>
               <button
                 className="btn btn-primary"
                 style={{ marginTop: '1rem', width: '100%', justifyContent: 'center' }}

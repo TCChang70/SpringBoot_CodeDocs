@@ -26,6 +26,8 @@ export const updateExam = (token, examId, body) => fetch(`${BASE}/exams/${examId
 export const deleteExam = (token, examId)       => fetch(`${BASE}/exams/${examId}`,  { method:'DELETE', headers:authHeader(token) }).then(handle)
 export const setExamStatus = (token, examId, active) =>
   fetch(`${BASE}/exams/${examId}/status`, { method:'PATCH', headers:authHeader(token), body:JSON.stringify({ active }) }).then(handle)
+export const updateExamSettings = (token, examId, body) =>
+  fetch(`${BASE}/exams/${examId}/settings`, { method:'PATCH', headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
 export const submitExam = (token, examId, answers) =>
   fetch(`${BASE}/exams/${examId}/submit`, { method:'POST', headers:authHeader(token), body:JSON.stringify({ answers }) }).then(handle)
 
@@ -57,3 +59,9 @@ export const getMyResults   = (token)         => fetch(`${BASE}/results/my`,    
 export const getExamResults = (token, examId) => fetch(`${BASE}/results/exam/${examId}`,{ headers: authHeader(token) }).then(handle)
 export const getExamResultDetail = (token, examId, resultId) =>
   fetch(`${BASE}/results/exam/${examId}/${resultId}`, { headers: authHeader(token) }).then(handle)
+export const getDeletedExamResults = (token, examId) =>
+  fetch(`${BASE}/results/exam/${examId}/deleted`, { headers: authHeader(token) }).then(handle)
+export const deleteResult = (token, resultId) =>
+  fetch(`${BASE}/results/${resultId}`, { method:'DELETE', headers:authHeader(token) }).then(handle)
+export const restoreResult = (token, resultId) =>
+  fetch(`${BASE}/results/${resultId}/restore`, { method:'POST', headers:authHeader(token) }).then(handle)

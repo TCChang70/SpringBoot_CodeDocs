@@ -124,27 +124,42 @@ export default function TakeExamPage() {
     return (
       <div className="card" style={{ maxWidth: 520, margin: '2rem auto', textAlign: 'center' }}>
         <div style={{ fontSize: '3.5rem', marginBottom: '.75rem' }}>
-          {result.grade === 'A' ? '🏆' : result.grade === 'B' ? '🎉' : result.grade === 'C' ? '👍' : '📚'}
+          {result.scoreHidden ? '🔒' : result.grade === 'A' ? '🏆' : result.grade === 'B' ? '🎉' : result.grade === 'C' ? '👍' : '📚'}
         </div>
         <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '.25rem' }}>測驗完成！</h2>
         <p className="text-muted text-sm" style={{ marginBottom: '1.5rem' }}>{result.examTitle}</p>
 
-        <div className="result-big-score">{result.score} / {result.totalPoints}</div>
-        <div className="result-grade" style={{ color: GRADE_COLOR[result.grade] ?? '#374151' }}>
-          {result.grade}
-        </div>
-        <p className="text-muted" style={{ marginTop: '.5rem' }}>{result.percentage}%</p>
+        {result.scoreHidden ? (
+          <div
+            style={{
+              background: '#f9fafb', borderRadius: '.5rem', padding: '1.25rem',
+              margin: '1.25rem 0 0', fontSize: '.95rem', color: '#4b5563',
+            }}
+          >
+            <div style={{ fontSize: '2rem', marginBottom: '.5rem' }}>🔒</div>
+            <div style={{ fontWeight: 700, marginBottom: '.25rem' }}>作答已送出！</div>
+            <div className="text-muted text-sm">本測驗成績尚未公布，請靜候教師公布後再前往「我的成績」查看。</div>
+          </div>
+        ) : (
+          <>
+            <div className="result-big-score">{result.score} / {result.totalPoints}</div>
+            <div className="result-grade" style={{ color: GRADE_COLOR[result.grade] ?? '#374151' }}>
+              {result.grade}
+            </div>
+            <p className="text-muted" style={{ marginTop: '.5rem' }}>{result.percentage}%</p>
 
-        <div
-          style={{
-            background: '#f9fafb', borderRadius: '.5rem', padding: '.875rem',
-            margin: '1.25rem 0', fontSize: '.875rem', color: '#4b5563'
-          }}
-        >
-          {result.percentage >= 90 ? '🌟 優秀！繼續保持！'
-            : result.percentage >= 70 ? '💪 不錯，再接再厲！'
-            : '📖 建議複習相關章節後再次挑戰！'}
-        </div>
+            <div
+              style={{
+                background: '#f9fafb', borderRadius: '.5rem', padding: '.875rem',
+                margin: '1.25rem 0', fontSize: '.875rem', color: '#4b5563'
+              }}
+            >
+              {result.percentage >= 90 ? '🌟 優秀！繼續保持！'
+                : result.percentage >= 70 ? '💪 不錯，再接再厲！'
+                : '📖 建議複習相關章節後再次挑戰！'}
+            </div>
+          </>
+        )}
 
         <div style={{ display: 'flex', gap: '.75rem', justifyContent: 'center' }}>
           <button className="btn btn-primary" onClick={() => navigate('/student')}>

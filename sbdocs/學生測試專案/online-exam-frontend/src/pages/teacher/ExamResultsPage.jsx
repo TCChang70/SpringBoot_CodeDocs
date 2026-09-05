@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { getExamResults, getExamResultDetail } from '../../api/examApi'
+import { getExamResults, getExamResultDetail, getDeletedExamResults, deleteResult, restoreResult } from '../../api/examApi'
 import OptionText from '../../components/OptionText'
 
 const GRADE_BG = { A:'#10b981', B:'#3b82f6', C:'#f59e0b', D:'#f97316', F:'#ef4444' }
@@ -15,15 +15,28 @@ export default function ExamResultsPage() {
   const [results, setResults] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [deleted, setDeleted] = useState([])
   const [detail, setDetail] = useState(null)
   const [detailLoading, setDetailLoading] = useState(false)
   const [detailError, setDetailError] = useState('')
 
   useEffect(() => {
-    getExamResults(auth.token, id)
-      .then(setResults)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false))
+    const loadAll = async () => {
+      setError('')
+      try {
+        const [active, d] = await Promise.all([
+          getExamResults(auth.token, id),
+          getDeletedExamResults(auth.token, id),
+        ])
+        setResults(active)
+        setDeleted(d)
+      } catch (err) {
+        setError(err.message)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadAll()
   }, [auth.token, id])
 
   function viewResult(r) {
@@ -34,6 +47,29 @@ export default function ExamResultsPage() {
       .then(setDetail)
       .catch(err => setDetailError(err.message))
       .finally(() => setDetailLoading(false))
+  }
+
+  async function handleDelete(r) {
+    if (!window.confirm(`確定要刪除「${r.studentName}」的第 ${r.attemptNumber ?? '?'} 次作答紀錄嗎？\n刪除後該筆紀錄會隱藏（不會真正移除，可再復原）。`)) return
+    setError('')
+    try {
+      await deleteResult(auth.token, r.id)
+      setResults(list => list.filter(x => x.id !== r.id))
+      getDeletedExamResults(auth.token, id).then(setDeleted).catch(() => {})
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleRestore(d) {
+    setError('')
+    try {
+      await restoreResult(auth.token, d.id)
+      setDeleted(list => list.filter(x => x.id !== d.id))
+      getExamResults(auth.token, id).then(setResults).catch(() => {})
+    } catch (err) {
+      setError(err.message)
+    }
   }
 
   if (loading) return <div className="loading">⏳ 載入成績中...</div>
@@ -128,6 +164,7 @@ export default function ExamResultsPage() {
                     <th>排名</th>
                     <th>班級</th>
                     <th>學生姓名</th>
+                    <th>次數</th>
                     <th>得分</th>
                     <th>得分率</th>
                     <th>等級</th>
@@ -148,6 +185,11 @@ export default function ExamResultsPage() {
                         }
                       </td>
                       <td style={{ fontWeight: 500 }}>{r.studentName}</td>
+                      <td className="text-sm">
+                        {r.attemptNumber != null
+                          ? <span style={{ background:'#d1fae5', color:'#065f46', padding:'.15rem .5rem', borderRadius:999, fontSize:'.8rem', fontWeight:500 }}>第 {r.attemptNumber} 次</span>
+                          : <span className="text-muted text-sm">—</span>}
+                      </td>
                       <td>{r.score} / {r.totalPoints}</td>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
@@ -170,9 +212,14 @@ export default function ExamResultsPage() {
                         {new Date(r.submittedAt).toLocaleString('zh-TW')}
                       </td>
                       <td>
-                        <button className="btn btn-sm btn-teacher" onClick={() => viewResult(r)}>
-                          📋 查看作答
-                        </button>
+                        <div style={{ display: 'flex', gap: '.4rem' }}>
+                          <button className="btn btn-sm btn-teacher" onClick={() => viewResult(r)}>
+                            📋 查看作答
+                          </button>
+                          <button className="btn btn-sm btn-danger" onClick={() => handleDelete(r)}>
+                            🗑 刪除
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -181,6 +228,54 @@ export default function ExamResultsPage() {
             </div>
           </div>
         </>
+      )}
+
+      {/* ── 已刪除紀錄（可復原） ── */}
+      {deleted.length > 0 && (
+        <div className="card" style={{ marginTop: '1rem', borderLeft: '4px solid var(--danger)' }}>
+          <h3 className="card-title" style={{ color: 'var(--danger)' }}>
+            🗑 已刪除的作答紀錄（{deleted.length}）
+            <span className="text-sm text-muted" style={{ fontWeight: 400, marginLeft: '.5rem' }}>
+              軟刪除：資料仍保留，僅從列表中隱藏，可隨時復原
+            </span>
+          </h3>
+          <div className="table-wrapper">
+            <table>
+              <thead>
+                <tr>
+                  <th>班級</th>
+                  <th>學生姓名</th>
+                  <th>次數</th>
+                  <th>得分</th>
+                  <th>提交時間</th>
+                  <th>操作</th>
+                </tr>
+              </thead>
+              <tbody>
+                {deleted.map(d => (
+                  <tr key={d.id} style={{ opacity: .85 }}>
+                    <td>
+                      {d.studentClass
+                        ? <span style={{ background:'#dbeafe', color:'#1e40af', padding:'.15rem .5rem', borderRadius:999, fontSize:'.8rem', fontWeight:500 }}>{d.studentClass}</span>
+                        : <span className="text-muted text-sm">—</span>}
+                    </td>
+                    <td style={{ fontWeight: 500 }}>{d.studentName}</td>
+                    <td className="text-sm">第 {d.attemptNumber ?? '—'} 次</td>
+                    <td>{d.score} / {d.totalPoints}</td>
+                    <td className="text-sm text-muted">
+                      {new Date(d.submittedAt).toLocaleString('zh-TW')}
+                    </td>
+                    <td>
+                      <button className="btn btn-sm btn-teacher" onClick={() => handleRestore(d)}>
+                        ↩️ 復原
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
 
       {/* ── 作答紀錄 modal ─────────────────────────── */}

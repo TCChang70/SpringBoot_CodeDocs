@@ -9,7 +9,7 @@ export default function ExamFormPage() {
   const { auth } = useAuth()
   const navigate = useNavigate()
 
-  const [form, setForm] = useState({ title: '', description: '', timeLimit: 60 })
+  const [form, setForm] = useState({ title: '', description: '', timeLimit: 60, allowRetake: true, hideResult: false })
   const [loading, setLoading] = useState(isEdit)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
@@ -17,7 +17,10 @@ export default function ExamFormPage() {
   useEffect(() => {
     if (!isEdit) return
     getExamDetail(auth.token, id)
-      .then(data => setForm({ title: data.title, description: data.description ?? '', timeLimit: data.timeLimit }))
+      .then(data => setForm({
+        title: data.title, description: data.description ?? '', timeLimit: data.timeLimit,
+        allowRetake: data.allowRetake, hideResult: data.hideResult,
+      }))
       .catch(err => setError(err.message))
       .finally(() => setLoading(false))
   }, [auth.token, id, isEdit])
@@ -82,6 +85,26 @@ export default function ExamFormPage() {
               max={360}
               style={{ maxWidth: 160 }}
             />
+          </div>
+          <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '.5rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={form.allowRetake}
+                onChange={e => setForm({ ...form, allowRetake: e.target.checked })}
+              />
+              <strong>允許考生重複作答</strong>
+              <span className="text-muted text-sm">（關閉後每位考生限作答一次）</span>
+            </label>
+            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: '.5rem', cursor: 'pointer' }}>
+              <input
+                type="checkbox"
+                checked={form.hideResult}
+                onChange={e => setForm({ ...form, hideResult: e.target.checked })}
+              />
+              <strong>對考生隱藏成績</strong>
+              <span className="text-muted text-sm">（教師仍可查看，考生待公布後才看得到）</span>
+            </label>
           </div>
           <div style={{ display: 'flex', gap: '.75rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
             <button type="button" className="btn btn-ghost" onClick={() => navigate('/teacher')}>取消</button>

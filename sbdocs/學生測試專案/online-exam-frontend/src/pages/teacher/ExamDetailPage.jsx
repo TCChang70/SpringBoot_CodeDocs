@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
-import { getExamDetail, addQuestion, updateQuestion, deleteQuestion, setExamStatus, batchImportQuestions } from '../../api/examApi'
+import { getExamDetail, addQuestion, updateQuestion, deleteQuestion, setExamStatus, batchImportQuestions, updateExamSettings } from '../../api/examApi'
 import OptionText from '../../components/OptionText'
 
 const OPTION_LETTERS = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I']
@@ -195,6 +195,24 @@ export default function ExamDetailPage() {
     }
   }
 
+  async function handleToggleRetake() {
+    try {
+      await updateExamSettings(auth.token, id, { allowRetake: !exam.allowRetake })
+      load()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
+  async function handleToggleHide() {
+    try {
+      await updateExamSettings(auth.token, id, { hideResult: !exam.hideResult })
+      load()
+    } catch (err) {
+      setError(err.message)
+    }
+  }
+
   // ── 批次匯入：解析 ──────────────────────────────────────────────
   function splitCsvLine(line) {
     // 支援標準 CSV 引號欄位（含逗號、Tab、雙引號）
@@ -333,6 +351,12 @@ export default function ExamDetailPage() {
             ⏱ {exam.timeLimit} 分鐘 · 📋 {exam.questions.length} 題 · 💯 共 {totalPoints} 分 ·&nbsp;
             <span className={`badge ${exam.active ? 'badge-active' : 'badge-inactive'}`}>
               {exam.active ? '開放中' : '已關閉'}
+            </span>{' '}
+            <span className={`badge ${exam.allowRetake ? 'badge-active' : 'badge-inactive'}`}>
+              {exam.allowRetake ? '🔁 可重複作答' : '🔒 限答一次'}
+            </span>{' '}
+            <span className={`badge ${exam.hideResult ? 'badge-inactive' : 'badge-active'}`}>
+              {exam.hideResult ? '🙈 成績隱藏' : '👁 成績公開'}
             </span>
           </p>
         </div>
@@ -349,6 +373,20 @@ export default function ExamDetailPage() {
             title={exam.active ? '關閉測驗' : '開放測驗'}
           >
             {exam.active ? '🔒 關閉測驗' : '✅ 開放測驗'}
+          </button>
+          <button
+            className={`btn btn-sm ${exam.allowRetake ? 'btn-teacher' : 'btn-ghost'}`}
+            onClick={handleToggleRetake}
+            title={exam.allowRetake ? '改為限答一次' : '改為可重複作答'}
+          >
+            {exam.allowRetake ? '🔁 可重複作答' : '🔒 限答一次'}
+          </button>
+          <button
+            className={`btn btn-sm ${exam.hideResult ? 'btn-inactive' : 'btn-ghost'}`}
+            onClick={handleToggleHide}
+            title={exam.hideResult ? '公開成績給考生' : '對考生隱藏成績'}
+          >
+            {exam.hideResult ? '🙈 成績隱藏' : '👁 成績公開'}
           </button>
           <button className="btn btn-ghost btn-sm" onClick={() => { setShowImport(v => !v); setShowAddForm(false); setEditingId(null) }}>
             📥 批次匯入
