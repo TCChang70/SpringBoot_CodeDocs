@@ -12,6 +12,7 @@ function Dashboard() {
   useEffect(() => {
     Promise.all([getDashboardSummary(), getLowStockProducts()])
       .then(([s, p]) => { setSummaries(s); setLowStockProducts(p); })
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
 

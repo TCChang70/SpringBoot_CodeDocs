@@ -16,7 +16,7 @@ function ProductList() {
   useEffect(() => {
     getProductLines().then(setProductLines);
     getVendors().then(setVendors);
-    loadProducts();
+    getProducts({}).then(setProducts).catch(() => {});
   }, []);
 
   function loadProducts() {
@@ -24,7 +24,7 @@ function ProductList() {
       productLine: selectedLine   || undefined,
       vendor:      selectedVendor || undefined,
       keyword:     keyword        || undefined
-    }).then(setProducts);
+    }).then(setProducts).catch(() => {});
   }
 
   function calcMargin(buyPrice: number, msrp: number): string {
@@ -121,7 +121,7 @@ function ProductDetail() {
   const [product, setProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    if (id) getProductById(id).then(setProduct);
+    if (id) getProductById(id).then(setProduct).catch(() => {});
   }, [id]);
 
   if (!product) return <div className="container py-4">載入中...</div>;

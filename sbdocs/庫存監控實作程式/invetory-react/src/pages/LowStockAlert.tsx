@@ -14,9 +14,9 @@ function LowStockAlert() {
   useEffect(() => { loadLowStock(); }, []);
 
   function loadLowStock() {
-    getLowStockProducts().then((products) => {
-      setLowStockProducts(products);
-      products.forEach((p) => {
+    getLowStockProducts().catch(() => {}).then((products) => {
+      setLowStockProducts(products || []);
+      (products || []).forEach((p) => {
         getThreshold(p.productCode)
           .then((t) => setThresholdMap((prev) => ({ ...prev, [p.productCode]: t })))
           .catch(() => {});
