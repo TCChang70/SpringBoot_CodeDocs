@@ -1,9 +1,48 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { useAuth } from '../../context/AuthContext'
-import { getStudents, getStudentClasses, createStudent, updateStudent, deleteStudent } from '../../api/examApi'
+import { getStudents, getStudentClasses, createStudent, updateStudent, deleteStudent, batchImportStudents } from '../../api/examApi'
 
 const EMPTY_CREATE = { username: '', password: '', displayName: '', className: '' }
 const EMPTY_EDIT   = { displayName: '', className: '', newPassword: '' }
+
+const IMPORT_HEADERS = ['帳號', '姓名', '班級', '密碼']
+const TEMPLATE_URL = '/examples/student-import-template.csv'
+
+function splitCsvLine(line) {
+  const cells = []
+  let cur = ''
+  let inQuote = false
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i]
+    if (inQuote) {
+      if (ch === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++ } else inQuote = false
+      } else cur += ch
+    } else if (ch === '"') {
+      inQuote = true
+    } else if (ch === ',') {
+      cells.push(cur); cur = ''
+    } else {
+      cur += ch
+    }
+  }
+  cells.push(cur)
+  return cells
+}
+
+function parseStudentImport(text) {
+  const rows = []
+  const clean = (text || '').replace(/^\uFEFF/, '')
+  clean.split(/\r?\n/).forEach((line, idx) => {
+    const cells = splitCsvLine(line.trim())
+    if (!cells.length || cells.every(c => !c.trim())) return
+    if (idx === 0 && cells.some(c => IMPORT_HEADERS.includes(c.trim()))) return
+    const [username = '', displayName = '', className = '', password = ''] = cells.map(c => c.trim())
+    if (!username) return
+    rows.push({ username, displayName, className, password, line: idx + 1 })
+  })
+  return rows
+}
 
 export default function StudentListPage() {
   const { auth } = useAuth()
@@ -17,6 +56,11 @@ export default function StudentListPage() {
   const [createForm, setCreateForm] = useState(EMPTY_CREATE)
   const [editForm, setEditForm]     = useState(EMPTY_EDIT)
   const [saving, setSaving] = useState(false)
+  const [showImport, setShowImport] = useState(false)
+  const [importText, setImportText] = useState('')
+  const [importing, setImporting] = useState(false)
+  const [importResult, setImportResult] = useState(null)
+  const [importError, setImportError] = useState('')
 
   const reload = useCallback(() => {
     setLoading(true)
@@ -61,6 +105,47 @@ export default function StudentListPage() {
     setShowAdd(false)
   }
 
+  function handleImportFile(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => { setImportText(String(reader.result ?? '')); setImportResult(null); setImportError('') }
+    reader.readAsText(file, 'UTF-8')
+    e.target.value = ''
+  }
+
+  async function handleBatchImport() {
+    setImporting(true); setImportError(''); setImportResult(null)
+    try {
+      const payload = importRows.map(({ username, displayName, className, password }) => ({ username, displayName, className, password }))
+      const res = await batchImportStudents(auth.token, payload)
+      setImportResult(res)
+      setImportText('')
+      reload()
+    } catch (err) { setImportError(err.message) }
+    finally { setImporting(false) }
+  }
+
+  const importRows = useMemo(() => parseStudentImport(importText), [importText])
+
+  const importIssues = useMemo(() => {
+    const seen = new Set()
+    return importRows.map(r => {
+      const issues = []
+      if (!r.username) issues.push('缺帳號')
+      else if (r.username.length < 3) issues.push('帳號過短(>=3)')
+      if (!r.displayName) issues.push('缺姓名')
+      if (!r.password) issues.push('缺密碼')
+      else if (r.password.length < 6) issues.push('密碼過短(>=6)')
+      if (r.username) {
+        const key = r.username
+        if (seen.has(key)) issues.push('檔內重複')
+        seen.add(key)
+      }
+      return issues
+    })
+  }, [importRows])
+
   const filtered = filter ? students.filter(s => s.className === filter) : students
   const classCounts = students.reduce((acc, s) => {
     const k = s.className || '（未設定）'; acc[k] = (acc[k] ?? 0) + 1; return acc
@@ -73,13 +158,86 @@ export default function StudentListPage() {
           <h1 className="page-title">學生管理</h1>
           <p className="text-muted text-sm">共 {students.length} 位學生 · {classes.length} 個班級</p>
         </div>
-        <button className="btn btn-teacher"
-          onClick={() => { setShowAdd(v => !v); setEditingId(null) }}>
-          {showAdd ? '✕ 取消' : '＋ 新增學生'}
-        </button>
+        <div style={{ display: 'flex', gap: '.6rem' }}>
+          <button className="btn btn-ghost"
+            onClick={() => { setShowImport(v => !v); setShowAdd(false) }}>
+            {showImport ? '✕ 取消' : '⬆ 批次匯入'}
+          </button>
+          <button className="btn btn-teacher"
+            onClick={() => { setShowAdd(v => !v); setEditingId(null); setShowImport(false) }}>
+            {showAdd ? '✕ 取消' : '＋ 新增學生'}
+          </button>
+        </div>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
+
+      {/* ── Batch import form ── */}
+      {showImport && (
+        <div className="card" style={{ border: '2px solid var(--teacher)', marginBottom: '1rem' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '.5rem' }}>
+            <h3 style={{ fontWeight: 700, color: 'var(--teacher)' }}>⬆ 批次匯入學生帳號</h3>
+            <a className="btn btn-ghost btn-sm" href={TEMPLATE_URL} download="學生匯入範例.csv">⬇ 下載匯入範例檔</a>
+          </div>
+          <p className="text-muted text-sm" style={{ marginBottom: '1rem' }}>
+            每一列一位學生，欄位順序：<strong>帳號, 姓名, 班級, 密碼</strong>（首列為標題列，可省略）。
+            可上傳 CSV 檔，或直接將內容貼到下方欄位。
+          </p>
+          <input type="file" accept=".csv,.txt,text/csv,.xlsx" className="form-input" style={{ maxWidth: 360, marginBottom: '.75rem' }} onChange={handleImportFile} />
+          <textarea
+            className="form-input"
+            rows={6}
+            placeholder={`範例：\n帳號,姓名,班級,密碼\ns109001,王小明,資工一甲,password123\ns109002,陳小美,資工一甲,password123`}
+            value={importText}
+            onChange={e => { setImportText(e.target.value); setImportResult(null); setImportError('') }}
+            style={{ fontFamily: 'monospace', marginBottom: '.75rem' }}
+          />
+          {importRows.length > 0 && (
+            <div className="table-wrapper" style={{ marginBottom: '1rem' }}>
+              <table>
+                <thead>
+                  <tr><th>行</th><th>帳號</th><th>姓名</th><th>班級</th><th>密碼</th><th>檢查</th></tr>
+                </thead>
+                <tbody>
+                  {importRows.map((r, i) => (
+                    <tr key={i}>
+                      <td className="text-muted text-sm">{r.line}</td>
+                      <td>{r.username || '—'}</td>
+                      <td>{r.displayName || '—'}</td>
+                      <td>{r.className || '—'}</td>
+                      <td>{r.password ? '••••••' : '—'}</td>
+                      <td>
+                        {importIssues[i].length
+                          ? <span style={{ color: '#ef4444', fontSize: '.8rem' }}>{importIssues[i].join('、')}</span>
+                          : <span style={{ color: '#166534', fontSize: '.8rem' }}>✓</span>}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {importError && <div className="alert alert-error" style={{ marginBottom: '.75rem' }}>{importError}</div>}
+          {importResult && (
+            <div className={`alert ${importResult.duplicates.length ? 'alert-info' : 'alert-success'}`} style={{ marginBottom: '.75rem' }}>
+              成功匯入 <strong>{importResult.imported}</strong> 位學生
+              {importResult.duplicates.length > 0 && (
+                <>，跳過重複（已存在或檔內重複）{importResult.duplicates.length} 筆：{importResult.duplicates.join('、')}</>
+              )}
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: '.75rem', justifyContent: 'flex-end' }}>
+            <button type="button" className="btn btn-ghost"
+              onClick={() => { setShowImport(false); setImportResult(null); setImportError(''); setImportText('') }}>
+              關閉
+            </button>
+            <button type="button" className="btn btn-teacher"
+              disabled={importing || importRows.length === 0} onClick={handleBatchImport}>
+              {importing ? '匯入中...' : `開始匯入（${importRows.length} 位）`}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* ── Create form ── */}
       {showAdd && (

@@ -47,6 +47,8 @@ export const getStudentClasses = (token) => fetch(`${BASE}/students/classes`, { 
 export const createStudent = (token, body) => fetch(`${BASE}/students`, { method:'POST', headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
 export const updateStudent = (token, id, body) => fetch(`${BASE}/students/${id}`, { method:'PUT', headers:authHeader(token), body:JSON.stringify(body) }).then(handle)
 export const deleteStudent = (token, id) => fetch(`${BASE}/students/${id}`, { method:'DELETE', headers:authHeader(token) }).then(handle)
+export const batchImportStudents = (token, students) =>
+  fetch(`${BASE}/students/batch`, { method:'POST', headers:authHeader(token), body:JSON.stringify({ students }) }).then(handle)
 
 /* ── Teachers CRUD ────────────────────────────────── */
 export const getTeachers    = (token)            => fetch(`${BASE}/teachers`,       { headers: authHeader(token) }).then(handle)
