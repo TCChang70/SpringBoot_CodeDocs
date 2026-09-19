@@ -1,0 +1,1591 @@
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.1)
+
+2026-09-19T16:14:12.474+08:00  INFO 7716 --- [restaurant-pos] [           main] c.r.pos.RestaurantPosApplication         : Starting RestaurantPosApplication using Java 21.0.2 with PID 7716 (C:\temp\restaurant_pos\restaurant-pos-backend\target\classes started by zvinc in C:\temp\restaurant_pos\restaurant-pos-backend)
+2026-09-19T16:14:12.476+08:00  INFO 7716 --- [restaurant-pos] [           main] c.r.pos.RestaurantPosApplication         : No active profile set, falling back to 1 default profile: "default"
+2026-09-19T16:14:12.903+08:00  INFO 7716 --- [restaurant-pos] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2026-09-19T16:14:12.955+08:00  INFO 7716 --- [restaurant-pos] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 46 ms. Found 7 JPA repository interfaces.
+2026-09-19T16:14:13.302+08:00  INFO 7716 --- [restaurant-pos] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat initialized with port 8080 (http)
+2026-09-19T16:14:13.313+08:00  INFO 7716 --- [restaurant-pos] [           main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2026-09-19T16:14:13.315+08:00  INFO 7716 --- [restaurant-pos] [           main] o.apache.catalina.core.StandardEngine    : Starting Servlet engine: [Apache Tomcat/11.0.24]
+2026-09-19T16:14:13.353+08:00  INFO 7716 --- [restaurant-pos] [           main] b.w.c.s.WebApplicationContextInitializer : Root WebApplicationContext: initialization completed in 840 ms
+2026-09-19T16:14:13.466+08:00  INFO 7716 --- [restaurant-pos] [           main] org.hibernate.orm.jpa                    : HHH008540: Processing PersistenceUnitInfo [name: default]
+2026-09-19T16:14:13.499+08:00  INFO 7716 --- [restaurant-pos] [           main] org.hibernate.orm.core                   : HHH000001: Hibernate ORM core version 7.4.5.Final
+2026-09-19T16:14:13.781+08:00  INFO 7716 --- [restaurant-pos] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
+2026-09-19T16:14:13.803+08:00  INFO 7716 --- [restaurant-pos] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-09-19T16:14:14.016+08:00  INFO 7716 --- [restaurant-pos] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@32e65852
+2026-09-19T16:14:14.018+08:00  INFO 7716 --- [restaurant-pos] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-09-19T16:14:14.071+08:00  INFO 7716 --- [restaurant-pos] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
+	Database JDBC URL [jdbc:mysql://localhost:3306/restaurant_pos?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Taipei]
+	Database driver: MySQL Connector/J
+	Database dialect: MySQLDialect
+	Database version: 8.0.45
+	Default catalog/schema: restaurant_pos/undefined
+	Autocommit mode: undefined/unknown
+	Isolation level: REPEATABLE_READ [default REPEATABLE_READ]
+	JDBC fetch size: none
+	Pool: DataSourceConnectionProvider
+	Minimum pool size: undefined/unknown
+	Maximum pool size: undefined/unknown
+2026-09-19T16:14:14.788+08:00  INFO 7716 --- [restaurant-pos] [           main] org.hibernate.orm.core                   : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2026-09-19T16:14:14.828+08:00  INFO 7716 --- [restaurant-pos] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2026-09-19T16:14:14.887+08:00  INFO 7716 --- [restaurant-pos] [           main] o.s.d.j.r.query.QueryEnhancerFactories   : Hibernate is in classpath; If applicable, HQL parser will be used.
+2026-09-19T16:14:15.929+08:00  INFO 7716 --- [restaurant-pos] [           main] o.s.boot.tomcat.TomcatWebServer          : Tomcat started on port 8080 (http) with context path '/'
+2026-09-19T16:14:15.932+08:00  INFO 7716 --- [restaurant-pos] [           main] c.r.pos.RestaurantPosApplication         : Started RestaurantPosApplication in 3.778 seconds (process running for 4.058)
+2026-09-19T16:14:19.485+08:00  INFO 7716 --- [restaurant-pos] [nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-19T16:14:19.486+08:00  INFO 7716 --- [restaurant-pos] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2026-09-19T16:14:19.486+08:00  INFO 7716 --- [restaurant-pos] [nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 0 ms
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.username=?
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0
+Hibernate: 
+    select
+        e1_0.id 
+    from
+        employee e1_0 
+    where
+        e1_0.username=? 
+    limit
+        ?
+Hibernate: 
+    insert 
+    into
+        employee
+        (active, created_at, name, password, role, updated_at, username) 
+    values
+        (?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        e1_0.id 
+    from
+        employee e1_0 
+    where
+        e1_0.username=? 
+    limit
+        ?
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0
+Hibernate: 
+    select
+        e1_0.id 
+    from
+        employee e1_0 
+    where
+        e1_0.username=? 
+    limit
+        ?
+Hibernate: 
+    insert 
+    into
+        employee
+        (active, created_at, name, password, role, updated_at, username) 
+    values
+        (?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        e1_0.id 
+    from
+        employee e1_0 
+    where
+        e1_0.username=? 
+    limit
+        ?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.username=?
+Hibernate: 
+    select
+        rt1_0.id 
+    from
+        restaurant_table rt1_0 
+    where
+        rt1_0.table_number=? 
+    limit
+        ?
+Hibernate: 
+    insert 
+    into
+        restaurant_table
+        (capacity, created_at, status, table_number, updated_at) 
+    values
+        (?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        rt1_0.id 
+    from
+        restaurant_table rt1_0 
+    where
+        rt1_0.table_number=? 
+    limit
+        ?
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0 
+    where
+        rt1_0.id=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    insert 
+    into
+        orders
+        (created_at, employee_id, paid_at, status, table_id, total_amount, updated_at) 
+    values
+        (?, ?, ?, ?, ?, ?, ?)
+2026-09-19T16:30:29.674+08:00  WARN 7716 --- [restaurant-pos] [nio-8080-exec-6] o.h.v.i.m.a.CascadingMetaDataBuilder     : HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: AddItemsRequest#items()
+2026-09-19T16:30:29.679+08:00  WARN 7716 --- [restaurant-pos] [nio-8080-exec-6] o.h.v.i.m.a.CascadingMetaDataBuilder     : HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: items
+2026-09-19T16:30:29.680+08:00  WARN 7716 --- [restaurant-pos] [nio-8080-exec-6] o.h.v.i.m.a.CascadingMetaDataBuilder     : HV000271: Using `@Valid` on a container (java.util.List) is deprecated. You should apply the annotation on the type argument(s). Affected element: AddItemsRequest#com.restaurant.pos.dto.order.AddItemsRequest(List)
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0 
+    where
+        mi1_0.id=?
+Hibernate: 
+    insert 
+    into
+        order_item
+        (ice_level, menu_item_id, note, order_id, quantity, subtotal, sugar_level, unit_price) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        oi1_0.id,
+        oi1_0.ice_level,
+        oi1_0.menu_item_id,
+        oi1_0.note,
+        oi1_0.order_id,
+        oi1_0.quantity,
+        oi1_0.subtotal,
+        oi1_0.sugar_level,
+        oi1_0.unit_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        oi1_0.id,
+        oi1_0.ice_level,
+        oi1_0.menu_item_id,
+        oi1_0.note,
+        oi1_0.order_id,
+        oi1_0.quantity,
+        oi1_0.subtotal,
+        oi1_0.sugar_level,
+        oi1_0.unit_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    update
+        orders 
+    set
+        employee_id=?,
+        paid_at=?,
+        status=?,
+        table_id=?,
+        total_amount=?,
+        updated_at=? 
+    where
+        id=?
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0 
+    where
+        rt1_0.id=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    insert 
+    into
+        orders
+        (created_at, employee_id, paid_at, status, table_id, total_amount, updated_at) 
+    values
+        (?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0 
+    where
+        mi1_0.id=?
+Hibernate: 
+    insert 
+    into
+        order_item
+        (ice_level, menu_item_id, note, order_id, quantity, subtotal, sugar_level, unit_price) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0 
+    where
+        mi1_0.id=?
+Hibernate: 
+    insert 
+    into
+        order_item
+        (ice_level, menu_item_id, note, order_id, quantity, subtotal, sugar_level, unit_price) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        oi1_0.id,
+        oi1_0.ice_level,
+        oi1_0.menu_item_id,
+        oi1_0.note,
+        oi1_0.order_id,
+        oi1_0.quantity,
+        oi1_0.subtotal,
+        oi1_0.sugar_level,
+        oi1_0.unit_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        oi1_0.id,
+        oi1_0.ice_level,
+        oi1_0.menu_item_id,
+        oi1_0.note,
+        oi1_0.order_id,
+        oi1_0.quantity,
+        oi1_0.subtotal,
+        oi1_0.sugar_level,
+        oi1_0.unit_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    update
+        orders 
+    set
+        employee_id=?,
+        paid_at=?,
+        status=?,
+        table_id=?,
+        total_amount=?,
+        updated_at=? 
+    where
+        id=?
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0 
+    where
+        mi1_0.id=?
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        p1_0.id 
+    from
+        payment p1_0 
+    where
+        p1_0.order_id=? 
+    limit
+        ?
+Hibernate: 
+    select
+        count(oi1_0.id) 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    insert 
+    into
+        payment
+        (amount, employee_id, order_id, paid_at, payment_method) 
+    values
+        (?, ?, ?, ?, ?)
+Hibernate: 
+    update
+        orders 
+    set
+        employee_id=?,
+        paid_at=?,
+        status=?,
+        table_id=?,
+        total_amount=?,
+        updated_at=? 
+    where
+        id=?
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        oi1_0.id,
+        oi1_0.ice_level,
+        oi1_0.menu_item_id,
+        oi1_0.note,
+        oi1_0.order_id,
+        oi1_0.quantity,
+        oi1_0.subtotal,
+        oi1_0.sugar_level,
+        oi1_0.unit_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0 
+    where
+        mi1_0.id=?
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0 
+    where
+        mi1_0.id=?
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        p1_0.id 
+    from
+        payment p1_0 
+    where
+        p1_0.order_id=? 
+    limit
+        ?
+Hibernate: 
+    select
+        count(oi1_0.id) 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    insert 
+    into
+        payment
+        (amount, employee_id, order_id, paid_at, payment_method) 
+    values
+        (?, ?, ?, ?, ?)
+Hibernate: 
+    update
+        orders 
+    set
+        employee_id=?,
+        paid_at=?,
+        status=?,
+        table_id=?,
+        total_amount=?,
+        updated_at=? 
+    where
+        id=?
+Hibernate: 
+    select
+        dc1_0.id 
+    from
+        daily_closing dc1_0 
+    where
+        dc1_0.closing_date=? 
+    limit
+        ?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    SELECT
+        COUNT(DISTINCT o.id)                             AS totalOrders,
+        COALESCE(SUM(o.total_amount), 0)                 AS totalRevenue,
+        COALESCE(SUM(CASE 
+            WHEN p.payment_method = 'CASH'            
+                THEN p.amount 
+            ELSE 0 
+    END), 0)                AS cashAmount,
+    COALESCE(SUM(CASE 
+        WHEN p.payment_method = 'CREDIT_CARD'            
+            THEN p.amount 
+        ELSE 0 
+END), 0)                AS cardAmount,
+COALESCE(SUM(CASE 
+    WHEN p.payment_method = 'LINE_PAY'            
+        THEN p.amount 
+    ELSE 0 
+END), 0)                AS otherAmount 
+FROM
+    orders o 
+JOIN
+    payment p 
+        ON p.order_id = o.id 
+WHERE
+    o.status = 'PAID'   
+    AND DATE(o.paid_at) = ? 
+Hibernate: 
+    insert 
+    into
+        daily_closing
+        (card_amount, cash_amount, closed_at, closing_date, employee_id, other_amount, total_orders, total_revenue) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        dc1_0.id 
+    from
+        daily_closing dc1_0 
+    where
+        dc1_0.closing_date=? 
+    limit
+        ?
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        e1_0.id 
+    from
+        employee e1_0 
+    where
+        e1_0.username=? 
+    limit
+        ?
+Hibernate: 
+    insert 
+    into
+        employee
+        (active, created_at, name, password, role, updated_at, username) 
+    values
+        (?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.username=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.username=?
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0 
+    where
+        rt1_0.id=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    insert 
+    into
+        orders
+        (created_at, employee_id, paid_at, status, table_id, total_amount, updated_at) 
+    values
+        (?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0 
+    where
+        mi1_0.id=?
+Hibernate: 
+    insert 
+    into
+        order_item
+        (ice_level, menu_item_id, note, order_id, quantity, subtotal, sugar_level, unit_price) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0 
+    where
+        mi1_0.id=?
+Hibernate: 
+    insert 
+    into
+        order_item
+        (ice_level, menu_item_id, note, order_id, quantity, subtotal, sugar_level, unit_price) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        oi1_0.id,
+        oi1_0.ice_level,
+        oi1_0.menu_item_id,
+        oi1_0.note,
+        oi1_0.order_id,
+        oi1_0.quantity,
+        oi1_0.subtotal,
+        oi1_0.sugar_level,
+        oi1_0.unit_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        oi1_0.id,
+        oi1_0.ice_level,
+        oi1_0.menu_item_id,
+        oi1_0.note,
+        oi1_0.order_id,
+        oi1_0.quantity,
+        oi1_0.subtotal,
+        oi1_0.sugar_level,
+        oi1_0.unit_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    update
+        orders 
+    set
+        employee_id=?,
+        paid_at=?,
+        status=?,
+        table_id=?,
+        total_amount=?,
+        updated_at=? 
+    where
+        id=?
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        p1_0.id 
+    from
+        payment p1_0 
+    where
+        p1_0.order_id=? 
+    limit
+        ?
+Hibernate: 
+    select
+        count(oi1_0.id) 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    insert 
+    into
+        payment
+        (amount, employee_id, order_id, paid_at, payment_method) 
+    values
+        (?, ?, ?, ?, ?)
+Hibernate: 
+    update
+        orders 
+    set
+        employee_id=?,
+        paid_at=?,
+        status=?,
+        table_id=?,
+        total_amount=?,
+        updated_at=? 
+    where
+        id=?
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.status=? 
+        and o1_0.paid_at between ? and ? 
+    order by
+        o1_0.paid_at
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.amount,
+        p1_0.employee_id,
+        p1_0.order_id,
+        p1_0.paid_at,
+        p1_0.payment_method 
+    from
+        payment p1_0 
+    where
+        p1_0.order_id=?
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0 
+    where
+        rt1_0.id=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    select
+        dc1_0.id 
+    from
+        daily_closing dc1_0 
+    where
+        dc1_0.closing_date=? 
+    limit
+        ?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    SELECT
+        COUNT(DISTINCT o.id)                             AS totalOrders,
+        COALESCE(SUM(o.total_amount), 0)                 AS totalRevenue,
+        COALESCE(SUM(CASE 
+            WHEN p.payment_method = 'CASH'            
+                THEN p.amount 
+            ELSE 0 
+    END), 0)                AS cashAmount,
+    COALESCE(SUM(CASE 
+        WHEN p.payment_method = 'CREDIT_CARD'            
+            THEN p.amount 
+        ELSE 0 
+END), 0)                AS cardAmount,
+COALESCE(SUM(CASE 
+    WHEN p.payment_method = 'LINE_PAY'            
+        THEN p.amount 
+    ELSE 0 
+END), 0)                AS otherAmount 
+FROM
+    orders o 
+JOIN
+    payment p 
+        ON p.order_id = o.id 
+WHERE
+    o.status = 'PAID'   
+    AND DATE(o.paid_at) = ? 
+Hibernate: 
+    insert 
+    into
+        daily_closing
+        (card_amount, cash_amount, closed_at, closing_date, employee_id, other_amount, total_orders, total_revenue) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        e1_0.id 
+    from
+        employee e1_0 
+    where
+        e1_0.username=? 
+    limit
+        ?
+Hibernate: 
+    insert 
+    into
+        employee
+        (active, created_at, name, password, role, updated_at, username) 
+    values
+        (?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.username=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.username=?
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0 
+    where
+        rt1_0.id=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    insert 
+    into
+        orders
+        (created_at, employee_id, paid_at, status, table_id, total_amount, updated_at) 
+    values
+        (?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0 
+    where
+        mi1_0.id=?
+Hibernate: 
+    insert 
+    into
+        order_item
+        (ice_level, menu_item_id, note, order_id, quantity, subtotal, sugar_level, unit_price) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        mi1_0.id,
+        mi1_0.available,
+        mi1_0.category,
+        mi1_0.created_at,
+        mi1_0.description,
+        mi1_0.name,
+        mi1_0.price,
+        mi1_0.updated_at 
+    from
+        menu_item mi1_0 
+    where
+        mi1_0.id=?
+Hibernate: 
+    insert 
+    into
+        order_item
+        (ice_level, menu_item_id, note, order_id, quantity, subtotal, sugar_level, unit_price) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        oi1_0.id,
+        oi1_0.ice_level,
+        oi1_0.menu_item_id,
+        oi1_0.note,
+        oi1_0.order_id,
+        oi1_0.quantity,
+        oi1_0.subtotal,
+        oi1_0.sugar_level,
+        oi1_0.unit_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        oi1_0.id,
+        oi1_0.ice_level,
+        oi1_0.menu_item_id,
+        oi1_0.note,
+        oi1_0.order_id,
+        oi1_0.quantity,
+        oi1_0.subtotal,
+        oi1_0.sugar_level,
+        oi1_0.unit_price 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    update
+        orders 
+    set
+        employee_id=?,
+        paid_at=?,
+        status=?,
+        table_id=?,
+        total_amount=?,
+        updated_at=? 
+    where
+        id=?
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.id=?
+Hibernate: 
+    select
+        p1_0.id 
+    from
+        payment p1_0 
+    where
+        p1_0.order_id=? 
+    limit
+        ?
+Hibernate: 
+    select
+        count(oi1_0.id) 
+    from
+        order_item oi1_0 
+    where
+        oi1_0.order_id=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    insert 
+    into
+        payment
+        (amount, employee_id, order_id, paid_at, payment_method) 
+    values
+        (?, ?, ?, ?, ?)
+Hibernate: 
+    update
+        orders 
+    set
+        employee_id=?,
+        paid_at=?,
+        status=?,
+        table_id=?,
+        total_amount=?,
+        updated_at=? 
+    where
+        id=?
+Hibernate: 
+    select
+        o1_0.id,
+        o1_0.created_at,
+        o1_0.employee_id,
+        o1_0.paid_at,
+        o1_0.status,
+        o1_0.table_id,
+        o1_0.total_amount,
+        o1_0.updated_at 
+    from
+        orders o1_0 
+    where
+        o1_0.status=? 
+        and o1_0.paid_at between ? and ? 
+    order by
+        o1_0.paid_at
+Hibernate: 
+    select
+        p1_0.id,
+        p1_0.amount,
+        p1_0.employee_id,
+        p1_0.order_id,
+        p1_0.paid_at,
+        p1_0.payment_method 
+    from
+        payment p1_0 
+    where
+        p1_0.order_id=?
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0 
+    where
+        rt1_0.id=?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    select
+        dc1_0.id 
+    from
+        daily_closing dc1_0 
+    where
+        dc1_0.closing_date=? 
+    limit
+        ?
+Hibernate: 
+    select
+        e1_0.id,
+        e1_0.active,
+        e1_0.created_at,
+        e1_0.name,
+        e1_0.password,
+        e1_0.role,
+        e1_0.updated_at,
+        e1_0.username 
+    from
+        employee e1_0 
+    where
+        e1_0.id=?
+Hibernate: 
+    SELECT
+        COUNT(DISTINCT o.id)                             AS totalOrders,
+        COALESCE(SUM(o.total_amount), 0)                 AS totalRevenue,
+        COALESCE(SUM(CASE 
+            WHEN p.payment_method = 'CASH'            
+                THEN p.amount 
+            ELSE 0 
+    END), 0)                AS cashAmount,
+    COALESCE(SUM(CASE 
+        WHEN p.payment_method = 'CREDIT_CARD'            
+            THEN p.amount 
+        ELSE 0 
+END), 0)                AS cardAmount,
+COALESCE(SUM(CASE 
+    WHEN p.payment_method = 'LINE_PAY'            
+        THEN p.amount 
+    ELSE 0 
+END), 0)                AS otherAmount 
+FROM
+    orders o 
+JOIN
+    payment p 
+        ON p.order_id = o.id 
+WHERE
+    o.status = 'PAID'   
+    AND DATE(o.paid_at) = ? 
+Hibernate: 
+    insert 
+    into
+        daily_closing
+        (card_amount, cash_amount, closed_at, closing_date, employee_id, other_amount, total_orders, total_revenue) 
+    values
+        (?, ?, ?, ?, ?, ?, ?, ?)
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0 
+    where
+        rt1_0.id=?
+Hibernate: 
+    update
+        restaurant_table 
+    set
+        capacity=?,
+        status=?,
+        table_number=?,
+        updated_at=? 
+    where
+        id=?
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+Hibernate: 
+    select
+        rt1_0.id,
+        rt1_0.capacity,
+        rt1_0.created_at,
+        rt1_0.status,
+        rt1_0.table_number,
+        rt1_0.updated_at 
+    from
+        restaurant_table rt1_0
+[ERROR] Failed to execute goal org.springframework.boot:spring-boot-maven-plugin:4.1.1:run (default-cli) on project restaurant-pos: Process terminated with exit code: -1 -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoExecutionException
