@@ -1,0 +1,57 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: cms-backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/cms_db?useUnicode=true&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true&useSSL=false
+    username: root
+    password: 1234
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: none
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+app:
+  jwt:
+    # HS256 需要至少 32 bytes 之密鑰；正式環境請改用環境變數覆寫
+    secret: cms-jwt-secret-change-me-in-production-0123456789abcdef
+    expiration-ms: 86400000
+  media:
+    # 多媒體檔案儲存位置（可換成物件儲存實作）
+    storage-location: ./uploads
+    # 允許的 MIME 白名單（逗號分隔）
+    allowed-types: image/jpeg,image/png,image/gif,image/webp,application/pdf
+    max-size: 10485760
+  cors:
+    # 允許的前端來源（逗號分隔）
+    allowed-origins: http://localhost:5173
+
+# NFR-05 健康檢查（SD §7）：僅對外暴露 health，且不洩漏明細
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+
+logging:
+  level:
+    org.springframework.security: INFO
+    com.example.cms: DEBUG
