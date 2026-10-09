@@ -7,11 +7,14 @@ import RegisterPage from './pages/RegisterPage'
 import StudentDashboard from './pages/student/StudentDashboard'
 import TakeExamPage from './pages/student/TakeExamPage'
 import MyResultsPage from './pages/student/MyResultsPage'
+import MyReportPage from './pages/student/MyReportPage'
 import TeacherDashboard from './pages/teacher/TeacherDashboard'
 import ExamFormPage from './pages/teacher/ExamFormPage'
 import ExamDetailPage from './pages/teacher/ExamDetailPage'
 import ExamResultsPage from './pages/teacher/ExamResultsPage'
 import StudentListPage from './pages/teacher/StudentListPage'
+import StudentReportPage from './pages/teacher/StudentReportPage'
+import ClassReportPage from './pages/teacher/ClassReportPage'
 import TeacherManagePage from './pages/teacher/TeacherManagePage'
 
 export default function App() {
@@ -29,6 +32,7 @@ export default function App() {
               <Route path="/student" element={<StudentDashboard />} />
               <Route path="/student/exam/:id" element={<TakeExamPage />} />
               <Route path="/student/results" element={<MyResultsPage />} />
+              <Route path="/student/report" element={<MyReportPage />} />
             </Route>
           </Route>
 
@@ -37,6 +41,8 @@ export default function App() {
             <Route element={<Layout role="teacher" />}>
               <Route path="/teacher" element={<TeacherDashboard />} />
               <Route path="/teacher/students" element={<StudentListPage />} />
+              <Route path="/teacher/students/:id/report" element={<StudentReportPage />} />
+              <Route path="/teacher/report" element={<ClassReportPage />} />
               <Route path="/teacher/teachers" element={<TeacherManagePage />} />
               <Route path="/teacher/exam/new" element={<ExamFormPage />} />
               <Route path="/teacher/exam/:id/edit" element={<ExamFormPage />} />

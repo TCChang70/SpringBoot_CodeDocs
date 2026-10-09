@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { getStudents, getStudentClasses, createStudent, updateStudent, deleteStudent, batchImportStudents } from '../../api/examApi'
 
@@ -46,6 +47,7 @@ function parseStudentImport(text) {
 
 export default function StudentListPage() {
   const { auth } = useAuth()
+  const navigate = useNavigate()
   const [students, setStudents] = useState([])
   const [classes, setClasses]   = useState([])
   const [filter, setFilter]     = useState('')
@@ -366,7 +368,8 @@ export default function StudentListPage() {
                           : <span className="text-muted text-sm">—</span>}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '.4rem' }}>
+                        <div style={{ display: 'flex', gap: '.4rem', flexWrap: 'wrap' }}>
+                          <button className="btn btn-ghost btn-sm" onClick={() => navigate(`/teacher/students/${s.id}/report`)}>📊 成績報表</button>
                           <button className="btn btn-ghost btn-sm" onClick={() => startEdit(s)}>✏️ 編輯</button>
                           <button className="btn btn-danger btn-sm" onClick={() => handleDelete(s)}>🗑 刪除</button>
                         </div>

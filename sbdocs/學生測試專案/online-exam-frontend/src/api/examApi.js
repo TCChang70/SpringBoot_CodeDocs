@@ -67,3 +67,11 @@ export const deleteResult = (token, resultId) =>
   fetch(`${BASE}/results/${resultId}`, { method:'DELETE', headers:authHeader(token) }).then(handle)
 export const restoreResult = (token, resultId) =>
   fetch(`${BASE}/results/${resultId}/restore`, { method:'POST', headers:authHeader(token) }).then(handle)
+
+/* ── Reports ──────────────────────────────────────── */
+export const getMyReport      = (token)             => fetch(`${BASE}/results/my/report`, { headers: authHeader(token) }).then(handle)
+export const getStudentReport = (token, studentId)  => fetch(`${BASE}/results/student/${studentId}/report`, { headers: authHeader(token) }).then(handle)
+export const getClassReport   = (token, className)  => {
+  const qs = className ? `?className=${encodeURIComponent(className)}` : ''
+  return fetch(`${BASE}/results/report/class${qs}`, { headers: authHeader(token) }).then(handle)
+}

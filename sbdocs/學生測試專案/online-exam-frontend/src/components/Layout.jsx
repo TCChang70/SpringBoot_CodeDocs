@@ -22,12 +22,14 @@ export default function Layout({ role }) {
             <>
               <Link to="/teacher" className="btn btn-ghost btn-sm">測驗管理</Link>
               <Link to="/teacher/students" className="btn btn-ghost btn-sm">👥 學生管理</Link>
+              <Link to="/teacher/report" className="btn btn-ghost btn-sm">📊 成績報表</Link>
               <Link to="/teacher/teachers" className="btn btn-ghost btn-sm">👨‍🏫 教師管理</Link>
             </>
           ) : (
             <>
               <Link to="/student" className="btn btn-ghost btn-sm">測驗列表</Link>
               <Link to="/student/results" className="btn btn-ghost btn-sm">我的成績</Link>
+              <Link to="/student/report" className="btn btn-ghost btn-sm">成績報表</Link>
             </>
           )}
           <span className="navbar-user">
