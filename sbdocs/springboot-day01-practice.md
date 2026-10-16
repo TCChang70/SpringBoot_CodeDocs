@@ -4,6 +4,7 @@
 - 透過實作鞏固 Spring Boot 基礎知識
 - 練習 Maven/Gradle 專案管理
 - 練習 Spring IoC 和依賴注入
+- 理解 `@Controller` 與 `@RestController` 的差異
 - 建立第一個完整的 RESTful API
 
 ---
@@ -389,7 +390,144 @@ curl http://localhost:8080/api/util/info
 
 ---
 
-## 練習 5：建立完整的使用者管理 API ⭐⭐⭐
+## 練習 5：`@Controller` 與 `@RestController` 實作 ⭐⭐
+
+### 任務
+分別用 `@Controller` 與 `@RestController` 建立端點，理解兩者回傳值的差異：
+1. `@Controller` 搭配 Thymeleaf 樣板回傳 **HTML 頁面**
+2. `@Controller` 的單一方法加 `@ResponseBody` 回傳 **JSON／純文字**
+3. `@RestController` 回傳 **JSON**
+
+### 步驟
+1. 加入 Thymeleaf 依賴
+2. 建立 `@Controller` 與 HTML 樣板
+3. 建立 `@RestController`
+4. 用 curl 比較三者輸出
+
+### 依賴（pom.xml）
+```xml
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-thymeleaf</artifactId>
+</dependency>
+```
+
+> 對應理論文件：[3.5 `@RestController` 與 `@Controller` 的差異](springboot-day01-maven-ioc.md#35-restcontroller-與-controller-的差異)
+
+### 程式碼
+
+#### `@Controller` + Thymeleaf 樣板 `ViewController.java`
+```java
+package com.example.practice.controller;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+@Controller
+public class ViewController {
+
+    // 回傳樣板名稱：Spring 會去找 templates/greeting.html
+    @GetMapping("/view/greeting")
+    public String greeting(@RequestParam(defaultValue = "World") String name, Model model) {
+        model.addAttribute("name", name);   // 把資料放進樣板
+        return "greeting";                  // → templates/greeting.html
+    }
+
+    // 加 @ResponseBody：此方法改為直接回傳字串（不找樣板）
+    @GetMapping("/view/health")
+    @ResponseBody
+    public String health() {
+        return "OK";
+    }
+}
+```
+
+#### HTML 樣板 `src/main/resources/templates/greeting.html`
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Greeting</title>
+</head>
+<body>
+    <h1 th:text="'Hello, ' + ${name} + '!'">Hello</h1>
+</body>
+</html>
+```
+
+#### `@RestController` 回傳 JSON `UserApiController.java`
+```java
+package com.example.practice.controller;
+
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
+
+@RestController
+public class UserApiController {
+
+    // 回傳 Map → Spring 用 Jackson 轉成 JSON
+    @GetMapping("/api/greeting")
+    public Map<String, String> greeting(
+            @RequestParam(defaultValue = "World") String name) {
+        return Map.of("message", "Hello, " + name + "!");
+    }
+
+    // @PathVariable 取 URL 路徑中的變數
+    @GetMapping("/api/users/{id}")
+    public Map<String, Object> getUser(@PathVariable Long id) {
+        return Map.of("id", id, "name", "使用者" + id);
+    }
+}
+```
+
+### 測試
+```bash
+# @Controller + Thymeleaf → 回傳 HTML
+curl http://localhost:8080/view/greeting?name=Alice
+# 輸出：<h1>Hello, Alice!</h1>
+
+# @Controller + @ResponseBody → 回傳純文字
+curl http://localhost:8080/view/health
+# 輸出：OK
+
+# @RestController → 回傳 JSON
+curl http://localhost:8080/api/greeting?name=Alice
+# 輸出：{"message":"Hello, Alice!"}
+
+curl http://localhost:8080/api/users/1
+# 輸出：{"id":1,"name":"使用者1"}
+```
+
+### 預期結果
+| 端點 | 控制器型別 | 回應 |
+|------|-----------|------|
+| `/view/greeting` | `@Controller` | HTML 頁面 |
+| `/view/health` | `@Controller` + `@ResponseBody` | `OK`（純文字）|
+| `/api/greeting` | `@RestController` | JSON |
+| `/api/users/1` | `@RestController` | JSON |
+
+### 學習重點
+- `@Controller` 預設回傳 **View 名稱**（需樣板引擎）；`@RestController` 回傳 **JSON**
+- `@ResponseBody` 可讓 `@Controller` 的**單一方法**回傳 JSON，其餘方法維持回傳 View
+- `@PathVariable`（路徑變數）與 `@RequestParam`（查詢參數）的差異
+- `Map` / `record` / 自訂物件回傳值會由 Jackson 自動轉成 JSON
+
+### 常見錯誤
+1. **`@Controller` 回傳字串但沒有對應樣板** → 出現 404 或 Whitelabel Error Page（字串被當成 View 名稱）
+2. **用 `@Controller` 回傳物件（如 `Map`）** → 被當成 View 名稱而報錯；應改用 `@RestController` 或加 `@ResponseBody`
+3. **樣板位置錯誤** → 必須放在 `src/main/resources/templates/` 底下
+
+---
+
+## 練習 6：建立完整的使用者管理 API ⭐⭐⭐
 
 ### 任務
 建立一個完整的使用者管理 RESTful API，包含 CRUD 操作。
@@ -706,7 +844,7 @@ curl http://localhost:8080/api/users/count
 
 ---
 
-## 練習 6：配置檔使用 ⭐⭐
+## 練習 7：配置檔使用 ⭐⭐
 
 ### 任務
 學習使用 `application.properties` 和 `application.yml` 配置檔。
@@ -829,7 +967,7 @@ curl http://localhost:8080/api/config/name
 
 ---
 
-## 練習 7：整合 Swagger API 文檔 ⭐⭐⭐
+## 練習 8：整合 Swagger API 文檔 ⭐⭐⭐
 
 ### 任務
 整合 Swagger UI 來自動產生 API 文檔。
@@ -962,6 +1100,7 @@ http://localhost:8080/v3/api-docs
 | 理解 Spring IoC 概念 | □ 未完成 □ 部分完成 □ 完全完成 | |
 | 能使用 `@Component` / `@Autowired` | □ 未完成 □ 部分完成 □ 完全完成 | |
 | 能使用建構子注入 | □ 未完成 □ 部分完成 □ 完全完成 | |
+| 理解 `@Controller` 與 `@RestController` 的差異 | □ 未完成 □ 部分完成 □ 完全完成 | |
 | 能建立完整的 RESTful API | □ 未完成 □ 部分完成 □ 完全完成 | |
 | 能編寫單元測試 | □ 未完成 □ 部分完成 □ 完全完成 | |
 | 能配置應用程式 | □ 未完成 □ 部分完成 □ 完全完成 | |

@@ -201,6 +201,131 @@ server.port=8080
 
 ---
 
+### 3.5 `@RestController` 與 `@Controller` 的差異
+
+Spring MVC 有兩個容易混淆的控制器註解，差別在「方法回傳值如何被處理」：
+
+| 比較項目 | `@Controller` | `@RestController` |
+|---------|--------------|-------------------|
+| 回傳值預設行為 | 視為 **View 名稱**，交給 `ViewResolver`（Thymeleaf / JSP）解析成 HTML | 直接寫入 **HTTP Response Body** |
+| 常用情境 | 傳統 MVC 網站，回傳 HTML 頁面 | REST API，回傳 JSON |
+| 等價寫法 | — | `@Controller` + `@ResponseBody` |
+| 需要樣板引擎 | 需要（例如 Thymeleaf）| 不需要 |
+
+> **重點**：`@RestController` 是「組合註解」，等同於在 `@Controller` 的**每個方法**上都加了 `@ResponseBody`。回傳的物件會由 `HttpMessageConverter`（預設是 Jackson）自動序列化成 JSON。
+
+```java
+// ❌ 用 @Controller 回傳字串時，Spring 會去找名為 "hello" 的樣板檔案，
+//    而不是回傳 "hello" 這個字串。
+//    若沒有 Thymeleaf 樣板（templates/hello.html），會出現 404 或 Whitelabel Error Page。
+@Controller
+public class ViewController {
+    @GetMapping("/view/hello")
+    public String hello() {
+        return "hello";   // → 解析 templates/hello.html
+    }
+}
+```
+
+```java
+// ✅ 用 @RestController 回傳物件，Spring 用 Jackson 自動轉成 JSON
+public record Greeting(String message, String name) {}   // Java 16+ record
+
+@RestController
+public class ApiController {
+    @GetMapping("/api/hello")
+    public Greeting hello() {
+        return new Greeting("Hello", "World");  // → {"message":"Hello","name":"World"}
+    }
+}
+```
+
+```java
+// 💡 也可以只在 @Controller 的「單一方法」加 @ResponseBody，讓該方法回傳 JSON，
+//    其餘方法仍維持回傳 View。
+@Controller
+public class MixedController {
+    @GetMapping("/mixed/json")
+    @ResponseBody
+    public Greeting json() {
+        return new Greeting("Hello", "JSON");   // → JSON
+    }
+}
+```
+
+### 3.6 REST API 常用註解速查
+
+**HTTP 方法對應註解**（皆為 `@RequestMapping(method = ...)` 的簡化寫法）：
+
+| 註解 | HTTP 方法 | CRUD 對應 | 常見狀態碼 |
+|------|-----------|-----------|-----------|
+| `@GetMapping` | GET | Read（查詢）| 200 OK |
+| `@PostMapping` | POST | Create（新增）| 201 Created |
+| `@PutMapping` | PUT | Update（整筆更新）| 200 OK |
+| `@PatchMapping` | PATCH | Update（部分更新）| 200 OK |
+| `@DeleteMapping` | DELETE | Delete（刪除）| 204 No Content |
+| `@RequestMapping` | 全部（可用 `method` 指定）| — | — |
+
+**參數綁定註解**：
+
+| 註解 | 取值來源 | 範例 |
+|------|---------|------|
+| `@PathVariable` | URL 路徑變數 | `/api/users/123` → `@PathVariable String id` |
+| `@RequestParam` | 查詢字串（query string）| `/api/users?page=1` → `@RequestParam int page` |
+| `@RequestBody` | 請求主體（通常是 JSON）| `{"name":"Alice"}` → `@RequestBody User user` |
+| `@RequestHeader` | 請求標頭 | `Authorization: Bearer xxx` |
+
+> **記憶訣竅**：`@PathVariable` 抓「路徑裡的變數」，`@RequestParam` 抓「問號後面的參數」，`@RequestBody` 抓「請求內容（JSON）」。
+
+### 3.7 用 `ResponseEntity` 控制狀態碼
+
+`ResponseEntity<T>` 讓你完全掌控 HTTP 狀態碼、標頭與回應主體：
+
+```java
+@RestController
+@RequestMapping("/api/users")
+public class UserController {
+
+    // 200 OK + body；找不到則 404 Not Found
+    @GetMapping("/{id}")
+    public ResponseEntity<User> getById(@PathVariable String id) {
+        return userService.getUserById(id)
+                .map(ResponseEntity::ok)                    // 200 + body
+                .orElse(ResponseEntity.notFound().build()); // 404
+    }
+
+    // 201 Created + Location 標頭 + body
+    @PostMapping
+    public ResponseEntity<User> create(@RequestBody User user) {
+        User saved = userService.create(user);
+        return ResponseEntity
+                .created(URI.create("/api/users/" + saved.getId()))
+                .body(saved);
+    }
+
+    // 204 No Content（成功但無回應主體）；找不到則 404
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable String id) {
+        return userService.delete(id)
+                ? ResponseEntity.noContent().build()   // 204
+                : ResponseEntity.notFound().build();   // 404
+    }
+}
+```
+
+**常見狀態碼對照**：
+
+| 狀態碼 | 意義 | 使用時機 |
+|--------|------|---------|
+| 200 OK | 成功 | GET / PUT 成功 |
+| 201 Created | 已建立 | POST 新增成功（建議附 `Location` 標頭）|
+| 204 No Content | 成功但無內容 | DELETE 成功 |
+| 400 Bad Request | 請求錯誤 | 參數格式錯誤 |
+| 404 Not Found | 找不到資源 | 查無資料 |
+| 500 Internal Server Error | 伺服器錯誤 | 未預期的例外 |
+
+---
+
 ## 4. 三種依賴注入方式
 
 Spring 支援三種注入方式，建議優先使用**建構子注入**：
@@ -311,8 +436,8 @@ curl http://localhost:8080/hello?name=Alice
 - **練習 2**：建立 Service 層和依賴注入 ⭐⭐
 - **練習 3**：多種依賴注入方式比較 ⭐⭐
 - **練習 4**：Bean 註冊方式實作 ⭐⭐
-- **練習 5**：建立完整的使用者管理 API ⭐⭐⭐
-- **練習 6**：整合單元測試 ⭐⭐
+- **練習 5**：`@Controller` 與 `@RestController` 實作 ⭐⭐
+- **練習 6**：建立完整的使用者管理 API ⭐⭐⭐
 - **練習 7**：配置檔使用 ⭐⭐
 - **練習 8**：整合 Swagger API 文檔 ⭐⭐⭐
 
