@@ -1,6 +1,4 @@
-*.properties
-*.sql
-*.html
-*.js
-*.css
-*.csv
+.project
+.classpath
+*.class
+target/*
