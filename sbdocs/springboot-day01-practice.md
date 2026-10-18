@@ -1,5 +1,18 @@
 # Spring Boot Day 01 實作練習
 
+## 關於本文件
+
+本文件是 **[Spring Boot Day 01 理論文件](springboot-day01-maven-ioc.md)** 的配套實作指南。
+
+如果你還沒有閱讀理論文件，建議先讀完以下部分：
+- ✅ 第 1 章：Maven 專案結構
+- ✅ 第 2 章：Spring IoC 概念
+- ✅ 第 3 章：完整 Spring Boot 專案實作
+
+本實作文件包含 8 個遞進式練習，從基礎到進階，幫助你快速掌握 Spring Boot 核心概念。
+
+---
+
 ## 學習目標
 - 透過實作鞏固 Spring Boot 基礎知識
 - 練習 Maven/Gradle 專案管理
@@ -11,41 +24,153 @@
 
 ## 練習環境準備
 
-### 必要工具
-- JDK 21 或以上版本
-- Maven 3.8+ 或 Gradle 8+
-- IDE（推薦 IntelliJ IDEA 或 VS Code）
-- API 測試工具（Postman 或 curl）
+### 系統需求
 
-### 專案建立
-1. 前往 [start.spring.io](https://start.spring.io/)
-2. 選擇設定：
-   - Project: Maven
-   - Language: Java
-   - Spring Boot: 3.3.4
-   - Group: com.example
-   - Artifact: practice
-   - Packaging: Jar
-   - Java: 21
-3. 加入依賴：
-   - Spring Web
-   - Spring Boot DevTools（可選）
-4. 點擊 "Generate" 下載專案
+| 工具 | 最低版本 | 推薦版本 | 驗證命令 |
+|------|---------|---------|---------|
+| JDK | 11 | 21+ | `java -version` |
+| Maven | 3.6.0 | 3.8.4+ | `mvn -v` |
+| IDE | — | IntelliJ IDEA 2023.3+ | — |
+| Git | — | 2.40+ | `git --version` |
+
+### 工具驗證
+
+```bash
+# 驗證所有工具已安裝
+java -version
+javac -version
+mvn -version
+git --version
+
+# 輸出示例（成功）
+java version "21.0.1" 2023-10-17 LTS
+Apache Maven 3.8.4 (9b656c72d54e5bacbed989b64718c159fe59b537)
+git version 2.40.0
+```
+
+### 開發環境建議
+
+**推薦組合**（最佳生產力）：
+- IDE: **IntelliJ IDEA Community Edition**（免費）或 Ultimate（付費）
+- JDK: **Amazon Corretto 21** 或 **Eclipse Temurin 21**（免費）
+- Build: **Maven**（官方推薦）
+- Version Control: **Git + GitHub**
+
+**替代組合**：
+- IDE: VS Code + Spring Boot Extension Pack
+- JDK: OpenJDK 21 或 Oracle JDK 21
+- Build: Gradle 8.0+
+
+---
+
+## 必要工具
+
+### 專案初始化（三選一）
+
+#### 方法 A：使用 Spring Initializr 網站（推薦初心者）
+1. 訪問 [https://start.spring.io/](https://start.spring.io/)
+2. 配置項目參數：
+   ```
+   Project:        Maven
+   Language:       Java
+   Spring Boot:    3.3.4 (或最新版)
+   Group:          com.example
+   Artifact:       practice
+   Name:           practice
+   Description:    Spring Boot Practice Project
+   Packaging:      Jar
+   Java:           21
+   ```
+3. 搜尋依賴並添加：
+   - `Spring Web` （必選）
+   - `Spring Boot DevTools` （可選，開發時自動重啟）
+   - `Lombok` （可選，簡化 Getter/Setter）
+4. 點擊「Generate」下載 `practice.zip`
+5. 解壓縮到本地目錄
+
+#### 方法 B：使用 Maven 命令（推薦進階用戶）
+```bash
+# 產生基礎專案
+mvn archetype:generate \
+  -DgroupId=com.example \
+  -DartifactId=practice \
+  -DarchetypeArtifactId=maven-archetype-quickstart \
+  -DinteractiveMode=false
+
+cd practice
+
+# 編輯 pom.xml，將 parent 改為 spring-boot-starter-parent
+# 詳見理論文件第 1.3 節的完整 pom.xml 範例
+```
+
+#### 方法 C：使用 IDE 內建生成器
+**IntelliJ IDEA**：
+1. File → New → Project
+2. 選擇 Spring Boot
+3. 填入相同參數
+4. 完成
+
+### 專案結構驗證
+
+```bash
+cd practice
+
+# 驗證專案結構
+mvn validate
+# 預期輸出：BUILD SUCCESS
+
+# 下載依賴（可能耗時 1-5 分鐘）
+mvn clean install -q
+```
+
+### IDE 開啟專案
+
+**IntelliJ IDEA**：
+1. File → Open
+2. 選擇 practice 目錄
+3. 等待 IDE 建立索引
+
+**VS Code**：
+1. 安裝 Extension：Spring Boot Extension Pack + Maven for Java
+2. Open Folder → 選擇 practice 目錄
 
 ---
 
 ## 練習 1：建立基礎 Spring Boot 應用程式 ⭐
 
 ### 任務
-建立一個簡單的 Spring Boot 應用程式，包含一個 REST API 端點。
+建立一個簡單的 Spring Boot 應用程式，包含一個 REST API 端點，並成功啟動。
 
-### 步驟
-1. 解壓縮下載的專案
-2. 建立啟動類別
-3. 建立第一個 Controller
-4. 測試 API
+**預期成果**：
+- 應用程式成功啟動，監聽 8080 埠
+- 訪問 `http://localhost:8080/api/hello` 回傳問候訊息
 
-### 程式碼
+### 步驟詳解
+
+#### 步驟 1：初始化專案
+使用上面「必要工具」章節的任意方法初始化專案，確保完成以下驗證：
+```bash
+cd practice
+mvn validate         # 檢查 pom.xml
+mvn clean install    # 下載依賴
+```
+
+#### 步驟 2：建立專案目錄結構
+```
+src/main/java/com/example/practice/
+├── Application.java              # 啟動類別
+├── controller/
+│   └── HelloController.java      # 控制器
+└── service/
+    └── GreetingService.java      # 業務邏輯層（練習 2 再加）
+```
+
+使用 IDE 建立上述目錄和文件：
+- **IntelliJ IDEA**：右鍵點擊 `com/example/practice` → New → Package/Class
+- **VS Code**：手動建立目錄和文件
+
+#### 步驟 3：實現啟動類別
+建立或編輯 `Application.java`（參考理論文件 3.1 節）：
 
 #### 啟動類別 `Application.java`
 ```java
@@ -61,6 +186,9 @@ public class Application {
     }
 }
 ```
+
+#### 步驟 4：實現 Controller
+建立 `HelloController.java`（參考理論文件 3.3 節）：
 
 #### 第一個 Controller `HelloController.java`
 ```java
@@ -82,24 +210,115 @@ public class HelloController {
 ```
 
 ### 測試
+
+#### 4.1 啟動應用程式
+
 ```bash
-# 啟動應用程式
+# 進入項目目錄
+cd practice
+
+# 方法 A：Maven 直接啟動（推薦）
 mvn spring-boot:run
 
-# 測試 API
+# 方法 B：先編譯打包再執行
+mvn clean package -DskipTests
+java -jar target/practice-1.0-SNAPSHOT.jar
+
+# 方法 C：IDE 內直接運行
+# IntelliJ: 右鍵 Application.java → Run 'Application.main()'
+# VS Code: 點擊 main() 上方的「Run」或「Debug」
+```
+
+#### 預期啟動日誌
+```
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+...
+
+2024-10-18 10:30:48.123  INFO 12345 --- [main] com.example.practice.Application  : Started Application in 3.125 seconds
+2024-10-18 10:30:48.234  INFO 12345 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+```
+
+✅ **看到上面的訊息表示啟動成功**
+
+#### 4.2 測試 API
+
+**開啟新的終端視窗**，執行以下命令：
+
+```bash
+# 測試 1：簡單測試
 curl http://localhost:8080/api/hello
-```
 
-### 預期結果
-```
+# 預期輸出
 Hello, Spring Boot!
+
+# 測試 2：查看詳細回應（包含 HTTP 頭）
+curl -i http://localhost:8080/api/hello
+
+# 預期輸出
+HTTP/1.1 200 OK
+Content-Type: text/plain;charset=UTF-8
+Content-Length: 18
+
+Hello, Spring boot!
 ```
 
-### 常見錯誤
-1. **端口被佔用**：修改 `application.properties` 中的 `server.port`
-2. **套件掃描失敗**：確保啟動類別在正確的套件位置
+**或使用瀏覽器**：
+- 訪問 `http://localhost:8080/api/hello`
+- 應該看到 `Hello, Spring Boot!` 訊息
 
----
+### 常見錯誤與排除
+
+#### 錯誤 1：`Port 8080 is already in use`
+```
+Address already in use: bind
+
+原因：8080 埠被其他應用程式佔用
+
+解決方案 A：改變埠號
+編輯 src/main/resources/application.properties：
+server.port=8081
+然後重新啟動
+
+解決方案 B：殺死佔用的進程
+# Windows
+netstat -ano | findstr :8080
+taskkill /PID <PID> /F
+
+# Mac/Linux
+lsof -i :8080
+kill -9 <PID>
+```
+
+#### 錯誤 2：`ClassNotFoundException`
+```
+Caused by: java.lang.ClassNotFoundException: org.springframework.boot.SpringApplication
+
+原因：缺失依賴
+
+解決方案：
+mvn clean install -U
+然後重新啟動
+```
+
+#### 錯誤 3：`找不到 HelloController`
+```
+404 Not Found: /api/hello
+
+原因：Controller 類別不在掃描範圍內
+
+解決方案：
+檢查目錄結構：
+✅ 正確：com.example.practice.controller.HelloController
+❌ 錯誤：com.example.controller.HelloController
+        （與 Application 不在同級 package）
+
+確保 Application 在最頂層：
+com/example/practice/Application.java ✅
+com/example/practice/controller/HelloController.java ✅
+```
+
+### 學習重點
 
 ## 練習 2：建立 Service 層和依賴注入 ⭐⭐
 
