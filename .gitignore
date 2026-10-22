@@ -25,3 +25,15 @@ sbdocs/tailored_jwt/target/classes/data.sql
 sbdocs/tailored_jwt/target/classes/schema.sql
 sbdocs/tailored_jwt/target/classes/META-INF/MANIFEST.MF
 sbdocs/庫存監控實作程式/inventory-api/target/classes/application.properties
+sbdocs/庫存監控實作程式/inventory-api/target/classes/static/assets/index-Cr5iNuV8.css
+sbdocs/學生測試專案/online-exam-api/target/classes/application.properties
+sbdocs/學生測試專案/online-exam-api/target/classes/META-INF/MANIFEST.MF
+sbdocs/學生測試專案/online-exam-api/target/classes/static/index.html
+sbdocs/學生測試專案/online-exam-api/target/classes/static/assets/index-CNVQcrFI.js
+sbdocs/學生測試專案/online-exam-api/target/classes/static/assets/index-D_vuHgQZ.css
+sbdocs/學生測試專案/online-exam-api/target/classes/static/examples/student-import-template.csv
+*.yaml
+*.xml
+*.MF
+*.html
+*.js
