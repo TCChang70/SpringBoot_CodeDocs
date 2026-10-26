@@ -106,7 +106,7 @@ public class Product {
 
 ```sql
 -- src/main/resources/data.sql（適用練習 2-1、2-2）
-INSERT INTO product (name, price, stock, category) VALUES
+INSERT INTO products (name, price, stock, category) VALUES
   ('MacBook Pro 14', 69999.0, 5,  '電腦'),
   ('iPhone 15 Pro',  39999.0, 20, '手機'),
   ('iPad Air',       24999.0, 15, '電腦'),
@@ -140,6 +140,7 @@ INSERT INTO products (name, price, stock, category_id) VALUES
 ```properties
 # 啟動時執行 data.sql
 spring.sql.init.mode=always
+spring.jpa.defer-datasource-initialization=true
 spring.jpa.hibernate.ddl-auto=create-drop
 ```
 
