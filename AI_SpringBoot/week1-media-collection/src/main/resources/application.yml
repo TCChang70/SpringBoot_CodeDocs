@@ -1,0 +1,31 @@
+spring:
+  application:
+    name: media-collection-api
+
+  # H2 in-memory 資料庫設定（開發環境，重啟後資料重置）
+  datasource:
+    url: jdbc:h2:mem:mediadb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  # H2 Web Console：開發期間可直接查看資料庫
+  h2:
+    console:
+      enabled: true
+      path: /h2-console
+
+  # JPA / Hibernate 設定
+  jpa:
+    hibernate:
+      # create-drop：每次啟動建立 Table，關閉時刪除（開發測試用）
+      # 正式環境應改為 validate 或 none
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+    database-platform: org.hibernate.dialect.H2Dialect
+
+server:
+  port: 8080
