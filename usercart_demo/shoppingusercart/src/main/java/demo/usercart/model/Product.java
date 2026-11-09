@@ -9,8 +9,7 @@ import lombok.Data;
 public class Product {
 	
 	@Id
-	Integer id;
-	
+	int id;
 	@Column(length=255)
 	String title;
 	
@@ -25,9 +24,9 @@ public class Product {
 	@Column(length=255)
 	String image;
 	
-	//@Lob
-	//@Column(name = "picture", length = Integer.MAX_VALUE, nullable = true)
-	//private byte[] picture;
+	@Lob
+	@Column(name = "picture", length = Integer.MAX_VALUE, nullable = true)
+	private byte[] picture;
 	
 	int rating_id;
 	
